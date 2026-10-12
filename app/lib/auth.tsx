@@ -147,6 +147,39 @@ export const signInWithGoogle = (next: string) =>
 export const signInWithGoogleIdToken = (token: string, nonce: string) =>
   supabase().auth.signInWithIdToken({ provider: 'google', token, nonce });
 
+/** Nonce acak: versi SHA-256 untuk Google, versi mentah untuk Supabase. */
+export async function makeNonce() {
+  const raw = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
+  const hashed = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
+  return { raw, hashed };
+}
+
+export const GOOGLE_REDIRECT_KEY = 'swegrowth:google-redirect';
+export const googleRedirectUri = () => `${window.location.origin}/auth/google`;
+
+/**
+ * Login Google lewat redirect satu halaman penuh langsung ke Google (OpenID Connect,
+ * response_type=id_token), lalu ID token-nya diteruskan ke Supabase di /auth/google.
+ * Dipakai di HP: tanpa popup, tab baru, atau FedCM yang sering gagal di Chrome mobile,
+ * dan layar Google tetap menyebut domain kita.
+ */
+export async function startGoogleRedirect(clientId: string, next: string) {
+  const nonce = await makeNonce();
+  const state = crypto.randomUUID();
+  sessionStorage.setItem(GOOGLE_REDIRECT_KEY, JSON.stringify({ state, nonce: nonce.raw, next }));
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: googleRedirectUri(),
+    response_type: 'id_token',
+    scope: 'openid email profile',
+    nonce: nonce.hashed,
+    state,
+    prompt: 'select_account',
+  });
+  window.location.assign(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+}
+
 /** Untuk clientLoader: ambil user yang login, atau lempar redirect ke halaman masuk. */
 export async function requireUser(request: Request) {
   const url = new URL(request.url);

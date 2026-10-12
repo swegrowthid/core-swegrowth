@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { signInWithGoogle, signInWithGoogleIdToken } from '~/lib/auth';
+import { makeNonce, signInWithGoogle, signInWithGoogleIdToken, startGoogleRedirect } from '~/lib/auth';
 import { hasSupabase } from '~/lib/supabase';
 
 /**
@@ -7,6 +7,10 @@ import { hasSupabase } from '~/lib/supabase';
  * langsung diteruskan ke Supabase, jadi di layar Google yang tercatat adalah
  * domain kita, bukan <project>.supabase.co. Kalau client ID belum diisi atau
  * script Google gagal dimuat (ad-blocker, jaringan), jatuh ke redirect OAuth lama.
+ *
+ * Di HP tombol ini tidak memakai GIS: popup/FedCM-nya membuka tab baru yang sering
+ * tidak kembali ke halaman kita di Chrome mobile. Sebagai gantinya halaman langsung
+ * redirect ke Google lalu kembali ke /auth/google (lihat startGoogleRedirect).
  */
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 export const hasGoogleClientId = Boolean(clientId);
@@ -63,13 +67,9 @@ function loadGis() {
   return gisScript;
 }
 
-/** Nonce acak: versi SHA-256 untuk Google, versi mentah untuk Supabase. */
-async function makeNonce() {
-  const raw = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
-  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw));
-  const hashed = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
-  return { raw, hashed };
-}
+/** HP/tablet: layar sentuh tanpa mouse, atau user agent mobile. */
+const isMobile = () =>
+  window.matchMedia('(pointer: coarse) and (hover: none)').matches || /Android|iPhone|iPad|iPod|Mobi/i.test(navigator.userAgent);
 
 const GoogleIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -107,6 +107,10 @@ export function GoogleSignIn({ next, text = 'continue_with', onSignedIn, onError
 
   useEffect(() => {
     if (!clientId || !hasSupabase) return;
+    if (isMobile()) {
+      setMode('fallback');
+      return;
+    }
     let cancelled = false;
 
     (async () => {
@@ -147,8 +151,23 @@ export function GoogleSignIn({ next, text = 'continue_with', onSignedIn, onError
     };
   }, [text]);
 
+  // Kembali dari Google lewat tombol Back (bfcache): tombol jangan tetap terkunci.
+  useEffect(() => {
+    const reset = (e: PageTransitionEvent) => e.persisted && setBusy(false);
+    window.addEventListener('pageshow', reset);
+    return () => window.removeEventListener('pageshow', reset);
+  }, []);
+
   const redirectLogin = async () => {
     setBusy(true);
+    if (clientId) {
+      try {
+        await startGoogleRedirect(clientId, next);
+        return;
+      } catch {
+        // sessionStorage/crypto tidak tersedia: pakai redirect OAuth Supabase.
+      }
+    }
     const { error } = await signInWithGoogle(next);
     if (error) {
       onError('Login Google belum bisa dipakai. Coba lagi sebentar lagi.');

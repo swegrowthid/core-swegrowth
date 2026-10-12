@@ -66,12 +66,15 @@ npm run build      # output ke build/client
 dan email notifikasi Google menyebut `swegrowth.id`, bukan `<project-ref>.supabase.co`. Session tetap dari Supabase.
 
 1. Google Cloud Console → *Credentials* → OAuth client (Web) yang dipakai provider Google di Supabase →
-   **Authorized JavaScript origins**: `https://swegrowth.id` dan `http://localhost:4321`.
+   **Authorized JavaScript origins**: `https://swegrowth.id` dan `http://localhost:4321`, dan
+   **Authorized redirect URIs**: `https://swegrowth.id/auth/google` dan `http://localhost:4321/auth/google`.
+   Di HP (dan kalau script Google gagal dimuat) tombolnya tidak memakai popup GIS, tapi redirect penuh ke Google
+   yang kembali ke `/auth/google` dengan ID token; popup/FedCM GIS sering tidak kembali ke halaman di Chrome mobile.
 2. Isi client ID itu ke env `VITE_GOOGLE_CLIENT_ID` (Netlify + `.env`), lalu deploy ulang.
 3. Opsional: *OAuth consent screen → Branding* (nama, logo, homepage, `/privasi`, `/term-of-service`, authorized
    domain `swegrowth.id`) lalu ajukan verifikasi, supaya Google menampilkan nama "SWE Growth".
 
-Tanpa client ID atau kalau script Google diblokir, tombolnya jatuh ke redirect OAuth Supabase (`/auth/callback`),
+Tanpa client ID, tombolnya jatuh ke redirect OAuth Supabase (`/auth/callback`),
 jadi redirect URL di langkah 3 di atas tetap diperlukan.
 
 `app/lib/database.types.ts` ditulis tangan mengikuti migration; perbarui saat skema berubah.
