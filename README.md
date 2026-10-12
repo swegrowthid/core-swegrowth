@@ -73,16 +73,18 @@ seluruh sesi, dan event Google Calendar dibuat dengan pola ulang yang sama.
 
 ### Login Google tanpa domain supabase.co
 
-`/masuk` dan tombol daftar di halaman event memakai tombol Google Identity Services + `signInWithIdToken`, jadi layar
+`/masuk` dan tombol daftar di halaman event redirect langsung ke Google (OpenID Connect, `response_type=id_token`)
+lalu kembali ke `/auth/google`, yang meneruskan ID token ke Supabase lewat `signInWithIdToken`. Jadi layar
 dan email notifikasi Google menyebut `swegrowth.id`, bukan `<project-ref>.supabase.co`. Session tetap dari Supabase.
 
 1. Google Cloud Console → *Credentials* → OAuth client (Web) yang dipakai provider Google di Supabase →
-   **Authorized JavaScript origins**: `https://swegrowth.id` dan `http://localhost:4321`.
+   **Authorized redirect URIs**: `https://swegrowth.id/auth/google` dan `http://localhost:4321/auth/google`.
+   (Sengaja tanpa popup Google Identity Services: di Chrome mobile popup-nya sering tidak kembali ke halaman.)
 2. Isi client ID itu ke env `VITE_GOOGLE_CLIENT_ID` (Netlify + `.env`), lalu deploy ulang.
 3. Opsional: *OAuth consent screen → Branding* (nama, logo, homepage, `/privasi`, `/term-of-service`, authorized
    domain `swegrowth.id`) lalu ajukan verifikasi, supaya Google menampilkan nama "SWE Growth".
 
-Tanpa client ID atau kalau script Google diblokir, tombolnya jatuh ke redirect OAuth Supabase (`/auth/callback`),
+Tanpa client ID, tombolnya jatuh ke redirect OAuth Supabase (`/auth/callback`),
 jadi redirect URL di langkah 3 di atas tetap diperlukan.
 
 `app/lib/database.types.ts` ditulis tangan mengikuti migration; perbarui saat skema berubah.

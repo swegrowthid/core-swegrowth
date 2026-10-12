@@ -20,6 +20,7 @@ export default [
   // SPA
   route('masuk', 'routes/login.tsx'),
   route('auth/callback', 'routes/auth-callback.tsx'),
+  route('auth/google', 'routes/auth-google.tsx'),
 
   // Wajib login (lihat member-layout); isi khusus verified dijaga per halaman
   layout('routes/member-layout.tsx', [
