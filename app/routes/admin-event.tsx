@@ -17,6 +17,7 @@ import {
 import { Field, isoToWib, useMutation, val, wibToIso } from '~/lib/admin-form';
 import { requireAdmin } from '~/lib/auth';
 import type { ActivityRegistrationRow, ActivityStatus, CommunityGroupRow, EventPhoto, NextStep, Recurrence, RegistrationField } from '~/lib/database.types';
+import { downloadEventPoster } from '~/lib/event-poster';
 import { formatWibDate, formatWibTime } from '~/lib/format';
 import { supabase } from '~/lib/supabase';
 
@@ -148,6 +149,7 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
             <div className="inline-actions">
               <Link className="btn btn-ghost sm" to={activityPath(a)} target="_blank">Lihat halaman publik ↗</Link>
               <CopyLink path={activityPath(a)} />
+              <PosterButton activity={a} organizer={groups.find((g) => g.id === a.organizer_group_id)?.name ?? null} />
             </div>
           )}
         </div>
@@ -293,6 +295,31 @@ function EditorSection({ n, title, hint, children }: { n: number; title: string;
       {hint && <p className="form-sub">{hint}</p>}
       {children}
     </fieldset>
+  );
+}
+
+/** Unduh poster PNG (1080×1350) dari data event yang tersimpan, siap dibagikan. */
+function PosterButton({ activity, organizer }: { activity: Activity; organizer: string | null }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      className="btn btn-ghost sm"
+      type="button"
+      disabled={busy}
+      title="Dari data yang sudah disimpan"
+      onClick={async () => {
+        setBusy(true);
+        try {
+          await downloadEventPoster(activity, organizer);
+        } catch (e) {
+          alert(`Poster gagal dibuat: ${e instanceof Error ? e.message : e}`);
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      {busy ? 'Membuat poster…' : 'Download poster'}
+    </button>
   );
 }
 
