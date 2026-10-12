@@ -1,8 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { data, Link, useNavigate } from 'react-router';
+import { data, Link } from 'react-router';
 import type { Route } from './+types/event';
 import { Avatar } from '~/components/Avatar';
-import { GoogleSignIn, googleSignInLinks } from '~/components/GoogleSignIn';
+import { GoogleSignIn } from '~/components/GoogleSignIn';
 import { CalendarIcon, ClockIcon, PinIcon, UsersIcon } from '~/components/Icons';
 import {
   activityPath,
@@ -26,8 +26,6 @@ import type { RegistrationStatus } from '~/lib/database.types';
 import { formatWibDate, formatWibDay, formatWibTime } from '~/lib/format';
 import { pageMeta } from '~/lib/site';
 import { supabase } from '~/lib/supabase';
-
-export const links: Route.LinksFunction = googleSignInLinks;
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
   const a = loaderData?.activity;
@@ -250,14 +248,13 @@ function Seats({ activity: a, stats }: { activity: Activity; stats: Stats }) {
 /** Kartu daftar: harga → kuota → satu aksi → keterangan singkat → bagikan. */
 function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: Stats; my: My }) {
   const { user, mine, setMine } = my;
-  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   /** Tombol Google untuk tamu; setelah login lanjut ke `next`. */
   const guestLogin = (next: string) => (
-    <GoogleSignIn next={next} text="signup_with" onSignedIn={() => navigate(next)} onError={setError} />
+    <GoogleSignIn next={next} text="signup_with" onError={setError} />
   );
 
   const follow = async () => {

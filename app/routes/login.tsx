@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import type { Route } from './+types/login';
-import { GoogleSignIn, googleSignInLinks } from '~/components/GoogleSignIn';
+import { GoogleSignIn } from '~/components/GoogleSignIn';
 import { safeNext, useAuth } from '~/lib/auth';
 import { pageMeta } from '~/lib/site';
 import { hasSupabase } from '~/lib/supabase';
-
-export const links: Route.LinksFunction = googleSignInLinks;
 
 export const meta: Route.MetaFunction = () => [
   ...pageMeta('Masuk — SWE Growth', 'Masuk ke akun SWE Growth.'),
@@ -37,7 +35,7 @@ export default function Login() {
           {!hasSupabase && <p className="form-message error">Login belum dikonfigurasi di environment ini.</p>}
           {error && <p className="form-message error">{error}</p>}
 
-          <GoogleSignIn next={next} onSignedIn={() => navigate(next, { replace: true })} onError={setError} />
+          <GoogleSignIn next={next} onError={setError} />
 
           <p className="auth-foot">
             Dengan masuk, kamu setuju dengan <Link to="/term-of-service">Syarat Layanan</Link>,{' '}
