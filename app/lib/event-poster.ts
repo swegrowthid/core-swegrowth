@@ -156,7 +156,9 @@ type Poster = {
  * Gambar semua bagian mulai dari atas; kembalikan y terbawah konten (sebelum
  * footer). Dipanggil sekali tanpa menggambar untuk mencari ukuran judul yang muat.
  */
-function layout(ctx: Ctx, p: Poster, titleSize: number, paint: boolean, offset = 0) {
+type Fit = { titleSize: number; summaryLines: number };
+
+function layout(ctx: Ctx, p: Poster, { titleSize, summaryLines }: Fit, paint: boolean, offset = 0) {
   const inner = W - PAD * 2;
   let y = PAD;
 
@@ -202,10 +204,10 @@ function layout(ctx: Ctx, p: Poster, titleSize: number, paint: boolean, offset =
   }
 
   // Ringkasan.
-  if (p.summary) {
+  if (p.summary && summaryLines > 0) {
     setFont(ctx, 400, 34);
     y += 22;
-    for (const line of wrap(ctx, p.summary, inner, 3)) {
+    for (const line of wrap(ctx, p.summary, inner, summaryLines)) {
       y += 34 * 1.42;
       if (paint) {
         ctx.fillStyle = C.onTeal;
@@ -255,7 +257,8 @@ function layout(ctx: Ctx, p: Poster, titleSize: number, paint: boolean, offset =
   return y;
 }
 
-const FOOTER_H = 132;
+// Garis pemisah s.d. baseline link (92px) + margin bawah sama dengan sisi.
+const FOOTER_H = 92 + PAD;
 
 function footer(ctx: Ctx, link: string) {
   const top = H - FOOTER_H;
@@ -317,12 +320,20 @@ export async function renderEventPoster(a: Activity, organizerName: string | nul
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas tidak didukung browser ini.');
 
-  // Judul sebesar mungkin selama semua isi muat di atas footer; sisa ruang
-  // dibagi rata di atas dan bawah isi supaya event pendek tidak menumpuk di atas.
+  // Judul sebesar mungkin selama semua isi muat di atas footer; kalau judul
+  // terkecil pun belum muat, ringkasan dipendekkan. Sisa ruang dibagi rata di
+  // atas dan bawah isi supaya event pendek tidak menumpuk di atas.
   const limit = H - FOOTER_H - 64;
-  let size = 100;
-  while (size > 52 && layout(ctx, p, size, false) > limit) size -= 4;
-  const offset = Math.max(0, (limit - layout(ctx, p, size, false)) / 2);
+  let fit: Fit = { titleSize: 52, summaryLines: 0 };
+  search: for (const summaryLines of [3, 2, 1, 0]) {
+    for (let titleSize = 100; titleSize >= 52; titleSize -= 4) {
+      if (layout(ctx, p, { titleSize, summaryLines }, false) <= limit) {
+        fit = { titleSize, summaryLines };
+        break search;
+      }
+    }
+  }
+  const offset = Math.max(0, (limit - layout(ctx, p, fit, false)) / 2);
 
   ctx.fillStyle = C.teal;
   ctx.fillRect(0, 0, W, H);
@@ -344,7 +355,7 @@ export async function renderEventPoster(a: Activity, organizerName: string | nul
   }
   ctx.restore();
 
-  layout(ctx, p, size, true, offset);
+  layout(ctx, p, fit, true, offset);
   footer(ctx, p.link);
   return canvas;
 }
