@@ -24,7 +24,7 @@ database, buat project Supabase gratis sendiri lalu jalankan semua file di `supa
 
 ## Alur kerja
 
-1. Fork repo, lalu buat branch dari `main` (mis. `fix/agenda-timezone`, `feat/filter-rekomendasi`).
+1. Fork repo, lalu buat branch dari `develop` (mis. `fix/agenda-timezone`, `feat/filter-rekomendasi`).
 2. Buat perubahan sekecil mungkin yang menyelesaikan satu hal.
 3. Pastikan lolos sebelum push:
 
@@ -33,8 +33,9 @@ database, buat project Supabase gratis sendiri lalu jalankan semua file di `supa
    npm run build
    ```
 
-4. Buka pull request ke `main` dan isi template-nya. CI menjalankan typecheck + build di setiap PR.
-5. Semua PR direview maintainer sebelum di-merge.
+4. Buka pull request ke `develop` dan isi template-nya. CI menjalankan typecheck + build di setiap PR.
+5. Semua PR direview maintainer sebelum di-merge. `main` hanya menerima merge dari `develop` saat rilis, dan
+   itulah yang ter-deploy ke swegrowth.id.
 
 ## Konvensi
 

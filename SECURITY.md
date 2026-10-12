@@ -17,7 +17,7 @@ ter-deploy. Terima kasih sudah melapor secara bertanggung jawab.
 
 ## Cakupan
 
-Versi yang didukung hanya yang sedang berjalan di [swegrowth.id](https://swegrowth.id) (branch `main`).
+Versi yang didukung hanya yang sedang berjalan di [swegrowth.id](https://swegrowth.id) (branch `main`). Perubahan baru masuk lewat `develop`.
 
 Yang paling penting dijaga:
 
