@@ -1,0 +1,19 @@
+name: Usulan fitur
+description: Ide untuk membuat portal lebih berguna bagi member.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah yang ingin diselesaikan
+      description: Siapa yang butuh ini dan kenapa?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Usulan solusi
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatif yang sudah dipertimbangkan

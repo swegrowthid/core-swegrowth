@@ -2,6 +2,13 @@
   "name": "swe-growth-platform",
   "version": "1.0.0",
   "description": "SWE Growth — platform komunitas software engineer Indonesia",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zikrulihsan/core-swegrowth.git"
+  },
+  "homepage": "https://swegrowth.id",
   "type": "module",
   "scripts": {
     "predev": "node scripts/check-node.mjs",
