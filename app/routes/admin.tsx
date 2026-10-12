@@ -307,7 +307,7 @@ function ActivitiesAdmin({ activities, registrations, groups }: { activities: Ac
                           a.starts_at ? `${formatWibDate(a.starts_at)} ${formatWibTime(a.starts_at)}` : 'jadwal belum diisi',
                           recurrenceLabel(a)?.toLowerCase(),
                           organizerOf(a, groups) && `oleh ${organizerOf(a, groups)!.name}`,
-                          a.photos.length > 0 && `${a.photos.length} foto`,
+                          (a.photos ?? []).length > 0 && `${a.photos.length} foto`,
                           a.price_idr > 0 ? `Rp${a.price_idr.toLocaleString('id-ID')}` : 'gratis',
                           !a.is_public && 'disembunyikan',
                         ].filter(Boolean).join(' · ')}
