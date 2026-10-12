@@ -7,6 +7,7 @@ import {
   activityPath,
   activityStatusLabel,
   linkedinHandle,
+  RECURRENCE_LABEL,
   registrationCode,
   slugify,
   speakerPhoto,
@@ -15,7 +16,7 @@ import {
 } from '~/lib/activities';
 import { Field, isoToWib, useMutation, val, wibToIso } from '~/lib/admin-form';
 import { requireAdmin } from '~/lib/auth';
-import type { ActivityRegistrationRow, ActivityStatus, NextStep, RegistrationField } from '~/lib/database.types';
+import type { ActivityRegistrationRow, ActivityStatus, CommunityGroupRow, EventPhoto, NextStep, Recurrence, RegistrationField } from '~/lib/database.types';
 import { formatWibDate, formatWibTime } from '~/lib/format';
 import { supabase } from '~/lib/supabase';
 
@@ -27,16 +28,18 @@ export const meta: Route.MetaFunction = ({ loaderData }) => [
 /** /admin/event/baru atau /admin/event/:id */
 export async function clientLoader({ request, params }: Route.ClientLoaderArgs) {
   await requireAdmin(request);
-  if (params.id === 'baru') return { activity: null, info: null, registrations: [] as ActivityRegistrationRow[] };
-
   const db = supabase();
-  const [activity, info, registrations] = await Promise.all([
+  const groups = db.from('community_groups').select('*').order('sort_order').order('name').then((r) => r.data ?? []);
+  if (params.id === 'baru') return { activity: null, info: null, registrations: [] as ActivityRegistrationRow[], groups: await groups };
+
+  const [activity, info, registrations, groupRows] = await Promise.all([
     db.from('activities').select('*').eq('id', params.id).maybeSingle(),
     db.from('activity_member_info').select('*').eq('activity_id', params.id).maybeSingle(),
     db.from('activity_registrations').select('*').eq('activity_id', params.id).order('created_at'),
+    groups,
   ]);
   if (!activity.data) throw data(null, { status: 404 });
-  return { activity: activity.data, info: info.data, registrations: registrations.data ?? [] };
+  return { activity: activity.data, info: info.data, registrations: registrations.data ?? [], groups: groupRows };
 }
 
 export function HydrateFallback() {
@@ -53,12 +56,13 @@ const DEFAULT_FIELDS: RegistrationField[] = [
  * pendaftaran dan halaman konfirmasi (/terdaftar) — yang diisi di sini, itu yang tampil.
  */
 export default function AdminEvent({ loaderData }: Route.ComponentProps) {
-  const { activity: a, info, registrations } = loaderData;
+  const { activity: a, info, registrations, groups } = loaderData;
   const navigate = useNavigate();
   const { busy, run, flash } = useMutation();
   const [speakerLinkedin, setSpeakerLinkedin] = useState(a?.speaker_linkedin_url ?? '');
   const [speakerPhotoUrl, setSpeakerPhotoUrl] = useState(a?.speaker_photo_url ?? '');
   const [poster, setPoster] = useState(a?.image_url ?? '');
+  const [recurrence, setRecurrence] = useState<string>(a?.recurrence ?? '');
   const [calendar, setCalendar] = useState<CalendarSyncResult | null>(null);
   const revalidator = useRevalidator();
 
@@ -89,6 +93,10 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
       speaker_title: val(form, 'speaker_title') || null,
       speaker_linkedin_url: val(form, 'speaker_linkedin_url') || null,
       speaker_photo_url: val(form, 'speaker_photo_url') || null,
+      organizer_group_id: val(form, 'organizer_group_id') || null,
+      recurrence: (val(form, 'recurrence') || null) as Recurrence | null,
+      recurrence_until: val(form, 'recurrence') ? val(form, 'recurrence_until') || null : null,
+      photos: JSON.parse(val(form, 'photos') || '[]') as EventPhoto[],
       status: val(form, 'status') as ActivityStatus,
       price_idr: Number.parseInt(val(form, 'price_idr') || '0', 10),
       capacity: capacity ? Number.parseInt(capacity, 10) : null,
@@ -99,6 +107,14 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
     };
     if (fields.starts_at && fields.ends_at && fields.ends_at <= fields.starts_at) {
       alert('Jam selesai harus setelah jam mulai.');
+      return;
+    }
+    if (fields.recurrence && !fields.starts_at) {
+      alert('Event berulang butuh jadwal mulai sesi pertama.');
+      return;
+    }
+    if (fields.recurrence_until && fields.recurrence_until < val(form, 'starts_at').slice(0, 10)) {
+      alert('Tanggal berakhir pengulangan harus setelah sesi pertama.');
       return;
     }
     const links = { meeting_url: val(form, 'meeting_url') || null, recording_url: val(form, 'recording_url') || null };
@@ -150,12 +166,18 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
               <input id="image_url" name="image_url" type="url" pattern="https://.*" value={poster} onChange={(e) => setPoster(e.target.value)} placeholder="https://…/poster.png" />
             </Field>
             {poster.startsWith('https://') && <img className="poster-preview" src={poster} alt="Pratinjau poster" />}
+            <Field id="organizer_group_id" label="Penyelenggara" hint={groups.length === 0 ? 'Tambah subgrup (mis. English Club) di Admin → Subgrup.' : 'Event tetap tampil sebagai kegiatan komunitas SWE Growth.'}>
+              <select id="organizer_group_id" name="organizer_group_id" defaultValue={a?.organizer_group_id ?? ''}>
+                <option value="">SWE Growth (tanpa subgrup)</option>
+                {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            </Field>
             <Field id="slug" label="Slug URL" optional hint={a ? 'Mengubah slug membuat link lama yang sudah dibagikan tidak berlaku.' : 'Kosongkan = otomatis dari judul.'}>
               <input id="slug" name="slug" defaultValue={a?.slug} placeholder="otomatis dari judul" />
             </Field>
           </EditorSection>
 
-          <EditorSection n={2} title="Pembicara" hint="Tampil menonjol di bagian atas halaman event. Foto otomatis dari profil LinkedIn; isi link foto kalau ingin pakai foto lain.">
+          <EditorSection n={2} title="Pembicara (opsional)" hint="Kosongkan kalau belum ada pembicara; bagian ini tidak tampil. Kalau diisi, tampil menonjol di bagian atas halaman event. Foto otomatis dari profil LinkedIn; isi link foto kalau ingin pakai foto lain.">
             <div className="speaker-editor">
               <Avatar name={a?.speaker || 'Pembicara'} src={speakerPhoto({ speaker_linkedin_url: speakerLinkedin || null, speaker_photo_url: speakerPhotoUrl || null })} size={72} />
               <div className="form-grid">
@@ -173,7 +195,7 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
             </div>
           </EditorSection>
 
-          <EditorSection n={3} title="Jadwal & tempat">
+          <EditorSection n={3} title="Jadwal & tempat" hint="Untuk event berulang, isi mulai & selesai sesi pertama. Sesi berikutnya dihitung otomatis dan agenda selalu menampilkan sesi terdekat.">
             <div className="form-grid">
               <Field id="starts_at" label="Mulai (WIB)" optional>
                 <input id="starts_at" name="starts_at" type="datetime-local" defaultValue={isoToWib(a?.starts_at ?? null)} />
@@ -181,6 +203,17 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
               <Field id="ends_at" label="Selesai (WIB)" optional>
                 <input id="ends_at" name="ends_at" type="datetime-local" defaultValue={isoToWib(a?.ends_at ?? null)} />
               </Field>
+              <Field id="recurrence" label="Berulang">
+                <select id="recurrence" name="recurrence" value={recurrence} onChange={(e) => setRecurrence(e.target.value)}>
+                  <option value="">Tidak berulang</option>
+                  {(Object.keys(RECURRENCE_LABEL) as Recurrence[]).map((r) => <option key={r} value={r}>{RECURRENCE_LABEL[r]}</option>)}
+                </select>
+              </Field>
+              {recurrence && (
+                <Field id="recurrence_until" label="Berulang sampai" optional hint="Tanggal sesi terakhir. Kosongkan = terus berulang.">
+                  <input id="recurrence_until" name="recurrence_until" type="date" defaultValue={a?.recurrence_until ?? ''} />
+                </Field>
+              )}
               <Field id="mode" label="Format">
                 <select id="mode" name="mode" defaultValue={a?.mode ?? 'online'}>
                   <option value="online">Online</option><option value="offline">Offline</option><option value="hybrid">Hybrid</option>
@@ -235,6 +268,10 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
               </Field>
             </div>
             <NextStepsEditor initial={a?.next_steps ?? []} />
+          </EditorSection>
+
+          <EditorSection n={7} title="Dokumentasi" hint="Foto kegiatan, tampil sebagai galeri di halaman event dan di bagian Dokumentasi pada agenda. Foto pertama jadi sampul.">
+            <PhotosEditor initial={a?.photos ?? []} folder={a?.id ?? 'baru'} />
           </EditorSection>
 
           <div className="editor-save">
@@ -482,5 +519,112 @@ function NextStepsEditor({ initial }: { initial: NextStep[] }) {
         </button>
       )}
     </fieldset>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Foto dokumentasi
+// ---------------------------------------------------------------------------
+
+const PHOTO_BUCKET = 'event-photos';
+const MAX_PHOTOS = 40;
+const MAX_SIDE = 1920;
+
+/** Perkecil foto (sisi terpanjang 1920px, JPEG) supaya cepat dimuat dan di bawah batas 5 MB bucket. */
+async function shrinkPhoto(file: File): Promise<Blob> {
+  const bitmap = await createImageBitmap(file).catch(() => null);
+  if (!bitmap) return file;
+  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+  return blob ?? file;
+}
+
+/**
+ * Foto diunggah ke Supabase Storage (bucket event-photos) begitu dipilih, lalu
+ * daftarnya (urutan + keterangan) ikut tersimpan saat tombol Simpan ditekan.
+ * Bisa juga menempel link gambar yang sudah ada di tempat lain.
+ */
+function PhotosEditor({ initial, folder }: { initial: EventPhoto[]; folder: string }) {
+  const [photos, setPhotos] = useState(initial);
+  const [uploading, setUploading] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [link, setLink] = useState('');
+  const room = MAX_PHOTOS - photos.length;
+
+  const update = (i: number, patch: Partial<EventPhoto>) => setPhotos((list) => list.map((p, j) => (j === i ? { ...p, ...patch } : p)));
+  const move = (i: number, delta: number) =>
+    setPhotos((list) => {
+      const next = [...list];
+      const [item] = next.splice(i, 1);
+      next.splice(Math.max(0, Math.min(next.length, i + delta)), 0, item);
+      return next;
+    });
+
+  const upload = async (files: FileList | null) => {
+    const picked = Array.from(files ?? []).slice(0, room);
+    if (picked.length === 0) return;
+    setError(null);
+    setUploading(picked.length);
+    const storage = supabase().storage.from(PHOTO_BUCKET);
+    for (const file of picked) {
+      const body = await shrinkPhoto(file);
+      const ext = body.type === 'image/jpeg' ? 'jpg' : (file.name.split('.').pop() ?? 'jpg').toLowerCase();
+      const path = `${folder}/${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await storage.upload(path, body, { contentType: body.type || file.type, cacheControl: '31536000' });
+      if (uploadError) setError(`Gagal mengunggah ${file.name}: ${uploadError.message}`);
+      else setPhotos((list) => [...list, { url: storage.getPublicUrl(path).data.publicUrl, caption: '' }]);
+      setUploading((n) => n - 1);
+    }
+  };
+
+  const addLink = () => {
+    if (!link.startsWith('https://')) return setError('Link foto harus diawali https://');
+    setError(null);
+    setPhotos((list) => [...list, { url: link, caption: '' }]);
+    setLink('');
+  };
+
+  return (
+    <div className="photos-editor">
+      <input type="hidden" name="photos" value={JSON.stringify(photos.map((p) => ({ url: p.url, caption: p.caption.trim() })))} />
+      {error && <p className="form-message error">{error}</p>}
+      {photos.length > 0 && (
+        <ul className="photos-editor-list">
+          {photos.map((p, i) => (
+            <li key={`${i}-${p.url}`}>
+              <img src={p.url} alt="" />
+              <div>
+                <input aria-label={`Keterangan foto ${i + 1}`} value={p.caption} maxLength={200} placeholder={i === 0 ? 'Keterangan (opsional) · foto sampul' : 'Keterangan (opsional)'} onChange={(e) => update(i, { caption: e.target.value })} />
+                <div className="inline-actions">
+                  {i > 0 && <button className="link-btn" type="button" onClick={() => move(i, -1)}>↑ Naik</button>}
+                  {i < photos.length - 1 && <button className="link-btn" type="button" onClick={() => move(i, 1)}>↓ Turun</button>}
+                  <button className="link-btn" type="button" onClick={() => setPhotos((list) => list.filter((_, j) => j !== i))}>Hapus</button>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {room > 0 ? (
+        <div className="photos-editor-add">
+          <label className="btn btn-ghost sm">
+            {uploading > 0 ? `Mengunggah ${uploading} foto…` : '+ Unggah foto'}
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple hidden disabled={uploading > 0} onChange={(e) => { void upload(e.target.files); e.target.value = ''; }} />
+          </label>
+          <input aria-label="Link foto" type="url" value={link} placeholder="atau tempel link gambar https://…" onChange={(e) => setLink(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLink(); } }} />
+          <button className="btn btn-ghost sm" type="button" disabled={!link} onClick={addLink}>Tambah link</button>
+        </div>
+      ) : (
+        <p className="form-sub">Maksimal {MAX_PHOTOS} foto.</p>
+      )}
+      {photos.length !== initial.length || photos.some((p, i) => p.url !== initial[i]?.url || p.caption !== initial[i]?.caption) ? (
+        <p className="field-hint">Tekan Simpan supaya perubahan foto tampil di halaman publik.</p>
+      ) : null}
+    </div>
   );
 }

@@ -426,3 +426,36 @@ a.contrib-maker:hover { text-decoration: underline; text-underline-offset: 3px; 
 .rec-admin-item a.slug { color: var(--green-deep); overflow-wrap: anywhere; }
 .rec-admin-reason { margin: 4px 0; padding-left: 10px; border-left: 3px solid var(--line-2); color: var(--ink-soft); font-size: .92rem; }
 .rec-reject { padding: 14px; border-radius: var(--r-sm); background: var(--bg); }
+
+/* Event komunitas: penyelenggara (subgrup) di atas judul event. */
+.event-organizer { margin-top: 16px; font-size: .9rem; font-weight: 600; color: var(--on-teal); }
+.event-organizer a { color: var(--yellow); font-weight: 750; }
+.event-organizer a:hover { text-decoration: underline; }
+.event-organizer + .event-title { margin-top: 6px !important; }
+.meta-prefix { font-weight: 500; opacity: .85; }
+
+/* Galeri dokumentasi di halaman event. */
+.photo-grid { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.photo-grid button { display: block; width: 100%; padding: 0; border: 0; border-radius: var(--r-sm); overflow: hidden; background: var(--bg-2); cursor: zoom-in; }
+.photo-grid img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; transition: transform .25s var(--ease); }
+.photo-grid button:hover img { transform: scale(1.03); }
+.photo-grid button:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
+@media (max-width: 520px) { .photo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; } }
+
+.photo-viewer { width: min(960px, calc(100vw - 32px)); max-height: calc(100vh - 32px); padding: 14px; border: 0; border-radius: var(--r); background: var(--paper); color: var(--ink); }
+.photo-viewer::backdrop { background: rgb(6 30 32 / .82); }
+.photo-viewer figure { margin: 0; display: grid; gap: 10px; }
+.photo-viewer img { display: block; width: 100%; max-height: calc(100vh - 170px); object-fit: contain; border-radius: var(--r-sm); background: var(--bg-2); }
+.photo-viewer figcaption { display: flex; justify-content: space-between; gap: 12px; font-size: .92rem; }
+.photo-viewer-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+/* Dokumentasi kegiatan di agenda. */
+.agenda-docs { margin-top: 40px; }
+.agenda-docs h2 { font-size: 1.25rem; margin-bottom: 14px; }
+.doc-cards { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.doc-cards a { position: relative; display: grid; gap: 4px; height: 100%; padding: 10px 10px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); color: var(--ink); }
+.doc-cards a:hover { border-color: var(--line-2); }
+.doc-cards img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; border-radius: var(--r-sm); margin-bottom: 6px; background: var(--bg-2); }
+.doc-cards strong { font-weight: 700; line-height: 1.3; }
+.doc-cards span { color: var(--ink-faint); font-size: .84rem; }
+.doc-cards .doc-card-count { position: absolute; top: 18px; right: 18px; padding: 2px 9px; border-radius: 999px; background: rgb(11 61 64 / .8); color: var(--cream); font-size: .74rem; font-weight: 700; }

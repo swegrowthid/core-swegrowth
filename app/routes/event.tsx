@@ -3,7 +3,8 @@ import { data, Link } from 'react-router';
 import type { Route } from './+types/event';
 import { Avatar } from '~/components/Avatar';
 import { GoogleSignIn } from '~/components/GoogleSignIn';
-import { CalendarIcon, ClockIcon, PinIcon, UsersIcon } from '~/components/Icons';
+import { CalendarIcon, ClockIcon, PinIcon, RepeatIcon, UsersIcon } from '~/components/Icons';
+import { PhotoGallery } from '~/components/PhotoGallery';
 import {
   activityPath,
   activityStatusLabel,
@@ -14,7 +15,9 @@ import {
   getPublishedActivityBySlug,
   isActiveRegistration,
   isPaid,
+  nextSession,
   priceLabel,
+  recurrenceLabel,
   registeredPath,
   registerPath,
   speakerPhoto,
@@ -44,7 +47,13 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const activity = await getPublishedActivityBySlug(params.slug);
   if (!activity) throw data(null, { status: 404 });
-  return { activity, stats: await fetchPublicStats(activity.id) };
+  const [stats, organizer] = await Promise.all([
+    fetchPublicStats(activity.id),
+    activity.organizer_group_id
+      ? supabase().from('community_groups').select('*').eq('id', activity.organizer_group_id).maybeSingle().then((r) => r.data)
+      : null,
+  ]);
+  return { activity, stats, organizer };
 }
 
 export function HydrateFallback() {
@@ -60,7 +69,7 @@ const modeLabel = { online: 'Online', offline: 'Offline', hybrid: 'Hybrid' } as 
  * → quick CTA) → "yang akan dibahas" → poster & deskripsi → bagian pendaftaran
  * lengkap di bawah. Quick CTA menggulir ke pendaftaran; tiap info tampil sekali.
  */
-export default function EventPage({ loaderData: { activity: a, stats } }: Route.ComponentProps) {
+export default function EventPage({ loaderData: { activity: a, stats, organizer } }: Route.ComponentProps) {
   const place = [a.mode && modeLabel[a.mode], a.location].filter(Boolean).join(' · ');
   const done = a.status === 'completed' || a.status === 'cancelled';
   const soon = done ? null : countdown(a);
@@ -77,6 +86,10 @@ export default function EventPage({ loaderData: { activity: a, stats } }: Route.
             <span className="chip price-chip">{priceLabel(a)}</span>
             {soon && <span className="chip price-chip">{soon}</span>}
           </div>
+          <p className="event-organizer">
+            Kegiatan komunitas SWE Growth
+            {organizer && <> · diadakan <Link to={`/agenda?oleh=${organizer.slug}`}>{organizer.name}</Link></>}
+          </p>
           <h1 className="event-title">{a.title}</h1>
           {a.summary && <p className="event-summary-text">{a.summary}</p>}
           <EventMeta activity={a} place={place} />
@@ -100,6 +113,13 @@ export default function EventPage({ loaderData: { activity: a, stats } }: Route.
               <div className="prose">{a.description.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}</div>
             </section>
           )}
+
+          {(a.photos ?? []).length > 0 && (
+            <section className="event-section" id="dokumentasi">
+              <h2>Dokumentasi</h2>
+              <PhotoGallery photos={a.photos} title={a.title} />
+            </section>
+          )}
         </div>
 
         {/* Pendaftaran lengkap: ringkasan di kiri, kartu aksi di kanan. */}
@@ -120,8 +140,12 @@ export default function EventPage({ loaderData: { activity: a, stats } }: Route.
 function EventMeta({ activity: a, place, plain }: { activity: Activity; place: string; plain?: boolean }) {
   return (
     <ul className={plain ? 'event-meta plain' : 'event-meta'}>
-      <MetaItem icon={<CalendarIcon />}><b>{a.starts_at ? formatWibDay(a.starts_at) : 'Tanggal menyusul'}</b></MetaItem>
+      <MetaItem icon={<CalendarIcon />}>
+        {a.recurrence && nextSession(a) && <span className="meta-prefix">Sesi berikutnya </span>}
+        <b>{a.starts_at ? formatWibDay(a.starts_at) : 'Tanggal menyusul'}</b>
+      </MetaItem>
       {a.starts_at && <MetaItem icon={<ClockIcon />}>{timeRange(a)}</MetaItem>}
+      {recurrenceLabel(a) && <MetaItem icon={<RepeatIcon />}>{recurrenceLabel(a)}</MetaItem>}
       {place && <MetaItem icon={<PinIcon />}>{place}</MetaItem>}
     </ul>
   );

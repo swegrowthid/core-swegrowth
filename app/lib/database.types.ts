@@ -33,6 +33,22 @@ export type RegistrationField = {
 /** Langkah tambahan di halaman "terdaftar", diatur admin per event. */
 export type NextStep = { title: string; url: string; description: string };
 
+/** Pola jadwal berulang; starts_at/ends_at event = sesi pertama. */
+export type Recurrence = 'weekly' | 'biweekly' | 'monthly';
+
+/** Foto dokumentasi event (activities.photos). */
+export type EventPhoto = { url: string; caption: string };
+
+/** Subgrup komunitas yang menyelenggarakan event, mis. English Club. */
+export type CommunityGroupRow = {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  created_at: string;
+};
+
 export type ActivityRow = {
   activity_type: string;
   capacity: number | null;
@@ -58,6 +74,12 @@ export type ActivityRow = {
   next_steps: NextStep[];
   /** Poin "Yang akan dibahas". */
   highlights: string[];
+  /** Subgrup penyelenggara; null = SWE Growth langsung. */
+  organizer_group_id: string | null;
+  recurrence: Recurrence | null;
+  /** Tanggal WIB (yyyy-mm-dd) sesi terakhir boleh jatuh, inklusif; null = terus berulang. */
+  recurrence_until: string | null;
+  photos: EventPhoto[];
   /** Diisi edge function calendar-sync. */
   google_event_id: string | null;
   google_event_url: string | null;
@@ -280,6 +302,7 @@ export type Database = {
       recommendations: Table<RecommendationRow, 'category' | 'title' | 'url' | 'reason', Timestamps>;
       recommendation_topics: Table<RecommendationTopicRow, 'name', 'created_at'>;
       activity_member_info: Table<ActivityMemberInfoRow, 'activity_id', 'updated_at'>;
+      community_groups: Table<CommunityGroupRow, 'slug' | 'name', 'id' | 'created_at'>;
     };
     Views: Record<string, never>;
     Functions: {
