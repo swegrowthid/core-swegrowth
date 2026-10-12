@@ -284,3 +284,14 @@ button.nav-account { cursor: pointer; font: inherit; font-weight: 700; font-size
 .complete-card h2 { font-size: 1.15rem; }
 .complete-missing { font-size: .9rem; font-weight: 600; color: var(--ink); }
 .profile-signout { padding-top: 6px; border-top: 1px solid var(--line); }
+
+/* Editor foto dokumentasi (admin). */
+.photos-editor { display: grid; gap: 12px; }
+.photos-editor-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+.photos-editor-list li { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 12px; align-items: center; padding-bottom: 10px; border-bottom: 1px dashed var(--line); }
+.photos-editor-list img { width: 96px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--r-sm); background: var(--bg-2); }
+.photos-editor-list li > div { display: grid; gap: 6px; }
+.photos-editor-list input, .photos-editor-add input[type=url] { width: 100%; padding: 9px 11px; border: 1.5px solid var(--line-2); border-radius: 10px; background: var(--paper); color: var(--ink); font: inherit; font-size: .9rem; }
+.photos-editor-add { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.photos-editor-add label.btn { cursor: pointer; }
+@media (max-width: 640px) { .photos-editor-add { grid-template-columns: 1fr; } }
