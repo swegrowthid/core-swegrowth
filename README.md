@@ -1,7 +1,10 @@
 # SWE Growth — Portal Member
 
-Situs [swegrowth.id](https://swegrowth.id). Komunitas WhatsApp SWE Growth gratis; situs ini adalah **portal untuk member
-berbayar**. Pembayaran membership lewat goakal, lalu admin mengaktifkan member di `/admin`.
+[![CI](https://github.com/zikrulihsan/core-swegrowth/actions/workflows/ci.yml/badge.svg)](https://github.com/zikrulihsan/core-swegrowth/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Kode sumber [swegrowth.id](https://swegrowth.id), portal komunitas software engineer Indonesia: agenda kegiatan,
+pendaftaran event, profil member, dan rekomendasi. Mau ikut berkontribusi? Baca [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Stack: **React 19 + React Router (framework mode di atas Vite)**, Supabase (Postgres + Auth + RLS), deploy di Netlify.
 
@@ -107,23 +110,29 @@ selesai, fungsi ini membalas `not_configured` dan pendaftaran tetap jalan normal
 6. Jalankan migration `20261014000000_google_calendar.sql`, lalu coba dulu di event tes: daftar dengan email kedua,
    cek undangan masuk, ubah jam di editor, cek email perubahan, lalu batal daftar.
 
-## Alur membership
-
-1. Calon member bayar di goakal (`MEMBERSHIP_URL` di `app/lib/site.ts`).
-2. Dia masuk ke swegrowth.id, mengisi nama + WhatsApp, lalu melihat halaman `/menunggu`.
-3. Admin membuka `/admin` → tab **Member**, mencocokkan nama/email/WhatsApp dengan pembayaran, lalu mengisi
-   **Aktif sampai** (+ nomor order goakal opsional).
-4. Saat tanggalnya lewat, akses portal otomatis tertutup dan member diarahkan ke `/menunggu` untuk perpanjang.
-
 ## Konfigurasi di `app/lib/site.ts`
 
-- `MEMBERSHIP_URL` — halaman membership di goakal.
-- `WA_COMMUNITY_URL` — link gabung grup WhatsApp gratis. Kosong = tombol diganti "Minta link ke admin".
-- `MEMBER_BENEFITS` — daftar yang didapat member di landing page. Hanya tulis yang sudah benar-benar tersedia.
-- `ADMIN_WA` — nomor WhatsApp admin.
+- `SITE_URL`, `SITE_NAME` — domain dan nama situs (dipakai untuk URL absolut dan meta).
+- `MEMBERSHIP_LIVE` — `false` selama membership berbayar belum dibuka.
+- `COMMUNITY_CHANNELS` — link WhatsApp/Telegram/Discord komunitas yang tampil setelah onboarding dan di portal.
+- `MEMBER_BENEFITS` — daftar benefit verified member. Hanya tulis yang sudah benar-benar tersedia.
+- `ADMIN_WA` — nomor WhatsApp admin untuk tombol kontak.
+
+Kalau kamu menjalankan fork untuk komunitasmu sendiri, ganti semua nilai di atas plus logo di `public/assets/`.
 
 ## Deploy
 
 Netlify membaca `netlify.toml`: `npm run build`, publish `build/client`, Node 22. Set `VITE_SUPABASE_URL` dan
 `VITE_SUPABASE_PUBLISHABLE_KEY` di environment Netlify. Agenda di halaman publik ikut diperbarui di browser, jadi
 event baru tampil tanpa deploy ulang.
+
+## Kontribusi
+
+Issue dan pull request terbuka untuk siapa saja. Baca [CONTRIBUTING.md](CONTRIBUTING.md) dan
+[Kode Etik](CODE_OF_CONDUCT.md). Celah keamanan dilaporkan secara privat, lihat [SECURITY.md](SECURITY.md).
+
+## Lisensi
+
+Kode di repo ini dirilis di bawah [lisensi MIT](LICENSE). Nama dan logo SWE Growth, serta konten komunitas (teks
+halaman, foto, data member) tidak termasuk lisensi tersebut; fork untuk komunitas lain diharapkan memakai nama dan
+logonya sendiri.

@@ -1,0 +1,6 @@
+# Semua perubahan butuh review maintainer.
+* @zikrulihsan
+
+# Area sensitif keamanan: hak akses database, edge function, dan alur login.
+/supabase/ @zikrulihsan
+/app/lib/auth.tsx @zikrulihsan

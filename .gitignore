@@ -24,9 +24,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# environment
+# environment (hanya .env.example yang boleh masuk repo)
 .env
-.env.production
+.env.*
+!.env.example
 
 # typescript
 *.tsbuildinfo
@@ -40,3 +41,11 @@ yarn-error.log*
 
 # Supabase CLI (cache lokal, termasuk project-ref & pooler URL)
 supabase/.temp/
+supabase/.branches/
+supabase/.env
+
+# editor & tooling lokal
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.claude/settings.local.json

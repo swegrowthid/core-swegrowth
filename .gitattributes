@@ -1,0 +1,4 @@
+# Migration SQL tetap tampil di diff (perlu direview: RLS ada di sini),
+# tapi tidak dihitung di statistik bahasa halaman repo.
+supabase/migrations/** linguist-detectable=false
+package-lock.json linguist-generated=true

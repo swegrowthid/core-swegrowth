@@ -1,0 +1,29 @@
+name: Laporan bug
+description: Ada yang tidak berjalan semestinya di portal.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Apa yang terjadi?
+      description: Jelaskan bug-nya dan apa yang seharusnya terjadi.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Langkah reproduksi
+      placeholder: |
+        1. Buka /agenda
+        2. Klik ...
+        3. Muncul ...
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Browser & perangkat
+      placeholder: Chrome 130 di Android
+  - type: markdown
+    attributes:
+      value: "Jangan sertakan email, nomor WhatsApp, atau data pribadi member lain di laporan ini."
