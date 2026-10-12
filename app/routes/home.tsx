@@ -6,7 +6,7 @@ import { RecommendationCard } from '~/components/RecommendationCard';
 import { Avatar } from '~/components/Avatar';
 import { SOCIALS } from '~/components/Socials';
 import { ArrowRight, ArrowUpRight, BookIcon, BriefcaseIcon, ChatIcon, MicIcon, UsersIcon, VideoIcon } from '~/components/Icons';
-import { activityPath, getCommunityPulse, getCommunityStats, getPublishedActivities, isActivityUpcoming } from '~/lib/activities';
+import { activityPath, getCommunityPulse, getCommunityStats, getCommunityGroups, getPublishedActivities, upcomingSessions } from '~/lib/activities';
 import { PAST_ACTIVITIES } from '~/lib/past-activities';
 import { useAuth } from '~/lib/auth';
 import { getPublishedContributions } from '~/lib/contributions';
@@ -18,8 +18,9 @@ import { pageMeta } from '~/lib/site';
 export const meta: Route.MetaFunction = () => pageMeta('SWE Growth — komunitas software engineer Indonesia');
 
 const load = async () => {
-  const [activities, contributions, recommendations, stats, pulse] = await Promise.all([
+  const [activities, groups, contributions, recommendations, stats, pulse] = await Promise.all([
     getPublishedActivities(),
+    getCommunityGroups(),
     getPublishedContributions(),
     getPublishedRecommendations(),
     getCommunityStats(),
@@ -30,7 +31,8 @@ const load = async () => {
     // Angka hero baru dianimasikan setelah data terbaru dari browser masuk; sebelumnya placeholder.
     live: typeof window !== 'undefined',
     pulse,
-    activities: activities.filter(isActivityUpcoming).slice(0, 3),
+    activities: upcomingSessions(activities).slice(0, 3),
+    groups,
     contributions,
     recommendations: recommendations.filter((r) => r.is_featured),
   };
@@ -148,7 +150,7 @@ function HeroPulse({ items }: { items: Route.ComponentProps['loaderData']['pulse
   );
 }
 
-export default function Home({ loaderData: { activities, contributions, recommendations, stats, live, pulse } }: Route.ComponentProps) {
+export default function Home({ loaderData: { activities, groups, contributions, recommendations, stats, live, pulse } }: Route.ComponentProps) {
   const { user } = useAuth();
   const [picked, setPicked] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
@@ -199,7 +201,7 @@ export default function Home({ loaderData: { activities, contributions, recommen
               <p className="home-label">Agenda</p>
               <h2>Kegiatan terdekat</h2>
             </div>
-            <div className="panel"><AgendaList activities={activities} /></div>
+            <div className="panel"><AgendaList activities={activities} groups={groups} /></div>
             <Link className="btn btn-ghost more-link" to="/agenda">Lihat semua agenda <ArrowRight /></Link>
           </div>
         </section>

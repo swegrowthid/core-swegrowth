@@ -2,11 +2,12 @@ import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import type { Route } from './+types/admin';
 import { RecommendationsAdmin } from '~/components/RecommendationsAdmin';
-import { ACTIVITY_STATUSES, activityStatusLabel } from '~/lib/activities';
+import { ACTIVITY_STATUSES, activityStatusLabel, organizerOf, recurrenceLabel, slugify } from '~/lib/activities';
 import { Field, todayWib, useMutation, val } from '~/lib/admin-form';
 import { requireAdmin, useAuth } from '~/lib/auth';
 import type {
   ActivityStatus,
+  CommunityGroupRow,
   MemberContributionRow,
   MemberMotivationRow,
   MembershipRow,
@@ -24,7 +25,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   await requireAdmin(request);
   const db = supabase();
 
-  const [profiles, memberships, motivations, activities, registrations, groups, contributions, recommendations, recommendationTopics] = await Promise.all([
+  const [profiles, memberships, motivations, activities, registrations, groups, contributions, recommendations, recommendationTopics, communityGroups] = await Promise.all([
     db.from('profiles').select('*').order('created_at', { ascending: false }),
     db.from('memberships').select('*'),
     db.from('member_motivations').select('*'),
@@ -34,6 +35,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     db.from('member_contributions').select('*').order('sort_order').order('created_at'),
     db.from('recommendations').select('*').order('created_at', { ascending: false }),
     db.from('recommendation_topics').select('*').order('sort_order').order('name'),
+    db.from('community_groups').select('*').order('sort_order').order('name'),
   ]);
   return {
     profiles: profiles.data ?? [],
@@ -45,6 +47,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     contributions: contributions.data ?? [],
     recommendations: recommendations.data ?? [],
     recommendationTopics: recommendationTopics.data ?? [],
+    communityGroups: communityGroups.data ?? [],
   };
 }
 
@@ -52,10 +55,11 @@ export function HydrateFallback() {
   return <div className="loading-block">Memuat admin…</div>;
 }
 
-type Tab = 'member' | 'event' | 'grup' | 'kontribusi' | 'rekomendasi';
+type Tab = 'member' | 'event' | 'subgrup' | 'grup' | 'kontribusi' | 'rekomendasi';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'member', label: 'Member' },
   { id: 'event', label: 'Event' },
+  { id: 'subgrup', label: 'Subgrup' },
   { id: 'grup', label: 'Grup WhatsApp' },
   { id: 'kontribusi', label: 'Kontribusi member' },
   { id: 'rekomendasi', label: 'Rekomendasi' },
@@ -84,7 +88,8 @@ export default function Admin({ loaderData }: Route.ComponentProps) {
 
         <div style={{ marginTop: 24 }}>
           {tab === 'member' && <MembersAdmin profiles={loaderData.profiles} memberships={loaderData.memberships} motivations={loaderData.motivations} />}
-          {tab === 'event' && <ActivitiesAdmin activities={loaderData.activities} registrations={loaderData.registrations} />}
+          {tab === 'event' && <ActivitiesAdmin activities={loaderData.activities} registrations={loaderData.registrations} groups={loaderData.communityGroups} />}
+          {tab === 'subgrup' && <CommunityGroupsAdmin groups={loaderData.communityGroups} activities={loaderData.activities} />}
           {tab === 'grup' && <GroupsAdmin groups={loaderData.groups} />}
           {tab === 'rekomendasi' && <RecommendationsAdmin items={loaderData.recommendations} profiles={loaderData.profiles} topics={loaderData.recommendationTopics} />}
           {tab === 'kontribusi' && <ContributionsAdmin contributions={loaderData.contributions} profiles={loaderData.profiles} />}
@@ -272,7 +277,7 @@ type Activities = Route.ComponentProps['loaderData']['activities'];
 type RegistrationSummary = Route.ComponentProps['loaderData']['registrations'];
 
 /** Daftar event + statistik singkat; edit lengkap di /admin/event/:id. */
-function ActivitiesAdmin({ activities, registrations }: { activities: Activities; registrations: RegistrationSummary }) {
+function ActivitiesAdmin({ activities, registrations, groups }: { activities: Activities; registrations: RegistrationSummary; groups: CommunityGroupRow[] }) {
   const { busy, run, flash } = useMutation();
   const countOf = (id: string, status: string) => registrations.filter((r) => r.activity_id === id && r.status === status).length;
 
@@ -300,6 +305,9 @@ function ActivitiesAdmin({ activities, registrations }: { activities: Activities
                       <span className="slug">
                         {[
                           a.starts_at ? `${formatWibDate(a.starts_at)} ${formatWibTime(a.starts_at)}` : 'jadwal belum diisi',
+                          recurrenceLabel(a)?.toLowerCase(),
+                          organizerOf(a, groups) && `oleh ${organizerOf(a, groups)!.name}`,
+                          (a.photos ?? []).length > 0 && `${a.photos.length} foto`,
                           a.price_idr > 0 ? `Rp${a.price_idr.toLocaleString('id-ID')}` : 'gratis',
                           !a.is_public && 'disembunyikan',
                         ].filter(Boolean).join(' · ')}
@@ -331,6 +339,88 @@ function ActivitiesAdmin({ activities, registrations }: { activities: Activities
     </div>
   );
 }
+// ---------------------------------------------------------------------------
+// Subgrup komunitas (penyelenggara event)
+// ---------------------------------------------------------------------------
+
+function CommunityGroupsAdmin({ groups, activities }: { groups: CommunityGroupRow[]; activities: Activities }) {
+  const { busy, run, flash } = useMutation();
+  const [editing, setEditing] = useState<CommunityGroupRow | null>(null);
+  const eventCount = (id: string) => activities.filter((a) => a.organizer_group_id === id).length;
+
+  const save = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formEl = e.currentTarget;
+    const form = new FormData(formEl);
+    const name = val(form, 'name');
+    const row = {
+      name,
+      slug: slugify(val(form, 'slug') || name),
+      description: val(form, 'description'),
+      sort_order: Number.parseInt(val(form, 'sort_order') || '0', 10),
+    };
+    const ok = editing
+      ? await run(() => supabase().from('community_groups').update(row).eq('id', editing.id), 'Subgrup diperbarui.')
+      : await run(() => supabase().from('community_groups').insert(row), 'Subgrup ditambahkan. Pilih sebagai penyelenggara di editor event.');
+    if (ok) {
+      setEditing(null);
+      formEl.reset();
+    }
+  };
+
+  const remove = (g: CommunityGroupRow) => {
+    const n = eventCount(g.id);
+    if (!confirm(`Hapus subgrup "${g.name}"?${n ? ` ${n} event-nya tetap ada, tanpa penyelenggara subgrup.` : ''}`)) return;
+    void run(() => supabase().from('community_groups').delete().eq('id', g.id), 'Subgrup dihapus.');
+  };
+
+  return (
+    <div className="admin-grid">
+      <form className="form-card" onSubmit={save} key={editing?.id ?? 'new'}>
+        <h2>{editing ? 'Edit subgrup' : 'Tambah subgrup'}</h2>
+        <p className="form-sub">Subgrup menyelenggarakan event komunitas, mis. English Club atau Fundamental. Agenda bisa difilter per subgrup.</p>
+        {flash}
+        <Field id="cg_name" label="Nama"><input id="cg_name" name="name" required minLength={2} maxLength={80} defaultValue={editing?.name} placeholder="English Club" /></Field>
+        <Field id="cg_desc" label="Keterangan" optional hint="Tampil di agenda saat difilter ke subgrup ini.">
+          <textarea id="cg_desc" name="description" rows={2} maxLength={300} defaultValue={editing?.description} />
+        </Field>
+        <Field id="cg_slug" label="Slug" optional hint="Untuk link /agenda?oleh=slug. Kosongkan = otomatis dari nama.">
+          <input id="cg_slug" name="slug" defaultValue={editing?.slug} placeholder="otomatis dari nama" />
+        </Field>
+        <Field id="cg_order" label="Urutan" optional><input id="cg_order" name="sort_order" type="number" defaultValue={editing?.sort_order ?? groups.length + 1} /></Field>
+        <div className="inline-actions">
+          <button className="btn btn-primary" type="submit" disabled={busy}>{editing ? 'Simpan perubahan' : 'Simpan subgrup'}</button>
+          {editing && <button className="btn btn-ghost" type="button" onClick={() => setEditing(null)}>Batal</button>}
+        </div>
+      </form>
+
+      <div className="panel">
+        <h2>Subgrup</h2>
+        {groups.length === 0 ? (
+          <p className="form-sub">Belum ada subgrup. Event tanpa subgrup tampil sebagai kegiatan SWE Growth.</p>
+        ) : (
+          <ul className="admin-list">
+            {groups.map((g) => (
+              <li key={g.id}>
+                <div className="line">
+                  <div>
+                    <strong>{g.sort_order}. {g.name}</strong>
+                    <span className="slug">/agenda?oleh={g.slug} · {eventCount(g.id)} event</span>
+                  </div>
+                  <div className="inline-actions">
+                    <button className="link-btn" type="button" disabled={busy} onClick={() => setEditing(g)}>Edit</button>
+                    <button className="link-btn" type="button" disabled={busy} onClick={() => remove(g)}>Hapus</button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function GroupsAdmin({ groups }: { groups: WhatsappGroupRow[] }) {
   const { busy, run, flash } = useMutation();
 

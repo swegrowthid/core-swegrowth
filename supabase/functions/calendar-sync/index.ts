@@ -35,8 +35,16 @@ type GoogleEvent = {
   location?: string;
   start?: { dateTime?: string };
   end?: { dateTime?: string };
+  recurrence?: string[];
   attendees?: GoogleAttendee[];
 };
+
+/** Sama dengan recurrenceRule() di app/lib/activities.ts. UNTIL = akhir hari WIB. */
+function recurrenceRule(recurrence: string | null, until: string | null) {
+  if (!recurrence) return null;
+  const freq = recurrence === 'monthly' ? 'FREQ=MONTHLY' : `FREQ=WEEKLY${recurrence === 'biweekly' ? ';INTERVAL=2' : ''}`;
+  return `RRULE:${freq}${until ? `;UNTIL=${until.replace(/-/g, '')}T165959Z` : ''}`;
+}
 
 const env = (name: string) => Deno.env.get(name) ?? '';
 
@@ -139,12 +147,15 @@ Deno.serve(async (req) => {
       `Detail & pendaftaranmu: <a href="${page}/terdaftar">${page}/terdaftar</a>`,
       'SWE Growth — komunitas software engineer Indonesia',
     ].filter(Boolean).join('<br><br>');
+    // Event berulang: satu event Google berpola; tamu ikut semua sesi.
+    const rule = recurrenceRule(a.recurrence, a.recurrence_until);
     const details = {
       summary: a.title,
       description,
       location: meetingUrl ?? a.location ?? '',
       start: { dateTime: a.starts_at, timeZone: 'Asia/Jakarta' },
       end: { dateTime: end, timeZone: 'Asia/Jakarta' },
+      recurrence: rule ? [rule] : [],
     };
     const wanted = [...new Set((regs ?? []).map((r) => r.email.toLowerCase()))];
 
@@ -174,7 +185,8 @@ Deno.serve(async (req) => {
       (existing.description ?? '') !== details.description ||
       (existing.location ?? '') !== details.location ||
       !sameTime(existing.start?.dateTime, details.start.dateTime) ||
-      !sameTime(existing.end?.dateTime, details.end.dateTime);
+      !sameTime(existing.end?.dateTime, details.end.dateTime) ||
+      (existing.recurrence ?? []).join() !== details.recurrence.join();
 
     if (!detailsChanged && added.length === 0 && removed === 0) {
       await saveLink(existing);

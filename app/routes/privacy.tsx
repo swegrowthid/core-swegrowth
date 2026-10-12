@@ -34,6 +34,7 @@ const sections: LegalSection[] = [
           <li><strong>Profil member</strong> yang kamu isi: nomor WhatsApp, domisili, peran, perusahaan/kampus, level, lama pengalaman, LinkedIn, GitHub, portfolio, keahlian, teknologi, riwayat pengalaman, bio, dan username.</li>
           <li><strong>Jawaban kenalan</strong> saat onboarding: masalah karier, hal yang bisa membantu, alasan bergabung, dan harapan.</li>
           <li><strong>Pendaftaran kegiatan</strong>: nama, email, WhatsApp, status pendaftaran, dan jawaban pertanyaan tambahan di form pendaftaran.</li>
+          <li><strong>Foto dokumentasi kegiatan</strong> yang diunggah admin dan tampil publik di halaman kegiatan. Kamu bisa terlihat di foto kegiatan yang kamu ikuti; minta admin menghapus fotonya kalau keberatan.</li>
         </ul>
         <p>Kami tidak mengumpulkan data pembayaran. Kami tidak memakai cookie iklan atau pelacak pihak ketiga.</p>
       </>
@@ -108,7 +109,7 @@ const sections: LegalSection[] = [
       <>
         <p>Untuk menjalankan situs, data diproses oleh penyedia layanan berikut:</p>
         <ul>
-          <li><strong>Supabase</strong>: database dan login akun.</li>
+          <li><strong>Supabase</strong>: database, login akun, dan penyimpanan foto dokumentasi kegiatan.</li>
           <li><strong>Google</strong>: login dengan Google dan undangan Google Calendar.</li>
           <li><strong>Netlify</strong>: hosting situs.</li>
           <li><strong>unavatar.io</strong>: menampilkan foto profil LinkedIn <em>pembicara</em> kegiatan (bukan foto member).</li>
@@ -165,7 +166,7 @@ export default function Privacy() {
     <LegalPage
       title="Kebijakan Privasi"
       intro="Data apa yang kami kumpulkan, untuk apa, siapa yang bisa melihatnya, dan hak kamu atas data tersebut."
-      updated="8 Oktober 2026"
+      updated="12 Oktober 2026"
       sections={sections}
     />
   );

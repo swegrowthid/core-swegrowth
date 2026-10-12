@@ -3,7 +3,7 @@ import { Link, useRevalidator } from 'react-router';
 import type { Route } from './+types/portal';
 import { CommunityChannels } from '~/components/CommunityChannels';
 import { PortalHeader } from '~/components/PortalHeader';
-import { activityPath, activityStatusLabel, isActivityUpcoming, registeredPath, type Activity } from '~/lib/activities';
+import { activityPath, activityStatusLabel, registeredPath, upcomingSessions, type Activity } from '~/lib/activities';
 import { requireUser } from '~/lib/auth';
 import type { RecommendationRow, RegistrationStatus } from '~/lib/database.types';
 import { categoryOf, directoryPath, fetchMyRecommendations, rejectReasonLabel, STATUS_LABEL, SUBMIT_PATH } from '~/lib/recommendations';
@@ -23,7 +23,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     fetchMyRecommendations(user.id),
   ]);
 
-  const upcoming = (activities.data ?? []).filter(isActivityUpcoming);
+  const upcoming = upcomingSessions(activities.data ?? [], { undatedLast: true });
   const statusById = new Map((regs.data ?? []).map((r) => [r.activity_id, r.status]));
 
   return {

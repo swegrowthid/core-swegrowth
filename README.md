@@ -13,7 +13,7 @@ Prinsip isi: tidak ada data contoh atau angka karangan. Bagian yang datanya koso
 | --- | --- | --- |
 | `/` | publik | Penjelasan singkat, komunitas WA (gratis) vs portal member, agenda terdekat |
 | `/tentang` | publik | Cerita & tujuan SWE Growth (dulu di halaman goakal) |
-| `/agenda` | publik | Daftar kegiatan mendatang |
+| `/agenda` | publik | Daftar kegiatan komunitas mendatang (filter per subgrup `?oleh=slug`) + dokumentasi foto kegiatan |
 | `/agenda/:slug` | publik | Detail kegiatan (link yang dibagikan): biaya (Gratis/harga), jadwal, tombol Daftar |
 | `/agenda/:slug/daftar` | login | Form pendaftaran: data peserta dari profil + pertanyaan khusus event + setuju CoC |
 | `/agenda/:slug/terdaftar` | login (peserta) | Konfirmasi: kode pendaftaran, kalender, link meeting (terbuka 1 jam sebelum acara), batal |
@@ -28,9 +28,9 @@ Prinsip isi: tidak ada data contoh atau angka karangan. Bagian yang datanya koso
 | `/portal/profil` | login | Profil member + link profil publik untuk dibagikan |
 | `/portal/membership` | login | Membership & verified member: **segera hadir** (`MEMBERSHIP_LIVE` di `app/lib/site.ts`) |
 | `/portal/profil/edit` | login | Form profil member |
-| `/admin` | admin | Data member (cari + unduh CSV), aktivasi membership, event, grup WhatsApp |
+| `/admin` | admin | Data member (cari + unduh CSV), aktivasi membership, event, subgrup penyelenggara, grup WhatsApp |
 | `/admin/member/:id` | admin | Profil lengkap satu member + kegiatan yang diikuti |
-| `/admin/event/:id` | admin | Editor event (urutan = halaman publik): info, jadwal, pembicara + foto LinkedIn, detail, pendaftaran, langkah setelah daftar; statistik & pendaftar (CSV). `/admin/event/baru` untuk event baru |
+| `/admin/event/:id` | admin | Editor event (urutan = halaman publik): info + subgrup penyelenggara, pembicara (opsional) + foto LinkedIn, jadwal (bisa berulang), detail, pendaftaran, langkah setelah daftar, foto dokumentasi; statistik & pendaftar (CSV). `/admin/event/baru` untuk event baru |
 
 Halaman publik di-prerender saat build; sisanya SPA lewat `__spa-fallback.html` (lihat `netlify.toml`). URL lama
 (`/events`, `/blog`, `/jobs`, `/videos`, `/mentorship`, `/courses`, `/dashboard`, `/u/*`) diarahkan 301.
@@ -59,6 +59,17 @@ npm run build      # output ke build/client
 3. **Auth → URL Configuration**: Site URL `https://swegrowth.id`; Redirect URLs `https://swegrowth.id/auth/callback`
    dan `http://localhost:4321/auth/callback`.
 4. **Admin**: tambahkan email ke tabel `activity_admin_emails`.
+5. **Foto dokumentasi**: migration `20261020000000_community_events.sql` membuat bucket Storage publik `event-photos`
+   (hanya admin yang bisa mengunggah, maks. 5 MB per foto; editor memperkecil foto sebelum diunggah).
+
+### Event komunitas
+
+Semua event adalah kegiatan komunitas SWE Growth. Penyelenggaranya bisa **subgrup** (English Club, Fundamental, …)
+yang dikelola di `/admin` → **Subgrup**; event tanpa subgrup tampil sebagai kegiatan SWE Growth. Pembicara opsional.
+
+**Event berulang** (setiap minggu, dua minggu sekali, atau setiap bulan, opsional sampai tanggal tertentu): jadwal di
+editor adalah sesi pertama. Agenda dan halaman event selalu menampilkan sesi berikutnya, satu pendaftaran berlaku untuk
+seluruh sesi, dan event Google Calendar dibuat dengan pola ulang yang sama.
 
 ### Login Google tanpa domain supabase.co
 

@@ -1,5 +1,5 @@
-import type { ActivityRow, ActivityStatus, RegistrationStatus } from './database.types';
-import { formatWibTime, isUpcoming } from './format';
+import type { ActivityRow, ActivityStatus, CommunityGroupRow, Recurrence, RegistrationStatus } from './database.types';
+import { formatDate, formatWibTime, isoDate, isUpcoming } from './format';
 import { anonSupabase, hasSupabase, supabase } from './supabase';
 
 export type Activity = ActivityRow;
@@ -17,11 +17,127 @@ export const ACTIVITY_STATUSES = Object.keys(activityStatusLabel) as ActivitySta
 
 const isDone = (a: Activity) => a.status === 'completed' || a.status === 'cancelled';
 
-/** Belum selesai: dilihat dari ends_at kalau diisi (program panjang yang sudah mulai tetap tampil). */
-export const isActivityUpcoming = (a: Activity) => {
+/**
+ * Belum selesai: dilihat dari ends_at kalau diisi (program panjang yang sudah mulai tetap tampil).
+ * Event berulang selesai setelah sesi terakhirnya lewat.
+ */
+export const isActivityUpcoming = (a: Activity, now = new Date()) => {
+  if (isDone(a)) return false;
+  if (a.recurrence && a.starts_at) return nextSession(a, now) !== null;
   const until = a.ends_at ?? a.starts_at;
-  return !isDone(a) && (!until || isUpcoming(new Date(until)));
+  return !until || isUpcoming(new Date(until), now);
 };
+
+// ---------------------------------------------------------------------------
+// Event berulang: starts_at/ends_at = sesi pertama, sesi lain dihitung di sini.
+// ---------------------------------------------------------------------------
+
+const DAY_MS = 86_400_000;
+const WIB_MS = 7 * 60 * 60 * 1000;
+
+type Schedule = Pick<Activity, 'starts_at' | 'ends_at' | 'recurrence' | 'recurrence_until'>;
+
+/** Mulai sesi ke-n (0 = sesi pertama). Bulanan: tanggal yang sama, mundur ke akhir bulan kalau tidak ada. */
+function sessionStart(first: Date, recurrence: Recurrence, n: number) {
+  if (recurrence !== 'monthly') return new Date(first.getTime() + n * (recurrence === 'weekly' ? 7 : 14) * DAY_MS);
+  const wall = new Date(first.getTime() + WIB_MS);
+  const target = new Date(Date.UTC(wall.getUTCFullYear(), wall.getUTCMonth() + n, 1, wall.getUTCHours(), wall.getUTCMinutes()));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(wall.getUTCDate(), lastDay));
+  return new Date(target.getTime() - WIB_MS);
+}
+
+/**
+ * Sesi yang sedang/akan datang ({ starts_at, ends_at }); null kalau seri sudah
+ * selesai. Seperti event biasa, sesi dianggap belum lewat sampai akhir harinya.
+ */
+export function nextSession(a: Schedule, now = new Date()) {
+  if (!a.starts_at) return null;
+  const first = new Date(a.starts_at);
+  const duration = a.ends_at ? Date.parse(a.ends_at) - first.getTime() : null;
+  const session = (start: Date) => ({
+    starts_at: start.toISOString(),
+    ends_at: duration === null ? null : new Date(start.getTime() + duration).toISOString(),
+  });
+  if (!a.recurrence) return isUpcoming(new Date(a.ends_at ?? a.starts_at), now) ? session(first) : null;
+
+  for (let n = 0; n < 5000; n++) {
+    const start = sessionStart(first, a.recurrence, n);
+    if (a.recurrence_until && isoDate(new Date(start.getTime() + WIB_MS)) > a.recurrence_until) return null;
+    const end = duration === null ? start : new Date(start.getTime() + duration);
+    if (isUpcoming(end, now)) return session(start);
+  }
+  return null;
+}
+
+/** Untuk tampilan: event berulang memakai jadwal sesi berikutnya (kalau masih ada). */
+export function withNextSession<T extends Schedule>(a: T, now = new Date()): T {
+  if (!a.recurrence) return a;
+  const next = nextSession(a, now);
+  return next ? { ...a, ...next } : a;
+}
+
+/**
+ * Agenda: event yang belum selesai, jadwal berulang diganti sesi berikutnya,
+ * urut tanggal. Event tanpa jadwal di depan (atau di belakang dengan undatedLast).
+ */
+export function upcomingSessions(list: Activity[], { now = new Date(), undatedLast = false } = {}) {
+  const key = (a: Activity) => a.starts_at ?? (undatedLast ? '\uffff' : '');
+  return list
+    .filter((a) => isActivityUpcoming(a, now))
+    .map((a) => withNextSession(a, now))
+    .sort((x, y) => key(x).localeCompare(key(y)));
+}
+
+export const RECURRENCE_LABEL: Record<Recurrence, string> = {
+  weekly: 'Setiap minggu',
+  biweekly: 'Dua minggu sekali',
+  monthly: 'Setiap bulan',
+};
+
+const weekdayFmt = new Intl.DateTimeFormat('id-ID', { weekday: 'long', timeZone: 'Asia/Jakarta' });
+const dayOfMonthFmt = new Intl.DateTimeFormat('id-ID', { day: 'numeric', timeZone: 'Asia/Jakarta' });
+
+/** "Setiap Kamis", "Dua minggu sekali, Kamis", "Setiap bulan, tanggal 12" (+ "s.d. …"). Null kalau tidak berulang. */
+export function recurrenceLabel(a: Schedule) {
+  if (!a.recurrence || !a.starts_at) return null;
+  const first = new Date(a.starts_at);
+  const base =
+    a.recurrence === 'weekly' ? `Setiap ${weekdayFmt.format(first)}`
+    : a.recurrence === 'biweekly' ? `Dua minggu sekali, ${weekdayFmt.format(first)}`
+    : `Setiap bulan, tanggal ${dayOfMonthFmt.format(first)}`;
+  return a.recurrence_until ? `${base} s.d. ${formatDate(a.recurrence_until)}` : base;
+}
+
+/** RRULE untuk Google Calendar (sama dengan calendar-sync). */
+export function recurrenceRule(a: Schedule) {
+  if (!a.recurrence) return null;
+  const freq = a.recurrence === 'monthly' ? 'FREQ=MONTHLY' : `FREQ=WEEKLY${a.recurrence === 'biweekly' ? ';INTERVAL=2' : ''}`;
+  // Akhir hari recurrence_until dalam WIB, ditulis dalam UTC.
+  const until = a.recurrence_until ? `;UNTIL=${a.recurrence_until.replace(/-/g, '')}T165959Z` : '';
+  return `RRULE:${freq}${until}`;
+}
+
+// ---------------------------------------------------------------------------
+// Subgrup penyelenggara
+// ---------------------------------------------------------------------------
+
+export type CommunityGroup = CommunityGroupRow;
+
+export async function getCommunityGroups(): Promise<CommunityGroup[]> {
+  const db = client();
+  if (!db) return [];
+  const { data, error } = await db.from('community_groups').select('*').order('sort_order').order('name');
+  if (error) {
+    console.error('Tidak dapat mengambil subgrup komunitas:', error.message);
+    return [];
+  }
+  return data;
+}
+
+/** Nama penyelenggara untuk ditampilkan; null = SWE Growth langsung. */
+export const organizerOf = (a: Pick<Activity, 'organizer_group_id'>, groups: CommunityGroup[]) =>
+  groups.find((g) => g.id === a.organizer_group_id) ?? null;
 
 /** Sudah mulai tapi belum selesai, mis. program yang berjalan beberapa bulan. */
 export const isActivityOngoing = (a: Pick<Activity, 'starts_at' | 'ends_at'>, now = new Date()) =>
@@ -52,6 +168,12 @@ export async function getPublishedActivities(): Promise<Activity[]> {
   return data;
 }
 
+/** Event yang punya foto dokumentasi (termasuk seri berulang yang masih berjalan), terbaru dulu. */
+export const withDocumentation = (list: Activity[]) =>
+  list
+    .filter((a) => (a.photos ?? []).length > 0)
+    .sort((x, y) => (y.starts_at ?? '').localeCompare(x.starts_at ?? ''));
+
 export async function getPublishedActivityBySlug(slug: string): Promise<Activity | null> {
   const db = client();
   if (!db) return null;
@@ -67,7 +189,8 @@ export async function getPublishedActivityBySlug(slug: string): Promise<Activity
     console.error('Tidak dapat mengambil activity dari Supabase:', error.message);
     return null;
   }
-  return data;
+  // Event berulang tampil dengan jadwal sesi berikutnya.
+  return data && withNextSession(data);
 }
 
 /** Angka hero landing dari database (null kalau gagal diambil). */
@@ -178,7 +301,7 @@ export async function fetchMyRegistration(activityId: string, userId: string) {
 
 const calStamp = (d: Date) => d.toISOString().replace(/[-:]|\.\d{3}/g, '');
 
-/** Link "tambah ke Google Calendar". Tanpa ends_at dianggap 1 jam. */
+/** Link "tambah ke Google Calendar". Tanpa ends_at dianggap 1 jam. Event berulang ikut pola ulangnya. */
 export function googleCalendarUrl(a: Activity, details: string) {
   if (!a.starts_at) return null;
   const start = new Date(a.starts_at);
@@ -190,6 +313,8 @@ export function googleCalendarUrl(a: Activity, details: string) {
     details,
     location: a.location ?? (a.mode === 'online' ? 'Online' : ''),
   });
+  const rule = recurrenceRule(a);
+  if (rule) params.set('recur', rule);
   return `https://calendar.google.com/calendar/render?${params}`;
 }
 
