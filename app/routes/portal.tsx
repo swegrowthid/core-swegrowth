@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useRevalidator } from 'react-router';
 import type { Route } from './+types/portal';
 import { CommunityChannels } from '~/components/CommunityChannels';
+import { PastEventList } from '~/components/PastEventList';
 import { PortalHeader } from '~/components/PortalHeader';
-import { activityPath, activityStatusLabel, registeredPath, upcomingSessions, type Activity } from '~/lib/activities';
+import { activityPath, activityStatusLabel, pastActivities, registeredPath, upcomingSessions, type Activity } from '~/lib/activities';
 import { requireUser } from '~/lib/auth';
 import type { RecommendationRow, RegistrationStatus } from '~/lib/database.types';
 import { categoryOf, directoryPath, fetchMyRecommendations, rejectReasonLabel, STATUS_LABEL, SUBMIT_PATH } from '~/lib/recommendations';
@@ -25,16 +26,21 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 
   const upcoming = upcomingSessions(activities.data ?? [], { undatedLast: true });
   const statusById = new Map((regs.data ?? []).map((r) => [r.activity_id, r.status]));
+  const attended = new Set((regs.data ?? []).filter((r) => r.status === 'confirmed').map((r) => r.activity_id));
 
   return {
     mine: upcoming
       .filter((a) => statusById.has(a.id))
       .map((a) => ({ activity: a, status: statusById.get(a.id)! })),
     others: upcoming.filter((a) => !statusById.has(a.id)),
+    past: pastActivities(activities.data ?? []).slice(0, PAST_LIMIT),
+    attended: [...attended],
     groups: groups.data ?? [],
     recommendations,
   };
 }
+
+const PAST_LIMIT = 5;
 
 export function HydrateFallback() {
   return <div className="loading-block">Memuat portal…</div>;
@@ -47,7 +53,7 @@ const registrationLabel: Record<RegistrationStatus, string> = {
 };
 
 export default function Portal({ loaderData }: Route.ComponentProps) {
-  const { mine, others, groups, recommendations } = loaderData;
+  const { mine, others, past, attended, groups, recommendations } = loaderData;
   const empty = mine.length === 0 && others.length === 0;
 
   return (
@@ -68,6 +74,16 @@ export default function Portal({ loaderData }: Route.ComponentProps) {
             <div className="panel">
               <div className="panel-head"><h2>Agenda</h2></div>
               <EventRows items={others.map((a) => ({ activity: a, tag: activityStatusLabel[a.status], href: activityPath(a) }))} />
+            </div>
+          )}
+
+          {past.length > 0 && (
+            <div className="panel">
+              <div className="panel-head">
+                <h2>Kegiatan lalu</h2>
+                <Link to="/agenda?waktu=lalu">Lihat semua</Link>
+              </div>
+              <PastEventList activities={past} tagOf={(a) => (attended.includes(a.id) ? 'kamu ikut' : null)} />
             </div>
           )}
 

@@ -168,10 +168,24 @@ export async function getPublishedActivities(): Promise<Activity[]> {
   return data;
 }
 
-/** Event yang punya foto dokumentasi (termasuk seri berulang yang masih berjalan), terbaru dulu. */
-export const withDocumentation = (list: Activity[]) =>
+/**
+ * Sudah lewat: ditandai selesai, atau jadwal (sesi terakhir untuk event
+ * berulang) sudah lewat. Event yang dibatalkan tidak dihitung.
+ */
+export const isActivityPast = (a: Activity, now = new Date()) =>
+  a.status !== 'cancelled' && !isActivityUpcoming(a, now) && (a.status === 'completed' || Boolean(a.starts_at));
+
+/**
+ * Kegiatan lalu, terbaru dulu. Seri berulang yang masih berjalan ikut tampil
+ * kalau sudah punya foto dokumentasi dari sesi sebelumnya.
+ */
+export const pastActivities = (list: Activity[], now = new Date()) =>
   list
-    .filter((a) => (a.photos ?? []).length > 0)
+    .filter(
+      (a) =>
+        isActivityPast(a, now) ||
+        (a.recurrence && a.status !== 'cancelled' && (a.photos ?? []).length > 0 && a.starts_at && new Date(a.starts_at) <= now),
+    )
     .sort((x, y) => (y.starts_at ?? '').localeCompare(x.starts_at ?? ''));
 
 export async function getPublishedActivityBySlug(slug: string): Promise<Activity | null> {

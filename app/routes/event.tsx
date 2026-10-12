@@ -14,6 +14,7 @@ import {
   fetchPublicStats,
   getPublishedActivityBySlug,
   isActiveRegistration,
+  isActivityUpcoming,
   isPaid,
   nextSession,
   priceLabel,
@@ -71,7 +72,8 @@ const modeLabel = { online: 'Online', offline: 'Offline', hybrid: 'Hybrid' } as 
  */
 export default function EventPage({ loaderData: { activity: a, stats, organizer } }: Route.ComponentProps) {
   const place = [a.mode && modeLabel[a.mode], a.location].filter(Boolean).join(' · ');
-  const done = a.status === 'completed' || a.status === 'cancelled';
+  // Jadwal sudah lewat dianggap selesai walau status belum diubah admin.
+  const done = !isActivityUpcoming(a);
   const soon = done ? null : countdown(a);
   const my = useMine(a.id);
 
@@ -82,7 +84,7 @@ export default function EventPage({ loaderData: { activity: a, stats, organizer 
         <header className="event-hero on-teal">
           <Link className="back" to="/agenda">← Agenda</Link>
           <div className="event-chips">
-            <span className="chip yellow">{activityStatusLabel[a.status]}</span>
+            <span className="chip yellow">{activityStatusLabel[done && a.status !== 'cancelled' ? 'completed' : a.status]}</span>
             <span className="chip price-chip">{priceLabel(a)}</span>
             {soon && <span className="chip price-chip">{soon}</span>}
           </div>
@@ -295,7 +297,7 @@ function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: S
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const done = a.status === 'completed' || a.status === 'cancelled';
+  const done = !isActivityUpcoming(a);
   const action = (() => {
     if (done) {
       return (
