@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 /**
- * Bantu tulis teks event dengan Gemini (edge function event-writer, khusus admin).
+ * Bantu tulis teks event dengan Gemini (Netlify edge function /api/event-writer, khusus admin).
  * Data dikirim dari form yang sedang diisi, jadi bisa dipakai sebelum disimpan.
  */
 
@@ -34,14 +34,21 @@ export type DetailsResult = Result<{ summary: string; highlights: string[]; desc
 export type CaptionResult = Result<{ captions: string[] }>;
 
 async function call<T>(body: Record<string, unknown>): Promise<Result<T>> {
-  const { data, error } = await supabase().functions.invoke<Result<T>>('event-writer', { body });
-  if (error) {
-    // FunctionsHttpError membawa body JSON dari fungsi (mis. admin_only, detail Gemini).
-    const res = (error as { context?: Response }).context;
-    const parsed = res && typeof res.json === 'function' ? await res.json().catch(() => null) : null;
-    return { error: parsed?.error ?? error.message, detail: parsed?.detail } as Result<T>;
+  const { data } = await supabase().auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) return { error: 'login_required' } as Result<T>;
+  try {
+    const res = await fetch('/api/event-writer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+    const parsed = await res.json().catch(() => null);
+    if (!parsed) return { error: `HTTP ${res.status}` } as Result<T>;
+    return parsed as Result<T>;
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : String(e) } as Result<T>;
   }
-  return data ?? {};
 }
 
 export const writeDetails = (event: WriterEvent, notes: string, language: WriterLanguage) =>
@@ -51,8 +58,9 @@ export const writeCaption = (event: WriterEvent, notes: string, language: Writer
   call<{ captions: string[] }>({ kind: 'caption', event, notes, language, platform });
 
 export const writerErrorText = (r: Result<unknown>) =>
-  r.status === 'not_configured' ? 'Gemini belum disambungkan: isi secret GEMINI_API_KEY di Supabase lalu deploy fungsi event-writer.'
+  r.status === 'not_configured' ? 'Gemini belum disambungkan: isi GEMINI_API_KEY di Environment variables Netlify lalu deploy ulang.'
   : r.error === 'admin_only' ? 'Khusus admin.'
+  : r.error === 'login_required' ? 'Sesi login habis, masuk lagi dulu.'
   : r.error === 'title_or_notes_required' ? 'Isi judul atau catatan dulu.'
   : r.error || r.status === 'error' ? `Gagal: ${r.detail ?? r.error}`
   : null;

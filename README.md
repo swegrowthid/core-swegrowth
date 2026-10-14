@@ -127,18 +127,13 @@ selesai, fungsi ini membalas `not_configured` dan pendaftaran tetap jalan normal
 
 Di editor event, bagian **Detail acara** punya tombol **✨ Isi detail acara** (mengisi ringkasan, poin "yang akan
 dibahas", dan deskripsi) dan **✨ Buat caption** (Instagram, LinkedIn, atau WhatsApp/Telegram, 2 variasi). Keduanya
-memakai isi form saat ini plus catatan opsional dari admin, lewat edge function `supabase/functions/event-writer`.
-API key Gemini hanya ada di server; fungsi ini menolak siapa pun yang emailnya tidak ada di `activity_admin_emails`.
+memakai isi form saat ini plus catatan opsional dari admin, lewat Netlify edge function
+`netlify/edge-functions/event-writer.ts` (`/api/event-writer`). API key Gemini hanya ada di server, dan fungsi ini
+menolak siapa pun yang bukan admin (`is_admin()`).
 
-1. Buat API key di [Google AI Studio](https://aistudio.google.com/apikey).
-2. Simpan sebagai secret Supabase dan deploy fungsinya:
-
-   ```bash
-   supabase secrets set --project-ref <ref> GEMINI_API_KEY=…
-   supabase functions deploy event-writer --no-verify-jwt --project-ref <ref>
-   ```
-
-   Opsional: `GEMINI_MODEL` (default `gemini-2.5-flash`).
+Setup: buat API key di [Google AI Studio](https://aistudio.google.com/apikey), lalu di Netlify → *Site configuration →
+Environment variables* tambahkan `GEMINI_API_KEY` (opsional `GEMINI_MODEL`, default `gemini-2.5-flash`) dan deploy
+ulang. Saat `npm run dev` biasa endpoint ini tidak ada; pakai `netlify dev` untuk mencobanya secara lokal.
 
 ## Konfigurasi di `app/lib/site.ts`
 

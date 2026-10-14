@@ -1,29 +1,36 @@
-// Bantu admin menulis teks event dengan Gemini.
-//
-// Dipanggil editor event (/admin/event/:id) dengan data event yang sedang
-// diisi (belum tentu tersimpan). Dua jenis:
-//   kind "details" → ringkasan, poin "yang akan dibahas", dan deskripsi untuk halaman event
-//   kind "caption" → caption media sosial (Instagram / LinkedIn / WhatsApp)
-// Hasilnya hanya dikembalikan ke admin untuk ditinjau; tidak ada yang disimpan di sini.
-//
-// Secrets (supabase secrets set …):
-//   GEMINI_API_KEY               — dari https://aistudio.google.com/apikey
-//   GEMINI_MODEL (opsional)      — default gemini-2.5-flash
-//
-// Deploy: supabase functions deploy event-writer --no-verify-jwt
-// (JWT diverifikasi di bawah; hanya email di activity_admin_emails yang boleh memakai.)
-import { createClient } from 'npm:@supabase/supabase-js@2';
+/**
+ * Bantu admin menulis teks event dengan Gemini (POST /api/event-writer).
+ *
+ * Dipanggil editor event (/admin/event/:id) dengan data event yang sedang
+ * diisi (belum tentu tersimpan). Dua jenis:
+ *   kind "details" → ringkasan, poin "yang akan dibahas", dan deskripsi untuk halaman event
+ *   kind "caption" → caption media sosial (Instagram / LinkedIn / WhatsApp)
+ * Hasilnya hanya dikembalikan ke admin untuk ditinjau; tidak ada yang disimpan di sini.
+ *
+ * Env Netlify: GEMINI_API_KEY (dari https://aistudio.google.com/apikey),
+ * GEMINI_MODEL opsional (default gemini-2.5-flash). Key tidak pernah sampai ke browser.
+ * Hanya admin (is_admin() di Supabase, dicek dengan sesi login pemanggil) yang boleh memakai.
+ */
+import type { Config } from '@netlify/edge-functions';
 
-const CALLERS = ['https://swegrowth.id', 'http://localhost:4321', 'http://localhost:5173'];
+const env = (name: string) => Netlify.env.get(name) ?? '';
 
-const cors = (origin: string | null) => ({
-  'Access-Control-Allow-Origin': origin && CALLERS.includes(origin) ? origin : CALLERS[0],
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  Vary: 'Origin',
-});
+const reply = (status: number, body: unknown) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
-const env = (name: string) => Deno.env.get(name) ?? '';
+/** Tanya Supabase apakah pemilik JWT ini admin (RLS/is_admin() memakai email di token). */
+async function isAdmin(jwt: string) {
+  const url = env('VITE_SUPABASE_URL');
+  const key = env('VITE_SUPABASE_PUBLISHABLE_KEY');
+  if (!url || !key) return false;
+  const res = await fetch(`${url}/rest/v1/rpc/is_admin`, {
+    method: 'POST',
+    headers: { apikey: key, Authorization: `Bearer ${jwt}`, 'Content-Type': 'application/json' },
+    body: '{}',
+    signal: AbortSignal.timeout(5000),
+  });
+  return res.ok && (await res.json()) === true;
+}
 
 type EventInput = {
   title?: string;
@@ -91,23 +98,13 @@ async function gemini(prompt: string, schema: Record<string, unknown>) {
 
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.slice(0, max) : undefined);
 
-Deno.serve(async (req) => {
-  const headers = { ...cors(req.headers.get('Origin')), 'Content-Type': 'application/json' };
-  const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers });
-
-  if (req.method === 'OPTIONS') return new Response(null, { headers });
+export default async (req: Request) => {
   if (req.method !== 'POST') return reply(405, { error: 'method_not_allowed' });
   if (!env('GEMINI_API_KEY')) return reply(200, { status: 'not_configured' });
 
-  const db = createClient(env('SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
   const jwt = req.headers.get('Authorization')?.replace(/^Bearer /, '');
-  const { data: userData } = jwt ? await db.auth.getUser(jwt) : { data: { user: null } };
-  const email = userData.user?.email?.toLowerCase();
-  if (!email) return reply(401, { error: 'login_required' });
-  const { data: admin } = await db.from('activity_admin_emails').select('email').eq('email', email).maybeSingle();
-  if (!admin) return reply(403, { error: 'admin_only' });
+  if (!jwt) return reply(401, { error: 'login_required' });
+  if (!(await isAdmin(jwt).catch(() => false))) return reply(403, { error: 'admin_only' });
 
   const input = await req.json().catch(() => ({}));
   const raw = (input.event ?? {}) as Record<string, unknown>;
@@ -174,4 +171,6 @@ Deno.serve(async (req) => {
   } catch (e) {
     return reply(502, { status: 'error', detail: String(e).slice(0, 300) });
   }
-});
+};
+
+export const config: Config = { path: '/api/event-writer' };
