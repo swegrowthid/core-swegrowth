@@ -1,9 +1,11 @@
 import { useSearchParams } from 'react-router';
 import type { Route } from './+types/agenda';
 import { AgendaList } from '~/components/AgendaList';
+import { byEventDate, ExternalEventList } from '~/components/ExternalEventList';
 import { PastEventList } from '~/components/PastEventList';
 import { getCommunityGroups, getPublishedActivities, pastActivities, upcomingSessions } from '~/lib/activities';
 import { PAST_ACTIVITIES } from '~/lib/past-activities';
+import { getPublishedRecommendations } from '~/lib/recommendations';
 import { pageMeta } from '~/lib/site';
 
 const monthFmt = new Intl.DateTimeFormat('id-ID', { month: 'short', year: 'numeric' });
@@ -12,8 +14,14 @@ export const meta: Route.MetaFunction = () =>
   pageMeta('Agenda — SWE Growth', 'Agenda kegiatan komunitas SWE Growth. Daftar gratis dengan akun Google.');
 
 const load = async () => {
-  const [activities, groups] = await Promise.all([getPublishedActivities(), getCommunityGroups()]);
-  return { activities: upcomingSessions(activities), past: pastActivities(activities), groups };
+  const [activities, groups, recommendations] = await Promise.all([
+    getPublishedActivities(),
+    getCommunityGroups(),
+    getPublishedRecommendations(),
+  ]);
+  // Acara dari luar = rekomendasi kategori acara (yang sudah lewat tidak ikut tayang).
+  const external = recommendations.filter((r) => r.category === 'acara').sort(byEventDate);
+  return { activities: upcomingSessions(activities), past: pastActivities(activities), groups, external };
 };
 
 /** Saat build: snapshot agenda untuk HTML prerender. */
@@ -31,7 +39,7 @@ clientLoader.hydrate = true as const;
  * Tab waktu (?waktu=lalu untuk kegiatan lalu) dan filter penyelenggara
  * (?oleh=slug-subgrup) disimpan di URL supaya bisa dibagikan.
  */
-export default function Agenda({ loaderData: { activities, past, groups } }: Route.ComponentProps) {
+export default function Agenda({ loaderData: { activities, past, groups, external } }: Route.ComponentProps) {
   const [params, setParams] = useSearchParams();
   const showPast = params.get('waktu') === 'lalu';
   const group = groups.find((g) => g.slug === params.get('oleh')) ?? null;
@@ -101,6 +109,9 @@ export default function Agenda({ loaderData: { activities, past, groups } }: Rou
         ) : (
           <div className="panel"><AgendaList activities={shown} groups={groups} /></div>
         )}
+
+        {/* Acara pihak lain tidak punya subgrup, jadi hanya tampil tanpa filter penyelenggara. */}
+        {!showPast && !group && <ExternalEventList events={external} />}
       </div>
     </section>
   );

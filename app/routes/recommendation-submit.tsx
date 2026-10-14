@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, redirect } from 'react-router';
+import { Link, redirect, useSearchParams } from 'react-router';
 import type { Route } from './+types/recommendation-submit';
 import { Field } from '~/lib/admin-form';
 import { requireUser } from '~/lib/auth';
@@ -10,7 +10,7 @@ import type {
   RecommendationPrice,
   RecommendationRow,
 } from '~/lib/database.types';
-import { CATEGORIES, categoryOf, directoryPath, getRecommendationTopics, LANGUAGE_LABEL, PRICE_LABEL, STATUS_LABEL } from '~/lib/recommendations';
+import { CATEGORIES, categoryOf, directoryPath, getRecommendationTopics, isCategory, LANGUAGE_LABEL, PRICE_LABEL, STATUS_LABEL } from '~/lib/recommendations';
 import { supabase } from '~/lib/supabase';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Kirim rekomendasi — SWE Growth' }, { name: 'robots', content: 'noindex' }];
@@ -40,7 +40,10 @@ export default function RecommendationSubmit({ loaderData: { editing, topics } }
 }
 
 function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null; topicNames: string[] }) {
-  const [category, setCategory] = useState<RecommendationCategory>(editing?.category ?? 'buku');
+  // ?kategori=acara dari agenda: langsung pilih kategorinya.
+  const [params] = useSearchParams();
+  const preset = params.get('kategori');
+  const [category, setCategory] = useState<RecommendationCategory>(editing?.category ?? (isCategory(preset) ? preset : 'buku'));
   const [topics, setTopics] = useState<string[]>(editing?.topics ?? []);
   const [reasonLength, setReasonLength] = useState(editing?.reason.length ?? 0);
   const [duplicate, setDuplicate] = useState<{ title: string; status: RecommendationRow['status'] } | null>(null);
