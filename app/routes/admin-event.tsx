@@ -1,7 +1,8 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { data, Link, useNavigate, useRevalidator } from 'react-router';
 import type { Route } from './+types/admin-event';
 import { Avatar } from '~/components/Avatar';
+import { EventWriter } from '~/components/EventWriter';
 import {
   ACTIVITY_STATUSES,
   activityPath,
@@ -19,6 +20,7 @@ import { requireAdmin } from '~/lib/auth';
 import type { ActivityRegistrationRow, ActivityStatus, CommunityGroupRow, EventPhoto, NextStep, Recurrence, RegistrationField } from '~/lib/database.types';
 import { downloadEventPoster } from '~/lib/event-poster';
 import { formatWibDate, formatWibTime } from '~/lib/format';
+import { SITE_URL } from '~/lib/site';
 import { supabase } from '~/lib/supabase';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => [
@@ -66,6 +68,7 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
   const [recurrence, setRecurrence] = useState<string>(a?.recurrence ?? '');
   const [calendar, setCalendar] = useState<CalendarSyncResult | null>(null);
   const revalidator = useRevalidator();
+  const formRef = useRef<HTMLFormElement>(null);
 
   /** Samakan dengan Google Calendar lalu muat ulang (supaya link & waktu sinkron tampil). */
   const sync = async (id: string) => {
@@ -158,7 +161,7 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
 
         {a && <Stats activity={a} registrations={registrations} />}
 
-        <form className="editor" onSubmit={save} key={a?.updated_at ?? 'new'}>
+        <form className="editor" ref={formRef} onSubmit={save} key={a?.updated_at ?? 'new'}>
           <EditorSection n={1} title="Info utama" hint="Tampil di bagian atas halaman event dan di agenda.">
             <Field id="title" label="Judul"><input id="title" name="title" required minLength={3} maxLength={140} defaultValue={a?.title} /></Field>
             <Field id="summary" label="Ringkasan" optional hint="Satu-dua kalimat di bawah judul.">
@@ -227,7 +230,12 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
             </div>
           </EditorSection>
 
-          <EditorSection n={4} title="Detail acara">
+          <EditorSection n={4} title="Detail acara" hint="Tulis sendiri atau minta Gemini menyusunnya dari isi form. Caption media sosial juga bisa dibuat di sini.">
+            <EventWriter
+              formRef={formRef}
+              organizers={Object.fromEntries(groups.map((g) => [g.id, g.name]))}
+              publicUrl={a ? `${SITE_URL}${activityPath(a)}` : null}
+            />
             <Field id="highlights" label="Yang akan dibahas" optional hint="Satu poin per baris, maksimal 8. Tampil menonjol di atas deskripsi — tulis yang bikin orang penasaran.">
               <textarea
                 id="highlights"
