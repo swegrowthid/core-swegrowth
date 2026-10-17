@@ -211,11 +211,11 @@ footer.site-footer .brand { color: var(--cream); }
   nav.menu-open .nav-links { display: flex; }
   .nav-links a.lk { padding: 12px 0; font-size: 1rem; }
   .nav-links a.lk[aria-current="page"] { box-shadow: none; color: var(--yellow); }
-  /* Mobile: submenu selalu terbuka, menjorok di bawah judul grup. */
-  .nav-group > button.lk { padding: 12px 0 4px; font-size: 1rem; pointer-events: none; }
+  /* Mobile: submenu tertutup dulu, diketuk untuk membuka (menjorok di bawah judul grup). */
+  .nav-group > button.lk { display: flex; width: 100%; justify-content: space-between; padding: 12px 0; font-size: 1rem; }
   .nav-group > button.lk.active { box-shadow: none; }
-  .nav-group > button.lk svg { display: none; }
-  .nav-sub { display: grid; position: static; min-width: 0; padding: 0 0 0 14px; background: none; border: 0; border-left: 2px solid var(--teal-panel); border-radius: 0; box-shadow: none; }
+  .nav-group > button.lk svg { width: 18px; height: 18px; }
+  .nav-sub { position: static; min-width: 0; padding: 0 0 0 14px; background: none; border: 0; border-left: 2px solid var(--teal-panel); border-radius: 0; box-shadow: none; margin-bottom: 6px; }
   .nav-links .nav-sub a.lk { padding: 8px 0; }
   .nav-links .nav-sub a.lk:hover { background: none; }
   .nav-cta .btn-primary { display: none; }
