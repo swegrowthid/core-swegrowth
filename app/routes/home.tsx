@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import type { Route } from './+types/home';
 import { AgendaList } from '~/components/AgendaList';
+import { byEventDate, ExternalEventRows } from '~/components/ExternalEventList';
 import { RecommendationCard } from '~/components/RecommendationCard';
 import { Avatar } from '~/components/Avatar';
 import { SOCIALS } from '~/components/Socials';
@@ -26,15 +27,20 @@ const load = async () => {
     getCommunityStats(),
     getCommunityPulse(),
   ]);
+  // Angka hero baru dianimasikan setelah data terbaru dari browser masuk; sebelumnya placeholder.
+  const live = typeof window !== 'undefined';
   return {
     stats: heroStats(stats),
-    // Angka hero baru dianimasikan setelah data terbaru dari browser masuk; sebelumnya placeholder.
-    live: typeof window !== 'undefined',
+    live,
     pulse,
     activities: upcomingSessions(activities).slice(0, 3),
+    // Acara dari luar tampil di agenda, jadi tidak diulang di rekomendasi pilihan.
+    external: recommendations.filter((r) => r.category === 'acara').sort(byEventDate).slice(0, 3),
+    // Penanda "segera"/"baru" dihitung di browser saja supaya HTML prerender tidak basi.
+    now: live ? Date.now() : null,
     groups,
     contributions,
-    recommendations: recommendations.filter((r) => r.is_featured),
+    recommendations: recommendations.filter((r) => r.is_featured && r.category !== 'acara'),
   };
 };
 
@@ -150,7 +156,7 @@ function HeroPulse({ items }: { items: Route.ComponentProps['loaderData']['pulse
   );
 }
 
-export default function Home({ loaderData: { activities, groups, contributions, recommendations, stats, live, pulse } }: Route.ComponentProps) {
+export default function Home({ loaderData: { activities, external, now, groups, contributions, recommendations, stats, live, pulse } }: Route.ComponentProps) {
   const { user } = useAuth();
   const [picked, setPicked] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
@@ -158,6 +164,7 @@ export default function Home({ loaderData: { activities, groups, contributions, 
   const [recCategory, setRecCategory] = useState<RecommendationCategory | null>(null);
   const recCategories = CATEGORIES.filter((c) => recommendations.some((r) => r.category === c.id));
   const featured = recommendations.filter((r) => !recCategory || r.category === recCategory).slice(0, 6);
+  const hasAgenda = activities.length > 0 || external.length > 0;
 
   const joinButton = user ? (
     <Link className="btn btn-primary" to="/portal">Buka portal</Link>
@@ -174,7 +181,7 @@ export default function Home({ loaderData: { activities, groups, contributions, 
           <div className="inline-actions">
             {joinButton}
             {!user && (
-              <a className="btn btn-ghost" href={activities.length > 0 ? '#terdekat' : '/agenda'}>Lihat agenda terdekat</a>
+              <a className="btn btn-ghost" href={hasAgenda ? '#terdekat' : '/agenda'}>Lihat agenda terdekat</a>
             )}
           </div>
           <ul className="hero-stats">
@@ -194,14 +201,46 @@ export default function Home({ loaderData: { activities, groups, contributions, 
         </div>
       </section>
 
-      {activities.length > 0 && (
+      {hasAgenda && (
         <section className="home-section agenda-band" id="terdekat">
           <div className="wrap narrow-wrap">
             <div className="home-head">
               <p className="home-label">Agenda</p>
-              <h2>Kegiatan terdekat</h2>
+              <h2>Mau tumbuh di mana minggu ini?</h2>
             </div>
-            <div className="panel"><AgendaList activities={activities} groups={groups} /></div>
+            <div className="home-agenda">
+              <div className="panel">
+                <div className="panel-head">
+                  <div>
+                    <h3>Dari SWE Growth</h3>
+                    <p className="muted">Diadakan komunitas, daftar gratis pakai akun Google.</p>
+                  </div>
+                  <Link to="/agenda">Semua</Link>
+                </div>
+                {activities.length > 0 ? (
+                  <AgendaList activities={activities} groups={groups} now={now} />
+                ) : (
+                  <p className="muted">Belum ada kegiatan terjadwal. Pantau terus, sesi berikutnya lagi disiapkan.</p>
+                )}
+              </div>
+              <div className="panel external-events">
+                <div className="panel-head">
+                  <div>
+                    <h3>Tempat lain untuk tumbuh</h3>
+                    <p className="muted">Acara pilihan di luar SWE Growth, daftar di situs penyelenggara.</p>
+                  </div>
+                  <Link to={directoryPath('acara')}>Semua</Link>
+                </div>
+                {external.length > 0 ? (
+                  <ExternalEventRows events={external} now={now} />
+                ) : (
+                  <p className="muted">
+                    Belum ada acara dari luar yang kami rekomendasikan.{' '}
+                    <Link className="text-link" to={`${SUBMIT_PATH}?kategori=acara`}>Tahu acara bagus?</Link>
+                  </p>
+                )}
+              </div>
+            </div>
             <Link className="btn btn-ghost more-link" to="/agenda">Lihat semua agenda <ArrowRight /></Link>
           </div>
         </section>
@@ -260,7 +299,7 @@ export default function Home({ loaderData: { activities, groups, contributions, 
           <div className="wrap narrow-wrap">
             <div className="home-head">
               <p className="home-label">Rekomendasi</p>
-              <h2>Tempat lain buat grow</h2>
+              <h2>Bekal buat terus grow</h2>
             </div>
             {recCategories.length > 1 && (
               <div className="rec-tabs home-rec-tabs" role="group" aria-label="Kategori rekomendasi">

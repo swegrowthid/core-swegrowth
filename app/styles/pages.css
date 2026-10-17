@@ -468,3 +468,37 @@ a.contrib-maker:hover { text-decoration: underline; text-underline-offset: 3px; 
 }
 .external-events .external-note { margin-top: 16px; color: var(--ink-faint); font-size: .84rem; }
 .external-events .external-note a { color: var(--green-deep); font-weight: 700; }
+
+/* Beranda: dua agenda berdampingan (SWE Growth + acara dari luar). */
+.home-agenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px; align-items: start; text-align: left; }
+.home .home-agenda .panel { max-width: none; margin: 0; }
+.home-agenda .external-events { margin-top: 0; }
+.home-agenda .panel-head { align-items: flex-start; }
+.home-agenda .panel-head h3 { font-size: 1.12rem; }
+.home-agenda .panel-head .muted { margin-top: 2px; font-size: .82rem; }
+.home-agenda .panel-head a { flex: none; }
+.external-events .panel-head .muted { margin-top: 2px; font-size: .84rem; }
+
+/* Penanda acara: "segera" (kotak tanggal kuning, titik berdenyut) dan "baru" (bintang hijau). */
+.rows .row-main .event-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 5px; }
+.rows .row-main .event-badge {
+  display: inline-flex; align-items: center; gap: 5px; margin: 0; padding: 1px 8px; border-radius: 999px;
+  font-size: .7rem; font-weight: 750; letter-spacing: .02em; line-height: 1.6;
+}
+.rows .row-main .event-badge.soon { background: var(--yellow); color: var(--teal); }
+.event-badge.soon i { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: badge-pulse 1.6s ease-out infinite; }
+.rows .row-main .event-badge.new { background: color-mix(in srgb, var(--green) 22%, var(--paper)); border: 1px solid color-mix(in srgb, var(--green) 60%, var(--line)); color: var(--green-deep); }
+.event-badge.new i { font-style: normal; font-size: .72rem; }
+@keyframes badge-pulse {
+  0% { box-shadow: 0 0 0 0 rgb(11 61 64 / .55); }
+  70%, 100% { box-shadow: 0 0 0 6px rgb(11 61 64 / 0); }
+}
+
+.rows > li.is-soon .date-tile { background: var(--yellow); box-shadow: 0 0 0 3px color-mix(in srgb, var(--yellow) 35%, transparent); }
+.rows > li.is-soon .date-tile b, .rows > li.is-soon .date-tile span { color: var(--teal); }
+.rows > li.is-new .date-tile { position: relative; }
+.rows > li.is-new .date-tile::after {
+  content: '✦'; position: absolute; top: -7px; right: -7px; display: grid; place-items: center; width: 18px; height: 18px;
+  border-radius: 50%; background: var(--green); color: var(--teal); font-size: .64rem; box-shadow: 0 0 0 2px var(--paper);
+}
+@media (prefers-reduced-motion: reduce) { .event-badge.soon i { animation: none; } }
