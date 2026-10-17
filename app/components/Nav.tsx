@@ -11,11 +11,17 @@ export function Nav() {
   const navRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
   const { loading, user, isAdmin } = useAuth();
-  const [subOpen, setSubOpen] = useState(false);
+  const [subOpen, setSubOpen] = useState<string | null>(null);
   // Rekomendasi sementara tidak di menu (halamannya tetap ada, ditautkan dari beranda dan footer).
   const links: NavItem[] = [
     ...(user ? [{ to: '/portal', label: 'Portal' }] : []),
-    { to: '/tentang', label: 'Tentang' },
+    {
+      label: 'Tentang',
+      items: [
+        { to: '/tentang', label: 'Awal mula', hint: 'Kenapa SWE Growth ada' },
+        { to: '/code-of-conduct', label: 'Code of Conduct', hint: 'Nilai dan aturan main komunitas' },
+      ],
+    },
     {
       label: 'Kegiatan',
       items: [
@@ -23,20 +29,19 @@ export function Nav() {
         { to: '/rekaman', label: 'Rekaman', hint: 'Nonton lagi sesi yang sudah lewat' },
       ],
     },
-    { to: '/code-of-conduct', label: 'Code of Conduct' },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];
 
   useEffect(() => {
     setOpen(false);
-    setSubOpen(false);
+    setSubOpen(null);
   }, [pathname]);
 
   useEffect(() => {
     if (!open && !subOpen) return;
     const close = () => {
       setOpen(false);
-      setSubOpen(false);
+      setSubOpen(null);
     };
     const onClick = (e: MouseEvent) => {
       if (!navRef.current?.contains(e.target as Node)) close();
@@ -60,12 +65,12 @@ export function Nav() {
         <div className="nav-links" id="navLinks">
           {links.map((l) =>
             'items' in l ? (
-              <div key={l.label} className={`nav-group${subOpen ? ' open' : ''}`}>
+              <div key={l.label} className={`nav-group${subOpen === l.label ? ' open' : ''}`}>
                 <button
                   type="button"
                   className={`lk${l.items.some((i) => pathname.startsWith(i.to)) ? ' active' : ''}`}
-                  aria-expanded={subOpen}
-                  onClick={() => setSubOpen((v) => !v)}
+                  aria-expanded={subOpen === l.label}
+                  onClick={() => setSubOpen((v) => (v === l.label ? null : l.label))}
                 >
                   {l.label}
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
