@@ -14,14 +14,6 @@ export function Nav() {
   const [subOpen, setSubOpen] = useState<string | null>(null);
   // Rekomendasi sementara tidak di menu (halamannya tetap ada, ditautkan dari beranda dan footer).
   const links: NavItem[] = [
-    ...(user ? [{ to: '/portal', label: 'Portal' }] : []),
-    {
-      label: 'Tentang',
-      items: [
-        { to: '/tentang', label: 'Awal mula', hint: 'Kenapa SWE Growth ada' },
-        { to: '/code-of-conduct', label: 'Code of Conduct', hint: 'Nilai dan aturan main komunitas' },
-      ],
-    },
     {
       label: 'Kegiatan',
       items: [
@@ -29,6 +21,9 @@ export function Nav() {
         { to: '/rekaman', label: 'Rekaman', hint: 'Nonton lagi sesi yang sudah lewat' },
       ],
     },
+    ...(user ? [{ to: '/portal', label: 'Portal' }] : []),
+    { to: '/tentang', label: 'Tentang' },
+    { to: '/code-of-conduct', label: 'Code of Conduct' },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];
 
