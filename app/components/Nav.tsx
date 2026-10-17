@@ -13,6 +13,7 @@ export function Nav() {
     ...(user ? [{ to: '/portal', label: 'Portal' }] : []),
     { to: '/tentang', label: 'Tentang' },
     { to: '/agenda', label: 'Agenda' },
+    { to: '/rekaman', label: 'Rekaman' },
     { to: '/rekomendasi', label: 'Rekomendasi' },
     { to: '/code-of-conduct', label: 'Code of Conduct' },
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
