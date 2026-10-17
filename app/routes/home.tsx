@@ -165,6 +165,9 @@ export default function Home({ loaderData: { activities, external, now, groups, 
   const recCategories = CATEGORIES.filter((c) => recommendations.some((r) => r.category === c.id));
   const featured = recommendations.filter((r) => !recCategory || r.category === recCategory).slice(0, 6);
   const hasAgenda = activities.length > 0 || external.length > 0;
+  // Toggle agenda: SWE Growth dulu, kecuali belum ada kegiatan terjadwal.
+  const [agendaTab, setAgendaTab] = useState<'swegrowth' | 'luar' | null>(null);
+  const showExternal = (agendaTab ?? (activities.length > 0 ? 'swegrowth' : 'luar')) === 'luar';
 
   const joinButton = user ? (
     <Link className="btn btn-primary" to="/portal">Buka portal</Link>
@@ -209,37 +212,38 @@ export default function Home({ loaderData: { activities, external, now, groups, 
               <h2>Mau tumbuh di mana minggu ini?</h2>
             </div>
             <div className="home-agenda">
-              <div className="panel">
-                <div className="panel-head">
-                  <div>
-                    <h3>Dari SWE Growth</h3>
+              <nav className="agenda-time-tabs" aria-label="Penyelenggara acara">
+                <button type="button" aria-pressed={!showExternal} onClick={() => setAgendaTab('swegrowth')}>Dari SWE Growth</button>
+                <button type="button" aria-pressed={showExternal} onClick={() => setAgendaTab('luar')}>Tempat lain untuk tumbuh</button>
+              </nav>
+              {showExternal ? (
+                <div className="panel external-events">
+                  <div className="panel-head">
+                    <p className="muted">Acara pilihan di luar SWE Growth, daftar langsung di situs penyelenggara.</p>
+                    <Link to={directoryPath('acara')}>Semua</Link>
+                  </div>
+                  {external.length > 0 ? (
+                    <ExternalEventRows events={external} now={now} />
+                  ) : (
+                    <p className="muted">
+                      Belum ada acara dari luar yang kami rekomendasikan.{' '}
+                      <Link className="text-link" to={`${SUBMIT_PATH}?kategori=acara`}>Tahu acara bagus?</Link>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="panel">
+                  <div className="panel-head">
                     <p className="muted">Diadakan komunitas, daftar gratis pakai akun Google.</p>
+                    <Link to="/agenda">Semua</Link>
                   </div>
-                  <Link to="/agenda">Semua</Link>
+                  {activities.length > 0 ? (
+                    <AgendaList activities={activities} groups={groups} now={now} />
+                  ) : (
+                    <p className="muted">Belum ada kegiatan terjadwal. Sementara itu, intip acara di tempat lain.</p>
+                  )}
                 </div>
-                {activities.length > 0 ? (
-                  <AgendaList activities={activities} groups={groups} now={now} />
-                ) : (
-                  <p className="muted">Belum ada kegiatan terjadwal. Pantau terus, sesi berikutnya lagi disiapkan.</p>
-                )}
-              </div>
-              <div className="panel external-events">
-                <div className="panel-head">
-                  <div>
-                    <h3>Tempat lain untuk tumbuh</h3>
-                    <p className="muted">Acara pilihan di luar SWE Growth, daftar di situs penyelenggara.</p>
-                  </div>
-                  <Link to={directoryPath('acara')}>Semua</Link>
-                </div>
-                {external.length > 0 ? (
-                  <ExternalEventRows events={external} now={now} />
-                ) : (
-                  <p className="muted">
-                    Belum ada acara dari luar yang kami rekomendasikan.{' '}
-                    <Link className="text-link" to={`${SUBMIT_PATH}?kategori=acara`}>Tahu acara bagus?</Link>
-                  </p>
-                )}
-              </div>
+              )}
             </div>
             <Link className="btn btn-ghost more-link" to="/agenda">Lihat semua agenda <ArrowRight /></Link>
           </div>

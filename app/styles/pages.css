@@ -469,14 +469,14 @@ a.contrib-maker:hover { text-decoration: underline; text-underline-offset: 3px; 
 .external-events .external-note { margin-top: 16px; color: var(--ink-faint); font-size: .84rem; }
 .external-events .external-note a { color: var(--green-deep); font-weight: 700; }
 
-/* Beranda: dua agenda berdampingan (SWE Growth + acara dari luar). */
-.home-agenda { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 20px; align-items: start; text-align: left; }
-.home .home-agenda .panel { max-width: none; margin: 0; }
+/* Beranda: toggle dua agenda (SWE Growth / acara dari luar). */
+.home-agenda { display: grid; justify-items: center; }
+.home-agenda .panel { width: 100%; }
 .home-agenda .external-events { margin-top: 0; }
-.home-agenda .panel-head { align-items: flex-start; }
-.home-agenda .panel-head h3 { font-size: 1.12rem; }
-.home-agenda .panel-head .muted { margin-top: 2px; font-size: .82rem; }
+.home-agenda .panel-head { align-items: center; }
+.home-agenda .panel-head .muted { font-size: .86rem; }
 .home-agenda .panel-head a { flex: none; }
+@media (max-width: 480px) { .home-agenda .agenda-time-tabs button { padding: 7px 12px; font-size: .84rem; } }
 .external-events .panel-head .muted { margin-top: 2px; font-size: .84rem; }
 
 /* Penanda acara: "segera" (kotak tanggal kuning, titik berdenyut) dan "baru" (bintang hijau). */
