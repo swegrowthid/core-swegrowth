@@ -26,3 +26,34 @@ export const youtubeThumb = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefa
 
 /** Pola untuk input admin dan constraint database (lihat migration youtube_recording). */
 export const YOUTUBE_URL_PATTERN = 'https://(www\\.|m\\.)?(youtube\\.com|youtu\\.be)/.+';
+
+export const YOUTUBE_CHANNEL_ID = 'UCS_PPsVlRw6PX2HEDCBd7lA';
+const FEED_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
+
+export type ChannelVideo = { videoId: string; title: string; published: string };
+
+const decode = (s: string) =>
+  s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+
+/** Feed Atom YouTube (maks. 15 video terbaru). Pakai regex supaya jalan juga saat prerender di Node. */
+export function parseChannelFeed(xml: string): ChannelVideo[] {
+  return xml.split('<entry>').slice(1).flatMap((entry) => {
+    const videoId = entry.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/)?.[1];
+    const title = entry.match(/<title>([\s\S]*?)<\/title>/)?.[1];
+    const published = entry.match(/<published>([^<]+)<\/published>/)?.[1];
+    return videoId && title && published ? [{ videoId, title: decode(title.trim()), published }] : [];
+  });
+}
+
+/**
+ * Video terbaru di channel. Saat build langsung ke YouTube; di browser lewat
+ * edge function /api/youtube-feed (CORS + cache). Gagal = daftar kosong.
+ */
+export async function getChannelVideos(): Promise<ChannelVideo[]> {
+  try {
+    const res = await fetch(typeof window === 'undefined' ? FEED_URL : '/api/youtube-feed', { signal: AbortSignal.timeout(8000) });
+    return res.ok ? parseChannelFeed(await res.text()) : [];
+  } catch {
+    return [];
+  }
+}

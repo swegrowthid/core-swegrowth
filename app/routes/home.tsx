@@ -15,19 +15,21 @@ import { getPublishedContributions } from '~/lib/contributions';
 import type { RecommendationCategory } from '~/lib/database.types';
 import { CATEGORIES, directoryPath, getPublishedRecommendations, SUBMIT_PATH } from '~/lib/recommendations';
 import { recordingsFrom, YOUTUBE_CHANNEL_URL } from '~/lib/recordings';
+import { getChannelVideos } from '~/lib/youtube';
 import { TOPICS } from '~/lib/topics';
 import { pageMeta } from '~/lib/site';
 
 export const meta: Route.MetaFunction = () => pageMeta('SWE Growth — komunitas software engineer Indonesia');
 
 const load = async () => {
-  const [activities, groups, contributions, recommendations, stats, pulse] = await Promise.all([
+  const [activities, groups, contributions, recommendations, stats, pulse, channel] = await Promise.all([
     getPublishedActivities(),
     getCommunityGroups(),
     getPublishedContributions(),
     getPublishedRecommendations(),
     getCommunityStats(),
     getCommunityPulse(),
+    getChannelVideos(),
   ]);
   // Angka hero baru dianimasikan setelah data terbaru dari browser masuk; sebelumnya placeholder.
   const live = typeof window !== 'undefined';
@@ -36,7 +38,7 @@ const load = async () => {
     live,
     pulse,
     activities: upcomingSessions(activities).slice(0, 3),
-    recordings: recordingsFrom(activities).slice(0, 3),
+    recordings: recordingsFrom(activities, channel).slice(0, 3),
     // Acara dari luar tampil di agenda, jadi tidak diulang di rekomendasi pilihan.
     external: recommendations.filter((r) => r.category === 'acara').sort(byEventDate).slice(0, 3),
     // Penanda "segera"/"baru" dihitung di browser saja supaya HTML prerender tidak basi.
