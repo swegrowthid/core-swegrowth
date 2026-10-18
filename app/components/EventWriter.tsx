@@ -26,7 +26,10 @@ function readEvent(form: HTMLFormElement, organizers: Record<string, string>, pu
     title: val(f, 'title'),
     summary: val(f, 'summary'),
     description: val(f, 'description'),
-    highlights: val(f, 'highlights').split('\n').map((h) => h.trim()).filter(Boolean),
+    highlights: val(f, 'highlights')
+      .split('\n')
+      .map((h) => h.trim())
+      .filter(Boolean),
     speaker: val(f, 'speaker'),
     speaker_title: val(f, 'speaker_title'),
     organizer: organizers[val(f, 'organizer_group_id')] ?? 'SWE Growth',
@@ -77,7 +80,11 @@ export function EventWriter({
     const event = current();
     if (!event || !formRef.current) return;
     if (!event.title && !notes.trim()) return setMessage({ kind: 'error', text: 'Isi judul atau catatan dulu.' });
-    if ((event.summary || event.description || event.highlights.length) && !confirm('Ringkasan, poin bahasan, dan deskripsi yang sekarang akan diganti hasil Gemini. Lanjut?')) return;
+    if (
+      (event.summary || event.description || event.highlights.length) &&
+      !confirm('Ringkasan, poin bahasan, dan deskripsi yang sekarang akan diganti hasil Gemini. Lanjut?')
+    )
+      return;
     setBusy('details');
     setMessage(null);
     const r = await writeDetails(event, notes.trim(), language);
@@ -119,7 +126,9 @@ export function EventWriter({
           maxLength={2000}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder={'Catatan (opsional): poin penting, target peserta, gaya bahasa…\nmis. "untuk fresh graduate, tekankan sesi tanya jawab dan networking"'}
+          placeholder={
+            'Catatan (opsional): poin penting, target peserta, gaya bahasa…\nmis. "untuk fresh graduate, tekankan sesi tanya jawab dan networking"'
+          }
         />
         <div className="inline-actions">
           <select aria-label="Bahasa" value={language} onChange={(e) => setLanguage(e.target.value as WriterLanguage)}>
@@ -131,21 +140,34 @@ export function EventWriter({
           </button>
           <span className="writer-sep" aria-hidden="true" />
           <select aria-label="Platform caption" value={platform} onChange={(e) => setPlatform(e.target.value as CaptionPlatform)}>
-            {(Object.keys(CAPTION_PLATFORMS) as CaptionPlatform[]).map((p) => <option key={p} value={p}>{CAPTION_PLATFORMS[p]}</option>)}
+            {(Object.keys(CAPTION_PLATFORMS) as CaptionPlatform[]).map((p) => (
+              <option key={p} value={p}>
+                {CAPTION_PLATFORMS[p]}
+              </option>
+            ))}
           </select>
           <button className="btn btn-ghost sm" type="button" disabled={busy !== null} onClick={makeCaption}>
             {busy === 'caption' ? 'Menulis…' : '✨ Buat caption'}
           </button>
         </div>
-        <small className="field-hint">Memakai isi form saat ini (judul, jadwal, pembicara, dst.), termasuk yang belum disimpan. Selalu cek fakta sebelum dipakai.</small>
+        <small className="field-hint">
+          Memakai isi form saat ini (judul, jadwal, pembicara, dst.), termasuk yang belum disimpan. Selalu cek fakta sebelum dipakai.
+        </small>
       </div>
       {message && <p className={`form-message ${message.kind}`}>{message.text}</p>}
       {captions.length > 0 && (
         <ol className="writer-captions">
           {captions.map((c, i) => (
             <li key={i}>
-              <textarea aria-label={`Caption ${i + 1}`} rows={8} value={c} onChange={(e) => setCaptions((list) => list.map((x, j) => (j === i ? e.target.value : x)))} />
-              <button className="btn btn-ghost sm" type="button" onClick={() => copy(i)}>{copied === i ? 'Tersalin ✓' : 'Salin caption'}</button>
+              <textarea
+                aria-label={`Caption ${i + 1}`}
+                rows={8}
+                value={c}
+                onChange={(e) => setCaptions((list) => list.map((x, j) => (j === i ? e.target.value : x)))}
+              />
+              <button className="btn btn-ghost sm" type="button" onClick={() => copy(i)}>
+                {copied === i ? 'Tersalin ✓' : 'Salin caption'}
+              </button>
             </li>
           ))}
         </ol>

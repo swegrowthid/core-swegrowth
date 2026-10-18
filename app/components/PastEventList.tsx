@@ -31,10 +31,19 @@ export function PastEventList({
         return (
           <li key={a.id}>
             <span className="date-tile">
-              {parts ? <><b>{parts.day}</b><span>{parts.month}</span></> : <span>—</span>}
+              {parts ? (
+                <>
+                  <b>{parts.day}</b>
+                  <span>{parts.month}</span>
+                </>
+              ) : (
+                <span>—</span>
+              )}
             </span>
             <div className="row-main">
-              <Link className="title" to={href}>{a.title}</Link>
+              <Link className="title" to={href}>
+                {a.title}
+              </Link>
               <span>
                 {[
                   a.recurrence ? recurrenceLabel(a) : a.starts_at && formatWibDate(a.starts_at),

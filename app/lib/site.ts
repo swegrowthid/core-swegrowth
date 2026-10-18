@@ -59,13 +59,9 @@ export const COMMUNITY_CHANNELS: CommunityChannel[] = [
 ];
 
 /** Yang disiapkan untuk verified member (tampil di halaman membership "segera hadir"). */
-export const MEMBER_BENEFITS = [
-  'Badge verified member di profil',
-  'Rekaman kegiatan yang sudah lewat',
-];
+export const MEMBER_BENEFITS = ['Badge verified member di profil', 'Rekaman kegiatan yang sudah lewat'];
 
-export const adminWaLink = (text?: string) =>
-  `https://wa.me/${ADMIN_WA}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
+export const adminWaLink = (text?: string) => `https://wa.me/${ADMIN_WA}${text ? `?text=${encodeURIComponent(text)}` : ''}`;
 
 export const DEFAULT_DESCRIPTION =
   'SWE Growth — komunitas software engineer Indonesia. Portal berisi agenda kegiatan, pendaftaran, dan grup WhatsApp komunitas.';

@@ -8,7 +8,14 @@ import { RecordingGrid } from '~/components/RecordingGrid';
 import { Avatar } from '~/components/Avatar';
 import { SOCIALS } from '~/components/Socials';
 import { ArrowRight, ArrowUpRight, BookIcon, BriefcaseIcon, ChatIcon, MicIcon, UsersIcon, VideoIcon } from '~/components/Icons';
-import { activityPath, getCommunityPulse, getCommunityStats, getCommunityGroups, getPublishedActivities, upcomingSessions } from '~/lib/activities';
+import {
+  activityPath,
+  getCommunityPulse,
+  getCommunityStats,
+  getCommunityGroups,
+  getPublishedActivities,
+  upcomingSessions,
+} from '~/lib/activities';
 import { PAST_ACTIVITIES } from '~/lib/past-activities';
 import { useAuth } from '~/lib/auth';
 import { getPublishedContributions } from '~/lib/contributions';
@@ -38,7 +45,10 @@ const load = async () => {
     activities: upcomingSessions(activities).slice(0, 3),
     recordings: recordingsFrom(activities).slice(0, 3),
     // Acara dari luar tampil di agenda, jadi tidak diulang di rekomendasi pilihan.
-    external: recommendations.filter((r) => r.category === 'acara').sort(byEventDate).slice(0, 3),
+    external: recommendations
+      .filter((r) => r.category === 'acara')
+      .sort(byEventDate)
+      .slice(0, 3),
     // Penanda "segera"/"baru" dihitung di browser saja supaya HTML prerender tidak basi.
     now: live ? Date.now() : null,
     groups,
@@ -91,7 +101,12 @@ function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
     return () => cancelAnimationFrame(frame);
   }, [to]);
 
-  return <>{count(n)}{suffix}</>;
+  return (
+    <>
+      {count(n)}
+      {suffix}
+    </>
+  );
 }
 
 /** Satu kalimat pendek per kartu. */
@@ -103,7 +118,6 @@ const ACTIVITIES = [
   { icon: <BookIcon />, name: 'Kelas', body: 'Materi runtut dari praktisi, berangkat dari masalah nyata.' },
   { icon: <MicIcon />, name: 'Talkshow', body: 'Cerita perjalanan karier langsung dari praktisi.' },
 ];
-
 
 /**
  * Aktivitas minggu ini: satu chip tampil bergantian dengan efek flip.
@@ -148,9 +162,17 @@ function HeroPulse({ items }: { items: Route.ComponentProps['loaderData']['pulse
             aria-hidden={hidden || undefined}
           >
             {p.kind === 'member' ? (
-              <><b>{count(p.total)} engineer</b> baru gabung minggu ini</>
+              <>
+                <b>{count(p.total)} engineer</b> baru gabung minggu ini
+              </>
             ) : (
-              <><b>{count(p.total)} orang</b> daftar <Link to={activityPath({ slug: p.slug! })} tabIndex={hidden ? -1 : undefined}>{p.title}</Link> minggu ini</>
+              <>
+                <b>{count(p.total)} orang</b> daftar{' '}
+                <Link to={activityPath({ slug: p.slug! })} tabIndex={hidden ? -1 : undefined}>
+                  {p.title}
+                </Link>{' '}
+                minggu ini
+              </>
             )}
           </li>
         );
@@ -159,7 +181,9 @@ function HeroPulse({ items }: { items: Route.ComponentProps['loaderData']['pulse
   );
 }
 
-export default function Home({ loaderData: { activities, recordings, external, now, groups, contributions, recommendations, stats, live, pulse } }: Route.ComponentProps) {
+export default function Home({
+  loaderData: { activities, recordings, external, now, groups, contributions, recommendations, stats, live, pulse },
+}: Route.ComponentProps) {
   const { user } = useAuth();
   const [picked, setPicked] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
@@ -173,31 +197,44 @@ export default function Home({ loaderData: { activities, recordings, external, n
   const showExternal = (agendaTab ?? (activities.length > 0 ? 'swegrowth' : 'luar')) === 'luar';
 
   const joinButton = user ? (
-    <Link className="btn btn-primary" to="/portal">Buka portal</Link>
+    <Link className="btn btn-primary" to="/portal">
+      Buka portal
+    </Link>
   ) : (
-    <Link className="btn btn-primary" to="/masuk?next=/portal">Daftar sekarang</Link>
+    <Link className="btn btn-primary" to="/masuk?next=/portal">
+      Daftar sekarang
+    </Link>
   );
 
   return (
     <div className="home">
       <section className="block intro on-teal">
         <div className="wrap narrow-wrap">
-          <h1>Tumbuh sebagai software engineer, <span className="hl">bareng-bareng.</span></h1>
+          <h1>
+            Tumbuh sebagai software engineer, <span className="hl">bareng-bareng.</span>
+          </h1>
           <p className="lead">Diskusi harian, belajar bareng, dan kelas bersama sesama software engineer Indonesia.</p>
           <div className="inline-actions">
             {joinButton}
             {!user && (
-              <a className="btn btn-ghost" href={hasAgenda ? '#terdekat' : '/agenda'}>Lihat agenda terdekat</a>
+              <a className="btn btn-ghost" href={hasAgenda ? '#terdekat' : '/agenda'}>
+                Lihat agenda terdekat
+              </a>
             )}
           </div>
           <ul className="hero-stats">
             {stats.map((s) => (
               <li key={s.label}>
                 {live ? (
-                  <b><CountUp to={s.value} suffix={s.suffix} /></b>
+                  <b>
+                    <CountUp to={s.value} suffix={s.suffix} />
+                  </b>
                 ) : (
                   // Placeholder: angka snapshot tetap ada di HTML (tak terlihat) supaya lebarnya pas.
-                  <b className="stat-skel">{count(s.value)}{s.suffix}</b>
+                  <b className="stat-skel">
+                    {count(s.value)}
+                    {s.suffix}
+                  </b>
                 )}
                 <span>{s.label}</span>
               </li>
@@ -216,8 +253,12 @@ export default function Home({ loaderData: { activities, recordings, external, n
             </div>
             <div className="home-agenda">
               <nav className="agenda-time-tabs" aria-label="Penyelenggara acara">
-                <button type="button" aria-pressed={!showExternal} onClick={() => setAgendaTab('swegrowth')}>Dari SWE Growth</button>
-                <button type="button" aria-pressed={showExternal} onClick={() => setAgendaTab('luar')}>Tempat lain untuk tumbuh</button>
+                <button type="button" aria-pressed={!showExternal} onClick={() => setAgendaTab('swegrowth')}>
+                  Dari SWE Growth
+                </button>
+                <button type="button" aria-pressed={showExternal} onClick={() => setAgendaTab('luar')}>
+                  Tempat lain untuk tumbuh
+                </button>
               </nav>
               {showExternal ? (
                 <div className="panel external-events">
@@ -230,7 +271,9 @@ export default function Home({ loaderData: { activities, recordings, external, n
                   ) : (
                     <p className="muted">
                       Belum ada acara dari luar yang kami rekomendasikan.{' '}
-                      <Link className="text-link" to={`${SUBMIT_PATH}?kategori=acara`}>Tahu acara bagus?</Link>
+                      <Link className="text-link" to={`${SUBMIT_PATH}?kategori=acara`}>
+                        Tahu acara bagus?
+                      </Link>
                     </p>
                   )}
                 </div>
@@ -248,7 +291,9 @@ export default function Home({ loaderData: { activities, recordings, external, n
                 </div>
               )}
             </div>
-            <Link className="btn btn-ghost more-link" to="/agenda">Lihat semua agenda <ArrowRight /></Link>
+            <Link className="btn btn-ghost more-link" to="/agenda">
+              Lihat semua agenda <ArrowRight />
+            </Link>
           </div>
         </section>
       )}
@@ -262,8 +307,12 @@ export default function Home({ loaderData: { activities, recordings, external, n
             </div>
             <RecordingGrid recordings={recordings} />
             <div className="home-rec-more">
-              <Link className="btn btn-ghost" to="/rekaman">Lihat semua rekaman <ArrowRight /></Link>
-              <a className="text-link" href={YOUTUBE_CHANNEL_URL} target="_blank" rel="noopener">Channel YouTube SWE Growth</a>
+              <Link className="btn btn-ghost" to="/rekaman">
+                Lihat semua rekaman <ArrowRight />
+              </Link>
+              <a className="text-link" href={YOUTUBE_CHANNEL_URL} target="_blank" rel="noopener">
+                Channel YouTube SWE Growth
+              </a>
             </div>
           </div>
         </section>
@@ -326,18 +375,28 @@ export default function Home({ loaderData: { activities, recordings, external, n
             </div>
             {recCategories.length > 1 && (
               <div className="rec-tabs home-rec-tabs" role="group" aria-label="Kategori rekomendasi">
-                <button type="button" aria-pressed={!recCategory} onClick={() => setRecCategory(null)}>Semua</button>
+                <button type="button" aria-pressed={!recCategory} onClick={() => setRecCategory(null)}>
+                  Semua
+                </button>
                 {recCategories.map((c) => (
-                  <button key={c.id} type="button" aria-pressed={recCategory === c.id} onClick={() => setRecCategory(c.id)}>{c.label}</button>
+                  <button key={c.id} type="button" aria-pressed={recCategory === c.id} onClick={() => setRecCategory(c.id)}>
+                    {c.label}
+                  </button>
                 ))}
               </div>
             )}
             <ul className="rec-grid">
-              {featured.map((r) => <RecommendationCard key={r.id} r={r} />)}
+              {featured.map((r) => (
+                <RecommendationCard key={r.id} r={r} />
+              ))}
             </ul>
             <div className="home-rec-more">
-              <Link className="btn btn-ghost" to={directoryPath(recCategory ?? undefined)}>Lihat semua rekomendasi <ArrowRight /></Link>
-              <Link className="text-link" to={SUBMIT_PATH}>Punya rekomendasi? Kirim ke kita</Link>
+              <Link className="btn btn-ghost" to={directoryPath(recCategory ?? undefined)}>
+                Lihat semua rekomendasi <ArrowRight />
+              </Link>
+              <Link className="text-link" to={SUBMIT_PATH}>
+                Punya rekomendasi? Kirim ke kita
+              </Link>
             </div>
           </div>
         </section>
@@ -361,22 +420,27 @@ export default function Home({ loaderData: { activities, recordings, external, n
                   <div className="contrib-main">
                     <div className="contrib-title">
                       {/* Seluruh baris bisa diklik lewat link judul; link pembuat ada di atasnya. */}
-                      <h3><a className="contrib-link" href={c.url} target="_blank" rel="noopener">{c.title}</a></h3>
+                      <h3>
+                        <a className="contrib-link" href={c.url} target="_blank" rel="noopener">
+                          {c.title}
+                        </a>
+                      </h3>
                       {c.category && <span className="chip">{c.category}</span>}
                     </div>
                     {c.description && <p>{c.description}</p>}
-                    {c.maker_name && (
-                      c.maker_handle ? (
+                    {c.maker_name &&
+                      (c.maker_handle ? (
                         <Link className="contrib-maker" to={`/member/${c.maker_handle}`}>
                           <Avatar name={c.maker_name} src={c.maker_avatar_url} size={20} />
                           oleh {c.maker_name}
                         </Link>
                       ) : (
                         <span className="contrib-maker">oleh {c.maker_name}</span>
-                      )
-                    )}
+                      ))}
                   </div>
-                  <span className="contrib-go" aria-hidden="true"><ArrowUpRight /></span>
+                  <span className="contrib-go" aria-hidden="true">
+                    <ArrowUpRight />
+                  </span>
                 </li>
               ))}
             </ul>
@@ -387,14 +451,19 @@ export default function Home({ loaderData: { activities, recordings, external, n
       <section className="home-section">
         <div className="wrap narrow-wrap">
           <div className="home-closing on-teal">
-            <h2>Buat siapa aja yang mau <span className="hl">survive dan bertumbuh</span> di software engineering.</h2>
+            <h2>
+              Buat siapa aja yang mau <span className="hl">survive dan bertumbuh</span> di software engineering.
+            </h2>
             {joinButton}
             <div className="home-social">
               <span>Ikuti juga</span>
               <ul>
                 {SOCIALS.filter((s) => s.name !== 'Instagram').map((s) => (
                   <li key={s.name}>
-                    <a href={s.url} target="_blank" rel="noopener">{s.icon}{s.name}</a>
+                    <a href={s.url} target="_blank" rel="noopener">
+                      {s.icon}
+                      {s.name}
+                    </a>
                   </li>
                 ))}
               </ul>

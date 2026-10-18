@@ -62,8 +62,7 @@ export const wibDayParts = (ts: string) => {
 export const isoDate = (d: Date) => d.toISOString().slice(0, 10);
 
 /** Events are day-granular, so "upcoming" holds until the end of the event day. */
-export const isUpcoming = (d: Date, now = new Date()) =>
-  d.getTime() + 24 * 60 * 60 * 1000 > now.getTime();
+export const isUpcoming = (d: Date, now = new Date()) => d.getTime() + 24 * 60 * 60 * 1000 > now.getTime();
 
 export const isUpcomingDay = (day: string, now = new Date()) => isUpcoming(new Date(day), now);
 

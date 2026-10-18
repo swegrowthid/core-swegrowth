@@ -12,8 +12,14 @@ export const TOPICS = [
   { name: 'Managerial', body: 'Jadi tech lead atau EM. Naik level butuh skill ngurus orang, bukan cuma kode.' },
   { name: 'Karier & loker', body: 'Loker, referral, persiapan interview. Pasar kerja lagi ketat.' },
   { name: 'System design', body: 'Bedah cara sistem besar dibangun. Ini tolok ukur buat naik ke senior.' },
-  { name: 'Personal project', body: 'Side project dari iseng sampai jadi produk. Cara paling cepet buat belajar hal baru sekaligus nambah portofolio.' },
-  { name: 'Buku', body: 'Rekomendasi dan obrolan buku, dari engineering sampai pengembangan diri. Biar belajarnya nggak cuma dari thread.' },
+  {
+    name: 'Personal project',
+    body: 'Side project dari iseng sampai jadi produk. Cara paling cepet buat belajar hal baru sekaligus nambah portofolio.',
+  },
+  {
+    name: 'Buku',
+    body: 'Rekomendasi dan obrolan buku, dari engineering sampai pengembangan diri. Biar belajarnya nggak cuma dari thread.',
+  },
   { name: 'Hidup sehat', body: 'Olahraga, tidur, dan jaga mental biar nggak burnout. Seharian kerja di depan layar ada harganya.' },
 ];
 

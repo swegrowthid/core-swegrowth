@@ -9,8 +9,7 @@ export const val = (form: FormData, name: string) => String(form.get(name) ?? ''
 /** <input type="datetime-local"> diisi dalam WIB. */
 export const wibToIso = (local: string) => (local ? new Date(`${local}:00+07:00`).toISOString() : null);
 /** Kebalikan wibToIso, untuk mengisi form edit. */
-export const isoToWib = (iso: string | null) =>
-  iso ? new Date(Date.parse(iso) + 7 * 60 * 60 * 1000).toISOString().slice(0, 16) : '';
+export const isoToWib = (iso: string | null) => (iso ? new Date(Date.parse(iso) + 7 * 60 * 60 * 1000).toISOString().slice(0, 16) : '');
 
 /** Tanggal hari ini menurut WIB, yyyy-mm-dd. */
 export const todayWib = () => isoDate(new Date(Date.now() + 7 * 60 * 60 * 1000));
@@ -27,7 +26,10 @@ export function useMutation() {
     const { error } = await fn();
     setBusy(false);
     if (error) {
-      setMessage({ kind: 'error', text: error.code === '23505' ? 'Sudah ada data yang sama (slug atau link). Ganti dulu, ya.' : `Belum tersimpan: ${error.message}` });
+      setMessage({
+        kind: 'error',
+        text: error.code === '23505' ? 'Sudah ada data yang sama (slug atau link). Ganti dulu, ya.' : `Belum tersimpan: ${error.message}`,
+      });
       return false;
     }
     setMessage({ kind: 'success', text: success });
@@ -39,10 +41,25 @@ export function useMutation() {
   return { busy, run, flash };
 }
 
-export function Field({ id, label, optional, hint, children }: { id: string; label: string; optional?: boolean; hint?: string; children: ReactNode }) {
+export function Field({
+  id,
+  label,
+  optional,
+  hint,
+  children,
+}: {
+  id: string;
+  label: string;
+  optional?: boolean;
+  hint?: string;
+  children: ReactNode;
+}) {
   return (
     <div className="field">
-      <label htmlFor={id}>{label}{optional && <small> (opsional)</small>}</label>
+      <label htmlFor={id}>
+        {label}
+        {optional && <small> (opsional)</small>}
+      </label>
       {children}
       {hint && <small className="field-hint">{hint}</small>}
     </div>

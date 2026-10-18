@@ -27,7 +27,9 @@ export function recordingsFrom(activities: Activity[]): Recording[] {
   });
   const fromArchive = PAST_ACTIVITIES.flatMap((a) => {
     const videoId = youtubeId(a.youtube);
-    return videoId ? [{ key: `${a.month}-${a.title}`, title: a.title, videoId, date: `${a.month}-01`, monthOnly: true, eventPath: null }] : [];
+    return videoId
+      ? [{ key: `${a.month}-${a.title}`, title: a.title, videoId, date: `${a.month}-01`, monthOnly: true, eventPath: null }]
+      : [];
   });
   // Video yang sama bisa tercatat di event dan arsip; simpan yang dari event.
   const seen = new Set<string>();

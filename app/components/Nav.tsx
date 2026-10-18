@@ -27,10 +27,13 @@ export function Nav() {
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];
 
-  useEffect(() => {
+  // Tutup menu setiap pindah halaman (tanpa effect: state disesuaikan saat render).
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
     setOpen(false);
     setSubOpen(null);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!open && !subOpen) return;
@@ -55,7 +58,9 @@ export function Nav() {
       <div className="wrap nav-in">
         <Link className="brand" to="/" aria-label="SWE Growth Community">
           <img className="brand-logo" src="/assets/swe-growth-logo.png" alt="SWE Growth Community" width="32" height="32" />
-          <span className="b-name"><b>SWE Growth</b></span>
+          <span className="b-name">
+            <b>SWE Growth</b>
+          </span>
         </Link>
         <div className="nav-links" id="navLinks">
           {links.map((l) =>
@@ -68,7 +73,17 @@ export function Nav() {
                   onClick={() => setSubOpen((v) => (v === l.label ? null : l.label))}
                 >
                   {l.label}
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
                 </button>
                 <div className="nav-sub">
                   {l.items.map((i) => (
@@ -80,7 +95,9 @@ export function Nav() {
                 </div>
               </div>
             ) : (
-              <NavLink key={l.to} className="lk" to={l.to}>{l.label}</NavLink>
+              <NavLink key={l.to} className="lk" to={l.to}>
+                {l.label}
+              </NavLink>
             ),
           )}
         </div>
@@ -92,8 +109,12 @@ export function Nav() {
             <AccountMenu />
           ) : (
             <>
-              <Link className="btn btn-ghost nav-login" to="/masuk?next=/portal">Masuk</Link>
-              <Link className="btn btn-primary" to="/masuk?next=/portal">Daftar</Link>
+              <Link className="btn btn-ghost nav-login" to="/masuk?next=/portal">
+                Masuk
+              </Link>
+              <Link className="btn btn-primary" to="/masuk?next=/portal">
+                Daftar
+              </Link>
             </>
           )}
           <button
@@ -107,8 +128,28 @@ export function Nav() {
               setOpen((v) => !v);
             }}
           >
-            <svg className="ic-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
-            <svg className="ic-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            <svg
+              className="ic-open"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+            <svg
+              className="ic-close"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M6 6l12 12M18 6L6 18" />
+            </svg>
           </button>
         </div>
       </div>

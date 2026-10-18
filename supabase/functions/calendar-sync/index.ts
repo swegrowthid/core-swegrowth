@@ -119,11 +119,14 @@ Deno.serve(async (req) => {
   if (!a) return reply(404, { error: 'activity_not_found' });
 
   const saveLink = (event: GoogleEvent | null) =>
-    db.from('activities').update({
-      google_event_id: event?.id ?? null,
-      google_event_url: event?.htmlLink ?? null,
-      calendar_synced_at: new Date().toISOString(),
-    }).eq('id', a.id);
+    db
+      .from('activities')
+      .update({
+        google_event_id: event?.id ?? null,
+        google_event_url: event?.htmlLink ?? null,
+        calendar_synced_at: new Date().toISOString(),
+      })
+      .eq('id', a.id);
 
   try {
     const token = await googleToken();
@@ -146,7 +149,9 @@ Deno.serve(async (req) => {
       meetingUrl && `Link meeting: <a href="${meetingUrl}">${meetingUrl}</a>`,
       `Detail & pendaftaranmu: <a href="${page}/terdaftar">${page}/terdaftar</a>`,
       'SWE Growth — komunitas software engineer Indonesia',
-    ].filter(Boolean).join('<br><br>');
+    ]
+      .filter(Boolean)
+      .join('<br><br>');
     // Event berulang: satu event Google berpola; tamu ikut semua sesi.
     const rule = recurrenceRule(a.recurrence, a.recurrence_until);
     const details = {

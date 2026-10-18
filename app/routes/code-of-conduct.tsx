@@ -2,7 +2,10 @@ import type { Route } from './+types/code-of-conduct';
 import { pageMeta } from '~/lib/site';
 
 export const meta: Route.MetaFunction = () =>
-  pageMeta('Code of Conduct — SWE Growth', 'Nilai, aturan interaksi, dan batas aman yang kita jaga bersama di komunitas Software Engineer Growth.');
+  pageMeta(
+    'Code of Conduct — SWE Growth',
+    'Nilai, aturan interaksi, dan batas aman yang kita jaga bersama di komunitas Software Engineer Growth.',
+  );
 
 const toc = [
   { id: 'context', label: 'Community Context' },
@@ -174,8 +177,9 @@ export default function CodeOfConduct() {
       <section className="block">
         <div className="wrap">
           <h1 className="page-title">Code of Conduct</h1>
-          <p className="muted" style={{ maxWidth: '68ch', marginBottom: 32 }}>
-            Nilai, aturan interaksi, dan batas aman yang kita jaga bersama di semua ruang SWE Growth: grup WhatsApp, kegiatan, dan portal member.
+          <p className="muted measure-68 mb-32">
+            Nilai, aturan interaksi, dan batas aman yang kita jaga bersama di semua ruang SWE Growth: grup WhatsApp, kegiatan, dan portal
+            member.
           </p>
         </div>
         <div className="wrap coc-grid">
@@ -183,7 +187,9 @@ export default function CodeOfConduct() {
             <p className="mono toc-lbl">Daftar Isi</p>
             <ul>
               {toc.map((t) => (
-                <li key={t.id}><a href={`#${t.id}`}>{t.label}</a></li>
+                <li key={t.id}>
+                  <a href={`#${t.id}`}>{t.label}</a>
+                </li>
               ))}
             </ul>
           </nav>

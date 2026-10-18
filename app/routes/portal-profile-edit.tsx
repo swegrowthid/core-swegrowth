@@ -20,10 +20,14 @@ export default function PortalProfileEdit({ loaderData: { profile, email } }: Ro
   return (
     <>
       <PortalHeader />
-      <section className="block" style={{ paddingTop: 8 }}>
+      <section className="block tight-top">
         <div className="wrap narrow-wrap">
-          <Link className="back" to="/portal/profil">← Profil</Link>
-          <p className="muted" style={{ marginBottom: 18 }}>Email akun: {email}. Profil tampil publik, kecuali nomor WhatsApp dan email yang hanya terlihat oleh kamu dan admin.</p>
+          <Link className="back" to="/portal/profil">
+            ← Profil
+          </Link>
+          <p className="muted mb-18">
+            Email akun: {email}. Profil tampil publik, kecuali nomor WhatsApp dan email yang hanya terlihat oleh kamu dan admin.
+          </p>
           <ProfileForm
             profile={profile}
             submitLabel="Simpan profil"
