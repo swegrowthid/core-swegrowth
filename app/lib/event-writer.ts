@@ -58,9 +58,14 @@ export const writeCaption = (event: WriterEvent, notes: string, language: Writer
   call<{ captions: string[] }>({ kind: 'caption', event, notes, language, platform });
 
 export const writerErrorText = (r: Result<unknown>) =>
-  r.status === 'not_configured' ? 'Gemini belum disambungkan: isi GEMINI_API_KEY di Environment variables Netlify lalu deploy ulang.'
-  : r.error === 'admin_only' ? 'Khusus admin.'
-  : r.error === 'login_required' ? 'Sesi login habis, masuk lagi dulu.'
-  : r.error === 'title_or_notes_required' ? 'Isi judul atau catatan dulu.'
-  : r.error || r.status === 'error' ? `Gagal: ${r.detail ?? r.error}`
-  : null;
+  r.status === 'not_configured'
+    ? 'Gemini belum disambungkan: isi GEMINI_API_KEY di Environment variables Netlify lalu deploy ulang.'
+    : r.error === 'admin_only'
+      ? 'Khusus admin.'
+      : r.error === 'login_required'
+        ? 'Sesi login habis, masuk lagi dulu.'
+        : r.error === 'title_or_notes_required'
+          ? 'Isi judul atau catatan dulu.'
+          : r.error || r.status === 'error'
+            ? `Gagal: ${r.detail ?? r.error}`
+            : null;

@@ -12,28 +12,28 @@ Prinsip isi: tidak ada data contoh atau angka karangan. Bagian yang datanya koso
 
 ## Halaman
 
-| URL | Akses | Isi |
-| --- | --- | --- |
-| `/` | publik | Penjelasan singkat, komunitas WA (gratis) vs portal member, agenda terdekat |
-| `/tentang` | publik | Cerita & tujuan SWE Growth (dulu di halaman goakal) |
-| `/agenda` | publik | Daftar kegiatan komunitas mendatang (filter per subgrup `?oleh=slug`) + dokumentasi foto kegiatan |
-| `/agenda/:slug` | publik | Detail kegiatan (link yang dibagikan): biaya (Gratis/harga), jadwal, tombol Daftar |
-| `/agenda/:slug/daftar` | login | Form pendaftaran: data peserta dari profil + pertanyaan khusus event + setuju CoC |
-| `/agenda/:slug/terdaftar` | login (peserta) | Konfirmasi: kode pendaftaran, kalender, link meeting (terbuka 1 jam sebelum acara), batal |
-| `/onboarding` | login | Kenalan (motivasi) → isi profil → link grup WhatsApp |
-| `/code-of-conduct` | publik | Aturan komunitas |
-| `/privasi` | publik | Kebijakan privasi (dipakai juga di OAuth consent Google). Perbarui saat ada data/layanan baru |
-| `/term-of-service` | publik | Syarat layanan |
-| `/member/:handle` | publik | Profil publik member (username atau id) + "Member sejak". Tanpa WA, email, dan jawaban kenalan |
-| `/masuk` | publik | Login Google (satu-satunya metode login) |
-| `/menunggu` | login | Status membership: cara bayar & kabari admin |
-| `/portal` | member aktif | Kegiatan yang diikuti, agenda, grup WhatsApp member |
-| `/portal/profil` | login | Profil member + link profil publik untuk dibagikan |
-| `/portal/membership` | login | Membership & verified member: **segera hadir** (`MEMBERSHIP_LIVE` di `app/lib/site.ts`) |
-| `/portal/profil/edit` | login | Form profil member |
-| `/admin` | admin | Data member (cari + unduh CSV), aktivasi membership, event, subgrup penyelenggara, grup WhatsApp |
-| `/admin/member/:id` | admin | Profil lengkap satu member + kegiatan yang diikuti |
-| `/admin/event/:id` | admin | Editor event (urutan = halaman publik): info + subgrup penyelenggara, pembicara (opsional) + foto LinkedIn, jadwal (bisa berulang), detail, pendaftaran, langkah setelah daftar, foto dokumentasi; statistik & pendaftar (CSV). `/admin/event/baru` untuk event baru |
+| URL                       | Akses           | Isi                                                                                                                                                                                                                                                                  |
+| ------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                       | publik          | Penjelasan singkat, komunitas WA (gratis) vs portal member, agenda terdekat                                                                                                                                                                                          |
+| `/tentang`                | publik          | Cerita & tujuan SWE Growth (dulu di halaman goakal)                                                                                                                                                                                                                  |
+| `/agenda`                 | publik          | Daftar kegiatan komunitas mendatang (filter per subgrup `?oleh=slug`) + dokumentasi foto kegiatan                                                                                                                                                                    |
+| `/agenda/:slug`           | publik          | Detail kegiatan (link yang dibagikan): biaya (Gratis/harga), jadwal, tombol Daftar                                                                                                                                                                                   |
+| `/agenda/:slug/daftar`    | login           | Form pendaftaran: data peserta dari profil + pertanyaan khusus event + setuju CoC                                                                                                                                                                                    |
+| `/agenda/:slug/terdaftar` | login (peserta) | Konfirmasi: kode pendaftaran, kalender, link meeting (terbuka 1 jam sebelum acara), batal                                                                                                                                                                            |
+| `/onboarding`             | login           | Kenalan (motivasi) → isi profil → link grup WhatsApp                                                                                                                                                                                                                 |
+| `/code-of-conduct`        | publik          | Aturan komunitas                                                                                                                                                                                                                                                     |
+| `/privasi`                | publik          | Kebijakan privasi (dipakai juga di OAuth consent Google). Perbarui saat ada data/layanan baru                                                                                                                                                                        |
+| `/term-of-service`        | publik          | Syarat layanan                                                                                                                                                                                                                                                       |
+| `/member/:handle`         | publik          | Profil publik member (username atau id) + "Member sejak". Tanpa WA, email, dan jawaban kenalan                                                                                                                                                                       |
+| `/masuk`                  | publik          | Login Google (satu-satunya metode login)                                                                                                                                                                                                                             |
+| `/menunggu`               | login           | Status membership: cara bayar & kabari admin                                                                                                                                                                                                                         |
+| `/portal`                 | member aktif    | Kegiatan yang diikuti, agenda, grup WhatsApp member                                                                                                                                                                                                                  |
+| `/portal/profil`          | login           | Profil member + link profil publik untuk dibagikan                                                                                                                                                                                                                   |
+| `/portal/membership`      | login           | Membership & verified member: **segera hadir** (`MEMBERSHIP_LIVE` di `app/lib/site.ts`)                                                                                                                                                                              |
+| `/portal/profil/edit`     | login           | Form profil member                                                                                                                                                                                                                                                   |
+| `/admin`                  | admin           | Data member (cari + unduh CSV), aktivasi membership, event, subgrup penyelenggara, grup WhatsApp                                                                                                                                                                     |
+| `/admin/member/:id`       | admin           | Profil lengkap satu member + kegiatan yang diikuti                                                                                                                                                                                                                   |
+| `/admin/event/:id`        | admin           | Editor event (urutan = halaman publik): info + subgrup penyelenggara, pembicara (opsional) + foto LinkedIn, jadwal (bisa berulang), detail, pendaftaran, langkah setelah daftar, foto dokumentasi; statistik & pendaftar (CSV). `/admin/event/baru` untuk event baru |
 
 Halaman publik di-prerender saat build; sisanya SPA lewat `__spa-fallback.html` (lihat `netlify.toml`). URL lama
 (`/events`, `/blog`, `/jobs`, `/videos`, `/mentorship`, `/courses`, `/dashboard`, `/u/*`) diarahkan 301.
@@ -50,6 +50,8 @@ Butuh Node ≥ 22.22 (lihat `.nvmrc`).
 cp .env.example .env   # isi VITE_SUPABASE_URL & VITE_SUPABASE_PUBLISHABLE_KEY
 npm install
 npm run dev        # http://localhost:4321
+npm run lint       # ESLint
+npm test           # Vitest
 npm run typecheck
 npm run build      # output ke build/client
 ```
@@ -58,7 +60,7 @@ npm run build      # output ke build/client
 
 1. Jalankan migration di `supabase/migrations/` **berurutan sesuai nama file** (SQL editor atau `supabase db push`).
    Semuanya aman dijalankan ulang.
-2. **Auth → Providers**: hanya **Google** yang aktif (matikan Email), sign-up diizinkan. Opsi *Skip nonce checks* harus mati.
+2. **Auth → Providers**: hanya **Google** yang aktif (matikan Email), sign-up diizinkan. Opsi _Skip nonce checks_ harus mati.
 3. **Auth → URL Configuration**: Site URL `https://swegrowth.id`; Redirect URLs `https://swegrowth.id/auth/callback`
    dan `http://localhost:4321/auth/callback`.
 4. **Admin**: tambahkan email ke tabel `activity_admin_emails`.
@@ -67,6 +69,8 @@ npm run build      # output ke build/client
 6. **Rekaman YouTube**: migration `20261021000000_youtube_recording.sql` menambah kolom `activities.youtube_url`.
    Admin menempel link video di bagian Dokumentasi; rekaman tampil di galeri `/rekaman` dan beranda, diputar di halaman
    event, dan ditandai di Kegiatan lalu. Arsip lama (`app/lib/past-activities.ts`) ikut tampil kalau diberi `youtube`.
+   Video terbaru dari channel YouTube (maks. 15, dari feed channel lewat edge function `/api/youtube-feed`, cache sejam)
+   juga otomatis masuk galeri tanpa perlu diinput.
 
 ### Event komunitas
 
@@ -83,11 +87,11 @@ seluruh sesi, dan event Google Calendar dibuat dengan pola ulang yang sama.
 lalu kembali ke `/auth/google`, yang meneruskan ID token ke Supabase lewat `signInWithIdToken`. Jadi layar
 dan email notifikasi Google menyebut `swegrowth.id`, bukan `<project-ref>.supabase.co`. Session tetap dari Supabase.
 
-1. Google Cloud Console → *Credentials* → OAuth client (Web) yang dipakai provider Google di Supabase →
+1. Google Cloud Console → _Credentials_ → OAuth client (Web) yang dipakai provider Google di Supabase →
    **Authorized redirect URIs**: `https://swegrowth.id/auth/google` dan `http://localhost:4321/auth/google`.
    (Sengaja tanpa popup Google Identity Services: di Chrome mobile popup-nya sering tidak kembali ke halaman.)
 2. Isi client ID itu ke env `VITE_GOOGLE_CLIENT_ID` (Netlify + `.env`), lalu deploy ulang.
-3. Opsional: *OAuth consent screen → Branding* (nama, logo, homepage, `/privasi`, `/term-of-service`, authorized
+3. Opsional: _OAuth consent screen → Branding_ (nama, logo, homepage, `/privasi`, `/term-of-service`, authorized
    domain `swegrowth.id`) lalu ajukan verifikasi, supaya Google menampilkan nama "SWE Growth".
 
 Tanpa client ID, tombolnya jatuh ke redirect OAuth Supabase (`/auth/callback`),
@@ -103,17 +107,17 @@ undangan, perubahan jadwal, dan pembatalan. Tamu tidak bisa melihat tamu lain. S
 **Sinkronkan sekarang** di editor event untuk sinkron ulang / mengundang peserta lama). Sebelum langkah di bawah
 selesai, fungsi ini membalas `not_configured` dan pendaftaran tetap jalan normal.
 
-1. **Google Cloud Console** → buat project → *APIs & Services → Library* → aktifkan **Google Calendar API**.
-2. *OAuth consent screen* → **External**, isi nama app & email → tambahkan scope
-   `https://www.googleapis.com/auth/calendar.events` → **Publish app** (status *In production*). Kalau dibiarkan
-   *Testing*, refresh token kedaluwarsa setelah 7 hari. Peringatan "app belum diverifikasi" saat login aman dilewati
+1. **Google Cloud Console** → buat project → _APIs & Services → Library_ → aktifkan **Google Calendar API**.
+2. _OAuth consent screen_ → **External**, isi nama app & email → tambahkan scope
+   `https://www.googleapis.com/auth/calendar.events` → **Publish app** (status _In production_). Kalau dibiarkan
+   _Testing_, refresh token kedaluwarsa setelah 7 hari. Peringatan "app belum diverifikasi" saat login aman dilewati
    karena hanya akun SWE Growth yang memberi izin.
-3. *Credentials → Create credentials → OAuth client ID* → **Web application**, Authorized redirect URI:
+3. _Credentials → Create credentials → OAuth client ID_ → **Web application**, Authorized redirect URI:
    `https://developers.google.com/oauthplayground`.
-4. Buka [OAuth Playground](https://developers.google.com/oauthplayground) → ikon ⚙️ → centang *Use your own OAuth
-   credentials* → isi client ID & secret → di kolom scope ketik `https://www.googleapis.com/auth/calendar.events` →
+4. Buka [OAuth Playground](https://developers.google.com/oauthplayground) → ikon ⚙️ → centang _Use your own OAuth
+   credentials_ → isi client ID & secret → di kolom scope ketik `https://www.googleapis.com/auth/calendar.events` →
    **Authorize APIs** → login dengan **Gmail SWE Growth** → **Exchange authorization code for tokens** → salin
-   *Refresh token*.
+   _Refresh token_.
 5. Simpan sebagai secret Supabase dan deploy fungsinya:
 
    ```bash
@@ -123,6 +127,7 @@ selesai, fungsi ini membalas `not_configured` dan pendaftaran tetap jalan normal
    ```
 
    Opsional: `GOOGLE_CALENDAR_ID` (default kalender utama) dan `SITE_URL` (default `https://swegrowth.id`).
+
 6. Jalankan migration `20261014000000_google_calendar.sql`, lalu coba dulu di event tes: daftar dengan email kedua,
    cek undangan masuk, ubah jam di editor, cek email perubahan, lalu batal daftar.
 
@@ -134,8 +139,8 @@ memakai isi form saat ini plus catatan opsional dari admin, lewat Netlify edge f
 `netlify/edge-functions/event-writer.ts` (`/api/event-writer`). API key Gemini hanya ada di server, dan fungsi ini
 menolak siapa pun yang bukan admin (`is_admin()`).
 
-Setup: buat API key di [Google AI Studio](https://aistudio.google.com/apikey), lalu di Netlify → *Site configuration →
-Environment variables* tambahkan `GEMINI_API_KEY` (opsional `GEMINI_MODEL`, default `gemini-2.5-flash`) dan deploy
+Setup: buat API key di [Google AI Studio](https://aistudio.google.com/apikey), lalu di Netlify → _Site configuration →
+Environment variables_ tambahkan `GEMINI_API_KEY` (opsional `GEMINI_MODEL`, default `gemini-2.5-flash`) dan deploy
 ulang. Saat `npm run dev` biasa endpoint ini tidak ada; pakai `netlify dev` untuk mencobanya secara lokal.
 
 ## Konfigurasi di `app/lib/site.ts`

@@ -36,9 +36,11 @@ export function ProfileView({ profile: p, actions }: Props) {
           {career.length > 0 && <p className="muted">{career.join(' · ')}</p>}
           <span className="chip yellow member-since">{memberSince(p.created_at)}</span>
           {links.length > 0 && (
-            <div className="inline-actions" style={{ marginTop: 12 }}>
+            <div className="inline-actions mt-12">
               {links.map((l) => (
-                <a key={l.label} className="btn btn-ghost sm" href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a>
+                <a key={l.label} className="btn btn-ghost sm" href={l.href} target="_blank" rel="noopener noreferrer">
+                  {l.label}
+                </a>
               ))}
             </div>
           )}
@@ -48,13 +50,25 @@ export function ProfileView({ profile: p, actions }: Props) {
 
       {hasContact && (
         <div className="panel">
-          <div className="panel-head"><h2>Kontak</h2><span className="muted">privat · hanya kamu & admin</span></div>
+          <div className="panel-head">
+            <h2>Kontak</h2>
+            <span className="muted">privat · hanya kamu & admin</span>
+          </div>
           <dl className="facts">
-            {p.email && <div><dt>Email</dt><dd>{p.email}</dd></div>}
+            {p.email && (
+              <div>
+                <dt>Email</dt>
+                <dd>{p.email}</dd>
+              </div>
+            )}
             {p.whatsapp && (
               <div>
                 <dt>WhatsApp</dt>
-                <dd><a className="text-link" href={`https://wa.me/${waNumber(p.whatsapp)}`} target="_blank" rel="noopener">{p.whatsapp}</a></dd>
+                <dd>
+                  <a className="text-link" href={`https://wa.me/${waNumber(p.whatsapp)}`} target="_blank" rel="noopener">
+                    {p.whatsapp}
+                  </a>
+                </dd>
               </div>
             )}
           </dl>
@@ -63,8 +77,14 @@ export function ProfileView({ profile: p, actions }: Props) {
 
       {p.bio && (
         <div className="panel">
-          <div className="panel-head"><h2>Tentang</h2></div>
-          <div className="prose">{p.bio.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}</div>
+          <div className="panel-head">
+            <h2>Tentang</h2>
+          </div>
+          <div className="prose">
+            {p.bio.split(/\n{2,}/).map((para, i) => (
+              <p key={i}>{para}</p>
+            ))}
+          </div>
         </div>
       )}
 
@@ -77,13 +97,17 @@ export function ProfileView({ profile: p, actions }: Props) {
 
       {experiences.length > 0 && (
         <div className="panel">
-          <div className="panel-head"><h2>Pengalaman</h2></div>
+          <div className="panel-head">
+            <h2>Pengalaman</h2>
+          </div>
           <ul className="rows experience-list">
             {experiences.map((e, i) => (
               <li key={i}>
                 <div className="row-main">
                   <strong>{e.role}</strong>
-                  <span>{e.company} · {experiencePeriod(e)}</span>
+                  <span>
+                    {e.company} · {experiencePeriod(e)}
+                  </span>
                   {e.description && <p>{e.description}</p>}
                 </div>
               </li>
@@ -99,7 +123,13 @@ function TagGroup({ title, tags }: { title: string; tags: string[] }) {
   return (
     <div className="tag-group">
       <h3>{title}</h3>
-      <div className="tags">{tags.map((t) => <span key={t} className="chip">{t}</span>)}</div>
+      <div className="tags">
+        {tags.map((t) => (
+          <span key={t} className="chip">
+            {t}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

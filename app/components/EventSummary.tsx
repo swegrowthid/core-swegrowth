@@ -7,9 +7,20 @@ export function EventSummary({ activity: a }: { activity: Activity }) {
   const parts = a.starts_at ? wibDayParts(a.starts_at) : null;
   return (
     <div className="event-summary">
-      <span className="date-tile">{parts ? <><b>{parts.day}</b><span>{parts.month}</span></> : <span>TBA</span>}</span>
+      <span className="date-tile">
+        {parts ? (
+          <>
+            <b>{parts.day}</b>
+            <span>{parts.month}</span>
+          </>
+        ) : (
+          <span>TBA</span>
+        )}
+      </span>
       <div className="row-main">
-        <Link className="title" to={activityPath(a)}>{a.title}</Link>
+        <Link className="title" to={activityPath(a)}>
+          {a.title}
+        </Link>
         <span className="event-summary-meta">
           {[a.starts_at ? `${formatWibDate(a.starts_at)}, ${timeRange(a)}` : 'Jadwal menyusul', a.mode, priceLabel(a)]
             .filter(Boolean)

@@ -7,13 +7,24 @@ export function Footer() {
       <div className="wrap foot-in">
         <div className="foot-brand">
           <Link className="brand" to="/">
-            <img className="brand-logo" src="/assets/swe-growth-logo.png" alt="SWE Growth Community" width="32" height="32" loading="lazy" />
-            <span className="b-name"><b>SWE Growth</b></span>
+            <img
+              className="brand-logo"
+              src="/assets/swe-growth-logo.png"
+              alt="SWE Growth Community"
+              width="32"
+              height="32"
+              loading="lazy"
+            />
+            <span className="b-name">
+              <b>SWE Growth</b>
+            </span>
           </Link>
           <div className="foot-note">Komunitas software engineer Indonesia. Bagian dari Ahsan Project.</div>
           <div className="foot-social">
             {SOCIALS.map((s) => (
-              <a key={s.name} href={s.url} target="_blank" rel="noopener" aria-label={s.name}>{s.icon}</a>
+              <a key={s.name} href={s.url} target="_blank" rel="noopener" aria-label={s.name}>
+                {s.icon}
+              </a>
             ))}
           </div>
         </div>

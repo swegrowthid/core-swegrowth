@@ -15,7 +15,9 @@ export async function clientLoader() {
   let saved: { state?: string; nonce?: string; next?: string } = {};
   try {
     saved = JSON.parse(sessionStorage.getItem(GOOGLE_REDIRECT_KEY) ?? '{}');
-  } catch {}
+  } catch {
+    // Isi sessionStorage rusak: anggap tidak ada data tersimpan.
+  }
   sessionStorage.removeItem(GOOGLE_REDIRECT_KEY);
 
   const next = safeNext(saved.next ?? null);

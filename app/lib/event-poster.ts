@@ -77,12 +77,36 @@ function wrap(ctx: Ctx, text: string, maxWidth: number, maxLines: number) {
 
 // Ikon sama dengan components/Icons.tsx (viewBox 24, stroke currentColor).
 type Icon = (ctx: Ctx) => void;
-const path = (d: string): Icon => (ctx) => ctx.stroke(new Path2D(d));
+const path =
+  (d: string): Icon =>
+  (ctx) =>
+    ctx.stroke(new Path2D(d));
 const ICONS: Record<'calendar' | 'clock' | 'repeat' | 'pin', Icon[]> = {
-  calendar: [(ctx) => { ctx.beginPath(); ctx.roundRect(3.5, 5, 17, 15.5, 2.5); ctx.stroke(); }, path('M3.5 10h17M8 3v4M16 3v4')],
-  clock: [(ctx) => { ctx.beginPath(); ctx.arc(12, 12, 8.5, 0, Math.PI * 2); ctx.stroke(); }, path('M12 7.5V12l3 2')],
+  calendar: [
+    (ctx) => {
+      ctx.beginPath();
+      ctx.roundRect(3.5, 5, 17, 15.5, 2.5);
+      ctx.stroke();
+    },
+    path('M3.5 10h17M8 3v4M16 3v4'),
+  ],
+  clock: [
+    (ctx) => {
+      ctx.beginPath();
+      ctx.arc(12, 12, 8.5, 0, Math.PI * 2);
+      ctx.stroke();
+    },
+    path('M12 7.5V12l3 2'),
+  ],
   repeat: [path('M17 2l3 3-3 3'), path('M4 11V9a4 4 0 0 1 4-4h12'), path('M7 22l-3-3 3-3'), path('M20 13v2a4 4 0 0 1-4 4H4')],
-  pin: [path('M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z'), (ctx) => { ctx.beginPath(); ctx.arc(12, 10, 2.4, 0, Math.PI * 2); ctx.stroke(); }],
+  pin: [
+    path('M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z'),
+    (ctx) => {
+      ctx.beginPath();
+      ctx.arc(12, 10, 2.4, 0, Math.PI * 2);
+      ctx.stroke();
+    },
+  ],
 };
 
 function drawIcon(ctx: Ctx, name: keyof typeof ICONS, x: number, y: number, size: number, color: string) {

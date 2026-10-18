@@ -4,9 +4,9 @@ import type { Route } from './+types/onboarding';
 import { CommunityChannels } from '~/components/CommunityChannels';
 import { ProfileForm } from '~/components/ProfileForm';
 import { fetchProfile, requireUser, safeNext, useAuth } from '~/lib/auth';
+import { fetchWhatsappGroups } from '~/lib/community';
 import type { MemberMotivationRow, WhatsappGroupRow } from '~/lib/database.types';
-import { fetchMotivation, MOTIVATION_QUESTIONS } from '~/lib/profile';
-import { supabase } from '~/lib/supabase';
+import { fetchMotivation, MOTIVATION_QUESTIONS, saveMotivation } from '~/lib/profile';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Gabung SWE Growth' }];
 
@@ -45,7 +45,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
 
   return (
     <section className="block">
-      <div className="wrap" style={{ maxWidth: 760 }}>
+      <div className="wrap wrap-760">
         <Steps current={step} />
 
         {step === 'kenalan' && (
@@ -61,20 +61,19 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
         {step === 'profil' && (
           <>
             <h1 className="page-title">Lengkapi profil member</h1>
-            <p className="muted" style={{ marginBottom: 26, maxWidth: '60ch' }}>
+            <p className="muted mb-26 measure-60">
               Setelah profil tersimpan, link komunitas (WhatsApp, Telegram, Discord) langsung muncul. Bagian bertanda (opsional) boleh
               dilengkapi nanti. Profil akan tampil publik; nomor WhatsApp dan email hanya terlihat oleh kamu dan admin. Email akun: {email}.{' '}
-              <button className="link-btn" type="button" onClick={() => goTo('kenalan')}>Ubah jawaban kenalan</button>
+              <button className="link-btn" type="button" onClick={() => goTo('kenalan')}>
+                Ubah jawaban kenalan
+              </button>
             </p>
             <ProfileForm
               profile={profile}
               submitLabel="Simpan & dapatkan link komunitas"
               onSaved={async () => {
-                const [{ data }] = await Promise.all([
-                  supabase().from('whatsapp_groups').select('*').order('sort_order').order('created_at'),
-                  refreshProfile(),
-                ]);
-                setGroups(data ?? []);
+                const [list] = await Promise.all([fetchWhatsappGroups(), refreshProfile()]);
+                setGroups(list);
                 goTo('grup');
               }}
             />
@@ -107,17 +106,14 @@ function MotivationStep({ motivation, onSaved }: { motivation: MemberMotivationR
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const answers = Object.fromEntries(
-      MOTIVATION_QUESTIONS.map((q) => [q.name, String(form.get(q.name) ?? '').trim()]),
-    ) as Record<(typeof MOTIVATION_QUESTIONS)[number]['name'], string>;
+    const answers = Object.fromEntries(MOTIVATION_QUESTIONS.map((q) => [q.name, String(form.get(q.name) ?? '').trim()])) as Record<
+      (typeof MOTIVATION_QUESTIONS)[number]['name'],
+      string
+    >;
 
     setBusy(true);
     setError(null);
-    const db = supabase().from('member_motivations');
-    // Insert dulu; kalau sudah pernah mengisi, perbarui (upsert butuh hak update atas user_id).
-    const { data, error: saveError } = motivation
-      ? await db.update(answers).eq('user_id', motivation.user_id).select().single()
-      : await db.insert(answers).select().single();
+    const { data, error: saveError } = await saveMotivation(motivation?.user_id ?? null, answers);
     setBusy(false);
 
     if (saveError) {
@@ -130,16 +126,16 @@ function MotivationStep({ motivation, onSaved }: { motivation: MemberMotivationR
   return (
     <>
       <h1 className="page-title">Kenalan dulu, yuk</h1>
-      <div className="panel" style={{ marginBottom: 22 }}>
-        <p style={{ marginBottom: 10 }}>
-          SWE Growth adalah komunitas software engineer Indonesia yang fokus bareng-bareng belajar{' '}
-          <strong>career growth</strong>, bukan satu tech stack tertentu. Topiknya seperti Effective Engineer, Going
-          Abroad, sampai System Design Interview.
+      <div className="panel mb-22">
+        <p className="mb-10">
+          SWE Growth adalah komunitas software engineer Indonesia yang fokus bareng-bareng belajar <strong>career growth</strong>, bukan
+          satu tech stack tertentu. Topiknya seperti Effective Engineer, Going Abroad, sampai System Design Interview.
         </p>
         <p className="muted">
-          Jawabanmu di bawah membantu kami menyusun kelas, sharing session, dan program lain sesuai masalah yang
-          teman-teman hadapi.{' '}
-          <Link className="text-link" to="/tentang" target="_blank" rel="noopener">Baca cerita lengkap SWE Growth ↗</Link>
+          Jawabanmu di bawah membantu kami menyusun kelas, sharing session, dan program lain sesuai masalah yang teman-teman hadapi.{' '}
+          <Link className="text-link" to="/tentang" target="_blank" rel="noopener">
+            Baca cerita lengkap SWE Growth ↗
+          </Link>
         </p>
       </div>
 
@@ -147,11 +143,16 @@ function MotivationStep({ motivation, onSaved }: { motivation: MemberMotivationR
         {error && <p className="form-message error">{error}</p>}
         {MOTIVATION_QUESTIONS.map((q) => (
           <div className="field" key={q.name}>
-            <label htmlFor={q.name}>{q.label}{!q.required && <small> (opsional)</small>}</label>
+            <label htmlFor={q.name}>
+              {q.label}
+              {!q.required && <small> (opsional)</small>}
+            </label>
             <textarea id={q.name} name={q.name} rows={3} maxLength={2000} required={q.required} defaultValue={motivation?.[q.name] ?? ''} />
           </div>
         ))}
-        <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? 'Menyimpan…' : 'Lanjut isi profil'}</button>
+        <button className="btn btn-primary" type="submit" disabled={busy}>
+          {busy ? 'Menyimpan…' : 'Lanjut isi profil'}
+        </button>
       </form>
     </>
   );
@@ -161,18 +162,20 @@ function Welcome({ groups, next, name }: { groups: WhatsappGroupRow[]; next: str
   return (
     <>
       <h1 className="page-title">Profil tersimpan. Selamat bergabung, {name.split(' ')[0]}!</h1>
-      <p className="muted" style={{ marginBottom: 22, maxWidth: '58ch' }}>
-        Yuk langsung gabung ke WhatsApp, tempat ngobrol utama yang sudah rame dari awal. Telegram baru dibuka, dan Discord
-        menyusul. Semua link ini juga selalu ada di portal.
+      <p className="muted mb-22 measure-58">
+        Yuk langsung gabung ke WhatsApp, tempat ngobrol utama yang sudah rame dari awal. Telegram baru dibuka, dan Discord menyusul. Semua
+        link ini juga selalu ada di portal.
       </p>
 
-      <div style={{ marginBottom: 22 }}>
+      <div className="mb-22">
         <CommunityChannels />
       </div>
 
       {groups.length > 0 && (
-        <div className="panel" style={{ marginBottom: 22 }}>
-          <div className="panel-head"><h2>Grup per bidang</h2></div>
+        <div className="panel mb-22">
+          <div className="panel-head">
+            <h2>Grup per bidang</h2>
+          </div>
           <ul className="rows">
             {groups.map((g) => (
               <li key={g.id}>
@@ -180,14 +183,18 @@ function Welcome({ groups, next, name }: { groups: WhatsappGroupRow[]; next: str
                   <strong>{g.name}</strong>
                   {g.description && <span>{g.description}</span>}
                 </div>
-                <a className="btn btn-ghost sm" href={g.invite_url} target="_blank" rel="noopener">Gabung</a>
+                <a className="btn btn-ghost sm" href={g.invite_url} target="_blank" rel="noopener">
+                  Gabung
+                </a>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <Link className="btn btn-ghost" to={next}>Lanjut ke portal</Link>
+      <Link className="btn btn-ghost" to={next}>
+        Lanjut ke portal
+      </Link>
     </>
   );
 }

@@ -32,15 +32,23 @@ export function eventFlags(day: string | null, createdAt: string, now: number | 
 }
 
 /** Class untuk <li>: ornamen di kotak tanggal. */
-export const flagClass = ({ soon, fresh }: EventFlags) =>
-  [soon && 'is-soon', fresh && 'is-new'].filter(Boolean).join(' ') || undefined;
+export const flagClass = ({ soon, fresh }: EventFlags) => [soon && 'is-soon', fresh && 'is-new'].filter(Boolean).join(' ') || undefined;
 
 export function EventBadges({ soon, fresh }: EventFlags) {
   if (!soon && !fresh) return null;
   return (
     <span className="event-badges">
-      {soon && <span className="event-badge soon"><i aria-hidden="true" />{soon}</span>}
-      {fresh && <span className="event-badge new"><i aria-hidden="true">✦</i>Baru</span>}
+      {soon && (
+        <span className="event-badge soon">
+          <i aria-hidden="true" />
+          {soon}
+        </span>
+      )}
+      {fresh && (
+        <span className="event-badge new">
+          <i aria-hidden="true">✦</i>Baru
+        </span>
+      )}
     </span>
   );
 }
