@@ -8,7 +8,7 @@
 
 ## Checklist
 
-- [ ] `npm run typecheck` dan `npm run build` lolos
+- [ ] `npm run lint`, `npm run typecheck`, `npm test`, dan `npm run build` lolos
 - [ ] Tidak ada secret, `.env`, atau data pribadi member di diff
 - [ ] Perubahan skema lewat migration baru, RLS aktif, `database.types.ts` diperbarui (kalau ada)
 - [ ] Dokumentasi/README diperbarui (kalau perlu)

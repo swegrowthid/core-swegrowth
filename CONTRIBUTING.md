@@ -29,11 +29,14 @@ database, buat project Supabase gratis sendiri lalu jalankan semua file di `supa
 3. Pastikan lolos sebelum push:
 
    ```bash
+   npm run lint          # ESLint
+   npm run format        # Prettier (format otomatis); CI memakai format:check
    npm run typecheck
+   npm test              # Vitest
    npm run build
    ```
 
-4. Buka pull request ke `develop` dan isi template-nya. CI menjalankan typecheck + build di setiap PR.
+4. Buka pull request ke `develop` dan isi template-nya. CI menjalankan lint, cek format, typecheck, test, dan build di setiap PR.
 5. Semua PR direview maintainer sebelum di-merge. `main` hanya menerima merge dari `develop` saat rilis, dan
    itulah yang ter-deploy ke swegrowth.id.
 
@@ -48,6 +51,8 @@ database, buat project Supabase gratis sendiri lalu jalankan semua file di `supa
   `YYYYMMDDHHMMSS_deskripsi.sql`. Jangan mengedit migration yang sudah di-merge. Tulis migration yang aman
   dijalankan ulang (`if not exists`, `create or replace`, `drop policy if exists`), aktifkan RLS untuk tabel baru,
   dan perbarui `app/lib/database.types.ts`.
+- **Test**: logika murni (jadwal, format, validasi) diberi unit test di sebelah file-nya, mis.
+  `app/lib/activities.test.ts`.
 - **Secret**: tidak ada secret di kode client. Semua env `VITE_*` ikut ke browser.
 
 ## Lisensi

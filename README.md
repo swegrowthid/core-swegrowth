@@ -50,6 +50,8 @@ Butuh Node ≥ 22.22 (lihat `.nvmrc`).
 cp .env.example .env   # isi VITE_SUPABASE_URL & VITE_SUPABASE_PUBLISHABLE_KEY
 npm install
 npm run dev        # http://localhost:4321
+npm run lint       # ESLint
+npm test           # Vitest
 npm run typecheck
 npm run build      # output ke build/client
 ```

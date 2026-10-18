@@ -217,8 +217,12 @@ export async function requireAdmin(request: Request) {
 }
 
 /** Hanya izinkan redirect ke path internal (cegah open redirect lewat ?next=). */
+/**
+ * Hanya path internal. "//x" dan "/\x" ditolak karena browser membacanya sebagai
+ * domain lain (open redirect).
+ */
 export function safeNext(next: string | null, fallback = '/portal') {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : fallback;
+  return next && /^\/(?![/\\])/.test(next) ? next : fallback;
 }
 
 export function displayName(profile: ProfileRow | null, user: User | null) {
