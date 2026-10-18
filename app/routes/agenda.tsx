@@ -21,7 +21,14 @@ const load = async () => {
   ]);
   // Acara dari luar = rekomendasi kategori acara (yang sudah lewat tidak ikut tayang).
   const external = recommendations.filter((r) => r.category === 'acara').sort(byEventDate);
-  return { activities: upcomingSessions(activities), past: pastActivities(activities), groups, external };
+  return {
+    activities: upcomingSessions(activities),
+    past: pastActivities(activities),
+    groups,
+    external,
+    // Penanda "segera"/"baru" dihitung di browser saja supaya HTML prerender tidak basi.
+    now: typeof window !== 'undefined' ? Date.now() : null,
+  };
 };
 
 /** Saat build: snapshot agenda untuk HTML prerender. */
@@ -39,7 +46,7 @@ clientLoader.hydrate = true as const;
  * Tab waktu (?waktu=lalu untuk kegiatan lalu) dan filter penyelenggara
  * (?oleh=slug-subgrup) disimpan di URL supaya bisa dibagikan.
  */
-export default function Agenda({ loaderData: { activities, past, groups, external } }: Route.ComponentProps) {
+export default function Agenda({ loaderData: { activities, past, groups, external, now } }: Route.ComponentProps) {
   const [params, setParams] = useSearchParams();
   const showPast = params.get('waktu') === 'lalu';
   const group = groups.find((g) => g.slug === params.get('oleh')) ?? null;
@@ -107,11 +114,11 @@ export default function Agenda({ loaderData: { activities, past, groups, externa
             )}
           </p>
         ) : (
-          <div className="panel"><AgendaList activities={shown} groups={groups} /></div>
+          <div className="panel"><AgendaList activities={shown} groups={groups} now={now} /></div>
         )}
 
         {/* Acara pihak lain tidak punya subgrup, jadi hanya tampil tanpa filter penyelenggara. */}
-        {!showPast && !group && <ExternalEventList events={external} />}
+        {!showPast && !group && <ExternalEventList events={external} now={now} />}
       </div>
     </section>
   );
@@ -126,7 +133,10 @@ function PastArchive() {
         {PAST_ACTIVITIES.map((a) => (
           <li key={`${a.month}-${a.title}`}>
             <time>{monthFmt.format(new Date(`${a.month}-01T00:00:00`))}</time>
-            {a.title}
+            <span>
+              {a.title}
+              {a.youtube && <> · <a href={a.youtube} target="_blank" rel="noreferrer">tonton rekaman</a></>}
+            </span>
           </li>
         ))}
       </ul>
