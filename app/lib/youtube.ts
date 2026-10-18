@@ -27,7 +27,9 @@ export const youtubeThumb = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefa
 /** Pola untuk input admin dan constraint database (lihat migration youtube_recording). */
 export const YOUTUBE_URL_PATTERN = 'https://(www\\.|m\\.)?(youtube\\.com|youtu\\.be)/.+';
 
-export const YOUTUBE_CHANNEL_ID = 'UCS_PPsVlRw6PX2HEDCBd7lA';
+/** Channel SWE Growth; bisa diganti lewat env VITE_YOUTUBE_CHANNEL_ID (Netlify). */
+export const YOUTUBE_CHANNEL_ID = (import.meta.env.VITE_YOUTUBE_CHANNEL_ID as string | undefined) || 'UCf_Vj2VGiqAdHvqVfHVuU6A';
+export const YOUTUBE_CHANNEL_URL = `https://www.youtube.com/channel/${YOUTUBE_CHANNEL_ID}`;
 const FEED_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_CHANNEL_ID}`;
 
 export type ChannelVideo = { videoId: string; title: string; published: string };
