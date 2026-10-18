@@ -15,7 +15,7 @@ export type Recording = {
   eventPath: string | null;
 };
 
-export const YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@segrowthid';
+export { YOUTUBE_CHANNEL_URL } from './youtube';
 
 /**
  * Video terbaru di channel YouTube + event lalu yang punya youtube_url + arsip
