@@ -34,9 +34,11 @@ database, buat project Supabase gratis sendiri lalu jalankan semua file di `supa
    npm run typecheck
    npm test              # Vitest
    npm run build
+   # Kalau mengubah supabase/migrations atau app/lib/database.types.ts (butuh Postgres kosong + psql):
+   DATABASE_URL=postgres://postgres@localhost:5432/postgres npm run check:db-types
    ```
 
-4. Buka pull request ke `develop` dan isi template-nya. CI menjalankan lint, cek format, typecheck, test, dan build di setiap PR.
+4. Buka pull request ke `develop` dan isi template-nya. CI menjalankan lint, cek format, typecheck, test, build, dan mencocokkan `database.types.ts` dengan migration di setiap PR.
 5. Semua PR direview maintainer sebelum di-merge. `main` hanya menerima merge dari `develop` saat rilis, dan
    itulah yang ter-deploy ke swegrowth.id.
 

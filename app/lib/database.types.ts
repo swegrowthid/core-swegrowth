@@ -1,6 +1,8 @@
-// Ditulis tangan mengikuti supabase/migrations/*.sql.
-// Setelah migration di-apply, regenerate dengan:
-//   npx supabase gen types typescript --project-id <project-ref> > app/lib/database.types.ts
+// Ditulis tangan mengikuti supabase/migrations/*.sql, sengaja lebih spesifik
+// daripada hasil `supabase gen types` (union status, bentuk kolom jsonb).
+// Setiap ubah migration, perbarui tipe Row di sini; CI (npm run check:db-types)
+// menerapkan semua migration ke Postgres kosong dan gagal kalau nama kolom
+// atau nullability-nya tidak cocok.
 
 export type ActivityStatus = 'coming_soon' | 'scheduled' | 'registration_open' | 'full' | 'completed' | 'cancelled';
 
