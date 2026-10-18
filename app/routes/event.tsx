@@ -53,7 +53,12 @@ export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const [stats, organizer] = await Promise.all([
     fetchPublicStats(activity.id),
     activity.organizer_group_id
-      ? supabase().from('community_groups').select('*').eq('id', activity.organizer_group_id).maybeSingle().then((r) => r.data)
+      ? supabase()
+          .from('community_groups')
+          .select('*')
+          .eq('id', activity.organizer_group_id)
+          .maybeSingle()
+          .then((r) => r.data)
       : null,
   ]);
   return { activity, stats, organizer };
@@ -85,7 +90,9 @@ export default function EventPage({ loaderData: { activity: a, stats, organizer 
       <div className="wrap narrow-wrap">
         {/* Hero teal selebar layar (box-shadow + clip-path). */}
         <header className="event-hero on-teal">
-          <Link className="back" to="/agenda">← Agenda</Link>
+          <Link className="back" to="/agenda">
+            ← Agenda
+          </Link>
           <div className="event-chips">
             <span className="chip yellow">{activityStatusLabel[done && a.status !== 'cancelled' ? 'completed' : a.status]}</span>
             <span className="chip price-chip">{priceLabel(a)}</span>
@@ -93,7 +100,12 @@ export default function EventPage({ loaderData: { activity: a, stats, organizer 
           </div>
           <p className="event-organizer">
             Kegiatan komunitas SWE Growth
-            {organizer && <> · diadakan <Link to={`/agenda?oleh=${organizer.slug}`}>{organizer.name}</Link></>}
+            {organizer && (
+              <>
+                {' '}
+                · diadakan <Link to={`/agenda?oleh=${organizer.slug}`}>{organizer.name}</Link>
+              </>
+            )}
           </p>
           <h1 className="event-title">{a.title}</h1>
           {a.summary && <p className="event-summary-text">{a.summary}</p>}
@@ -108,14 +120,22 @@ export default function EventPage({ loaderData: { activity: a, stats, organizer 
             <section className="event-section" id="rekaman">
               <h2>Rekaman</h2>
               <YouTubeEmbed id={recordingId} title={a.title} />
-              <p className="muted"><a href={a.youtube_url!} target="_blank" rel="noreferrer">Tonton di YouTube</a></p>
+              <p className="muted">
+                <a href={a.youtube_url!} target="_blank" rel="noreferrer">
+                  Tonton di YouTube
+                </a>
+              </p>
             </section>
           )}
 
           {(a.highlights ?? []).length > 0 && (
             <section className="event-section highlights">
               <h2>Yang akan dibahas</h2>
-              <ul>{a.highlights.map((h) => <li key={h}>{h}</li>)}</ul>
+              <ul>
+                {a.highlights.map((h) => (
+                  <li key={h}>{h}</li>
+                ))}
+              </ul>
             </section>
           )}
 
@@ -124,7 +144,11 @@ export default function EventPage({ loaderData: { activity: a, stats, organizer 
           {a.description && (
             <section className="event-section">
               <h2>Tentang acara</h2>
-              <div className="prose">{a.description.split(/\n{2,}/).map((para, i) => <p key={i}>{para}</p>)}</div>
+              <div className="prose">
+                {a.description.split(/\n{2,}/).map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+              </div>
             </section>
           )}
 
@@ -142,7 +166,12 @@ export default function EventPage({ loaderData: { activity: a, stats, organizer 
             <h2>{isActiveRegistration(my.mine?.status) ? 'Pendaftaranmu' : done ? 'Pendaftaran' : 'Daftar acara ini'}</h2>
             <p className="event-register-title">{a.title}</p>
             <EventMeta activity={a} place={place} plain />
-            {a.speaker && <p className="muted">Bersama <b>{a.speaker}</b>{a.speaker_title ? `, ${a.speaker_title}` : ''}</p>}
+            {a.speaker && (
+              <p className="muted">
+                Bersama <b>{a.speaker}</b>
+                {a.speaker_title ? `, ${a.speaker_title}` : ''}
+              </p>
+            )}
           </div>
           <RegisterCard activity={a} stats={stats} my={my} />
         </section>
@@ -209,28 +238,45 @@ function QuickCta({ activity: a, stats, my }: { activity: Activity; stats: Stats
   if (isActiveRegistration(my.mine?.status)) {
     return (
       <div className="quick-cta">
-        <Link className="btn btn-primary" to={registeredPath(a)}>Lihat pendaftaranku</Link>
+        <Link className="btn btn-primary" to={registeredPath(a)}>
+          Lihat pendaftaranku
+        </Link>
         <span>✓ {my.mine!.status === 'confirmed' ? 'Kamu sudah terdaftar' : 'Kamu ada di waitlist'}</span>
       </div>
     );
   }
 
   const label =
-    a.status === 'coming_soon' ? (my.mine?.following ? 'Kamu akan dikabari' : 'Ingatkan aku ↓')
-    : canRegister(a) && !isPaid(a) ? (a.status === 'full' ? 'Daftar waitlist ↓' : 'Daftar sekarang ↓')
-    : 'Lihat pendaftaran ↓';
+    a.status === 'coming_soon'
+      ? my.mine?.following
+        ? 'Kamu akan dikabari'
+        : 'Ingatkan aku ↓'
+      : canRegister(a) && !isPaid(a)
+        ? a.status === 'full'
+          ? 'Daftar waitlist ↓'
+          : 'Daftar sekarang ↓'
+        : 'Lihat pendaftaran ↓';
   const proof = [priceLabel(a), canRegister(a) && socialProof(a, stats)].filter(Boolean).join(' · ');
 
   return (
     <div className="quick-cta">
-      <button className="btn btn-primary" type="button" onClick={scrollToRegister}>{label}</button>
+      <button className="btn btn-primary" type="button" onClick={scrollToRegister}>
+        {label}
+      </button>
       {proof && <span>{proof}</span>}
     </div>
   );
 }
 
 function MetaItem({ icon, children }: { icon: ReactNode; children: ReactNode }) {
-  return <li><span className="meta-icon" aria-hidden="true">{icon}</span>{children}</li>;
+  return (
+    <li>
+      <span className="meta-icon" aria-hidden="true">
+        {icon}
+      </span>
+      {children}
+    </li>
+  );
 }
 
 /** Pembicara di hero — nama kuning seperti di poster kegiatan. */
@@ -245,7 +291,9 @@ function HeroSpeaker({ activity: a }: { activity: Activity }) {
           <span className="hero-speaker-role">
             {a.speaker_title}
             {a.speaker_linkedin_url && (
-              <a href={a.speaker_linkedin_url} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
+              <a href={a.speaker_linkedin_url} target="_blank" rel="noopener noreferrer">
+                LinkedIn ↗
+              </a>
             )}
           </span>
         )}
@@ -265,10 +313,19 @@ function Seats({ activity: a, stats }: { activity: Activity; stats: Stats }) {
     return (
       <div className="seats">
         <div className="seats-line">
-          <span><b>{filled}</b> dari {a.capacity} kursi terisi</span>
+          <span>
+            <b>{filled}</b> dari {a.capacity} kursi terisi
+          </span>
           <span className="muted">{left > 0 ? `sisa ${left}` : 'penuh'}</span>
         </div>
-        <div className="seats-track" role="meter" aria-valuemin={0} aria-valuemax={a.capacity} aria-valuenow={filled} aria-label="Kursi terisi">
+        <div
+          className="seats-track"
+          role="meter"
+          aria-valuemin={0}
+          aria-valuemax={a.capacity}
+          aria-valuenow={filled}
+          aria-label="Kursi terisi"
+        >
           <span style={{ width: `${(filled / a.capacity) * 100}%` }} />
         </div>
         {stats.waitlisted > 0 && <p className="seats-note">{stats.waitlisted} orang di waitlist</p>}
@@ -278,8 +335,12 @@ function Seats({ activity: a, stats }: { activity: Activity; stats: Stats }) {
   if (stats.confirmed === 0) return null;
   return (
     <p className="seats seats-count">
-      <span className="meta-icon" aria-hidden="true"><UsersIcon /></span>
-      <span><b>{stats.confirmed}</b> orang sudah terdaftar</span>
+      <span className="meta-icon" aria-hidden="true">
+        <UsersIcon />
+      </span>
+      <span>
+        <b>{stats.confirmed}</b> orang sudah terdaftar
+      </span>
     </p>
   );
 }
@@ -292,9 +353,7 @@ function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: S
   const [copied, setCopied] = useState(false);
 
   /** Tombol Google untuk tamu; setelah login lanjut ke `next`. */
-  const guestLogin = (next: string) => (
-    <GoogleSignIn next={next} text="signup_with" onError={setError} />
-  );
+  const guestLogin = (next: string) => <GoogleSignIn next={next} text="signup_with" onError={setError} />;
 
   const follow = async () => {
     setBusy(true);
@@ -317,9 +376,13 @@ function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: S
         <>
           <p className="register-state">{a.status === 'cancelled' ? 'Kegiatan dibatalkan' : 'Kegiatan sudah selesai'}</p>
           {isActiveRegistration(mine?.status) ? (
-            <Link className="btn btn-ghost btn-block" to={registeredPath(a)}>Lihat pendaftaranku</Link>
+            <Link className="btn btn-ghost btn-block" to={registeredPath(a)}>
+              Lihat pendaftaranku
+            </Link>
           ) : (
-            <Link className="btn btn-ghost btn-block" to="/agenda">Lihat agenda berikutnya</Link>
+            <Link className="btn btn-ghost btn-block" to="/agenda">
+              Lihat agenda berikutnya
+            </Link>
           )}
         </>
       );
@@ -330,7 +393,9 @@ function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: S
       return (
         <>
           <p className="register-state ok">✓ {mine!.status === 'confirmed' ? 'Kamu sudah terdaftar' : 'Kamu ada di waitlist'}</p>
-          <Link className="btn btn-primary btn-block" to={registeredPath(a)}>Lihat detail pendaftaran</Link>
+          <Link className="btn btn-primary btn-block" to={registeredPath(a)}>
+            Lihat detail pendaftaran
+          </Link>
         </>
       );
     }
@@ -340,7 +405,9 @@ function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: S
       return (
         <>
           {user ? (
-            <button className="btn btn-primary btn-block" type="button" disabled={busy} onClick={follow}>Ingatkan aku</button>
+            <button className="btn btn-primary btn-block" type="button" disabled={busy} onClick={follow}>
+              Ingatkan aku
+            </button>
           ) : (
             guestLogin(activityPath(a))
           )}
@@ -356,7 +423,9 @@ function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: S
     if (isPaid(a)) {
       return (
         <>
-          <button className="btn btn-primary btn-block" type="button" disabled>Pembayaran segera hadir</button>
+          <button className="btn btn-primary btn-block" type="button" disabled>
+            Pembayaran segera hadir
+          </button>
           <p className="register-note">Pendaftaran berbayar sedang disiapkan.</p>
         </>
       );
@@ -366,7 +435,9 @@ function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: S
     return (
       <>
         {user ? (
-          <Link className="btn btn-primary btn-block" to={registerPath(a)}>{full ? 'Daftar waitlist' : 'Daftar sekarang'}</Link>
+          <Link className="btn btn-primary btn-block" to={registerPath(a)}>
+            {full ? 'Daftar waitlist' : 'Daftar sekarang'}
+          </Link>
         ) : (
           guestLogin(registerPath(a))
         )}

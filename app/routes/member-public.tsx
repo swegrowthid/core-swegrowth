@@ -9,7 +9,10 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
   const p = loaderData?.profile;
   if (!p) return [{ title: 'Profil tidak ditemukan — SWE Growth' }];
   const role = [p.headline, p.company].filter(Boolean).join(' · ');
-  return pageMeta(`${p.full_name} — SWE Growth`, role ? `${p.full_name}, ${role}. Member SWE Growth.` : `${p.full_name}, member SWE Growth.`);
+  return pageMeta(
+    `${p.full_name} — SWE Growth`,
+    role ? `${p.full_name}, ${role}. Member SWE Growth.` : `${p.full_name}, member SWE Growth.`,
+  );
 };
 
 /** Profil publik member. Data lewat public_profile(): tanpa WhatsApp, email, dan jawaban kenalan. */
@@ -32,7 +35,13 @@ export default function MemberPublic({ loaderData: { profile } }: Route.Componen
       <div className="wrap narrow-wrap">
         <ProfileView
           profile={profile}
-          actions={isOwn && <Link className="btn btn-ghost sm" to="/portal/profil/edit">Edit profil</Link>}
+          actions={
+            isOwn && (
+              <Link className="btn btn-ghost sm" to="/portal/profil/edit">
+                Edit profil
+              </Link>
+            )
+          }
         />
         {!user && (
           <div className="panel on-teal join-cta">
@@ -40,7 +49,9 @@ export default function MemberPublic({ loaderData: { profile } }: Route.Componen
               <h2>Gabung SWE Growth</h2>
               <p>Komunitas software engineer Indonesia untuk bareng-bareng belajar career growth. Gratis.</p>
             </div>
-            <Link className="btn btn-primary" to="/masuk?next=/portal">Daftar gratis</Link>
+            <Link className="btn btn-primary" to="/masuk?next=/portal">
+              Daftar gratis
+            </Link>
           </div>
         )}
       </div>

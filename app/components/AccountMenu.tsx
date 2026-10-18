@@ -49,7 +49,18 @@ export function AccountMenu() {
       >
         <Avatar name={name} src={profile?.avatar_url} size={34} />
         <span>{name.split(' ')[0]}</span>
-        <svg className="account-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+        <svg
+          className="account-caret"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
       </button>
 
       {open && (
@@ -58,11 +69,23 @@ export function AccountMenu() {
             <strong>{name}</strong>
             {user?.email && <span>{user.email}</span>}
           </div>
-          <Link role="menuitem" to="/portal">Portal</Link>
-          <Link role="menuitem" to="/portal/profil">Profil saya</Link>
-          <Link role="menuitem" to="/portal/profil/edit">Edit profil</Link>
-          <Link role="menuitem" to="/portal#rekomendasiku">Rekomendasiku</Link>
-          {isAdmin && <Link role="menuitem" to="/admin">Admin</Link>}
+          <Link role="menuitem" to="/portal">
+            Portal
+          </Link>
+          <Link role="menuitem" to="/portal/profil">
+            Profil saya
+          </Link>
+          <Link role="menuitem" to="/portal/profil/edit">
+            Edit profil
+          </Link>
+          <Link role="menuitem" to="/portal#rekomendasiku">
+            Rekomendasiku
+          </Link>
+          {isAdmin && (
+            <Link role="menuitem" to="/admin">
+              Admin
+            </Link>
+          )}
           <button role="menuitem" type="button" className="account-out" disabled={busy} onClick={signOut}>
             {busy ? 'Keluar…' : 'Keluar'}
           </button>

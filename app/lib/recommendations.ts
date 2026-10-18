@@ -51,14 +51,17 @@ export const REJECT_REASONS: { id: RecommendationRejectReason; label: string }[]
   { id: 'tidak_sesuai_coc', label: 'Tidak sesuai Code of Conduct' },
 ];
 
-export const rejectReasonLabel = (id: RecommendationRejectReason | null) =>
-  REJECT_REASONS.find((r) => r.id === id)?.label ?? null;
+export const rejectReasonLabel = (id: RecommendationRejectReason | null) => REJECT_REASONS.find((r) => r.id === id)?.label ?? null;
 
 /** Info singkat di kartu: tanggal acara, harga, format, bahasa. */
-export function recommendationMeta(r: Pick<RecommendationRow, 'category' | 'event_date' | 'event_mode' | 'location' | 'price' | 'language'>) {
+export function recommendationMeta(
+  r: Pick<RecommendationRow, 'category' | 'event_date' | 'event_mode' | 'location' | 'price' | 'language'>,
+) {
   const date =
     r.category === 'acara' && r.event_date
-      ? new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(r.event_date))
+      ? new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(
+          new Date(r.event_date),
+        )
       : null;
   const where = r.category === 'acara' ? [r.event_mode, r.location].filter(Boolean).join(' · ') : null;
   return [date, where, r.price && PRICE_LABEL[r.price], r.language && LANGUAGE_LABEL[r.language]].filter(Boolean) as string[];

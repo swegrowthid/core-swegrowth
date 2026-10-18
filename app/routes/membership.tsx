@@ -19,19 +19,22 @@ export default function Membership() {
             <span className="chip yellow">Segera hadir</span>
             <h2 className="detail-title">Membership & verified member</h2>
             <p>
-              Kami sedang menyiapkan membership untuk mendukung komunitas. Untuk sekarang, semua yang ada di portal bisa
-              kamu pakai gratis.
+              Kami sedang menyiapkan membership untuk mendukung komunitas. Untuk sekarang, semua yang ada di portal bisa kamu pakai gratis.
             </p>
             {MEMBER_BENEFITS.length > 0 && (
               <>
                 <p style={{ marginTop: 14 }}>Yang sedang disiapkan:</p>
                 <ul className="plain-list">
-                  {MEMBER_BENEFITS.map((b) => <li key={b}>{b}</li>)}
+                  {MEMBER_BENEFITS.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
                 </ul>
               </>
             )}
           </div>
-          <Link className="back" to="/portal" style={{ marginTop: 18 }}>← Kembali ke portal</Link>
+          <Link className="back" to="/portal" style={{ marginTop: 18 }}>
+            ← Kembali ke portal
+          </Link>
         </div>
       </section>
     </>

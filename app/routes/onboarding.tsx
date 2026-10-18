@@ -64,7 +64,9 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
             <p className="muted" style={{ marginBottom: 26, maxWidth: '60ch' }}>
               Setelah profil tersimpan, link komunitas (WhatsApp, Telegram, Discord) langsung muncul. Bagian bertanda (opsional) boleh
               dilengkapi nanti. Profil akan tampil publik; nomor WhatsApp dan email hanya terlihat oleh kamu dan admin. Email akun: {email}.{' '}
-              <button className="link-btn" type="button" onClick={() => goTo('kenalan')}>Ubah jawaban kenalan</button>
+              <button className="link-btn" type="button" onClick={() => goTo('kenalan')}>
+                Ubah jawaban kenalan
+              </button>
             </p>
             <ProfileForm
               profile={profile}
@@ -107,9 +109,10 @@ function MotivationStep({ motivation, onSaved }: { motivation: MemberMotivationR
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    const answers = Object.fromEntries(
-      MOTIVATION_QUESTIONS.map((q) => [q.name, String(form.get(q.name) ?? '').trim()]),
-    ) as Record<(typeof MOTIVATION_QUESTIONS)[number]['name'], string>;
+    const answers = Object.fromEntries(MOTIVATION_QUESTIONS.map((q) => [q.name, String(form.get(q.name) ?? '').trim()])) as Record<
+      (typeof MOTIVATION_QUESTIONS)[number]['name'],
+      string
+    >;
 
     setBusy(true);
     setError(null);
@@ -132,14 +135,14 @@ function MotivationStep({ motivation, onSaved }: { motivation: MemberMotivationR
       <h1 className="page-title">Kenalan dulu, yuk</h1>
       <div className="panel" style={{ marginBottom: 22 }}>
         <p style={{ marginBottom: 10 }}>
-          SWE Growth adalah komunitas software engineer Indonesia yang fokus bareng-bareng belajar{' '}
-          <strong>career growth</strong>, bukan satu tech stack tertentu. Topiknya seperti Effective Engineer, Going
-          Abroad, sampai System Design Interview.
+          SWE Growth adalah komunitas software engineer Indonesia yang fokus bareng-bareng belajar <strong>career growth</strong>, bukan
+          satu tech stack tertentu. Topiknya seperti Effective Engineer, Going Abroad, sampai System Design Interview.
         </p>
         <p className="muted">
-          Jawabanmu di bawah membantu kami menyusun kelas, sharing session, dan program lain sesuai masalah yang
-          teman-teman hadapi.{' '}
-          <Link className="text-link" to="/tentang" target="_blank" rel="noopener">Baca cerita lengkap SWE Growth ↗</Link>
+          Jawabanmu di bawah membantu kami menyusun kelas, sharing session, dan program lain sesuai masalah yang teman-teman hadapi.{' '}
+          <Link className="text-link" to="/tentang" target="_blank" rel="noopener">
+            Baca cerita lengkap SWE Growth ↗
+          </Link>
         </p>
       </div>
 
@@ -147,11 +150,16 @@ function MotivationStep({ motivation, onSaved }: { motivation: MemberMotivationR
         {error && <p className="form-message error">{error}</p>}
         {MOTIVATION_QUESTIONS.map((q) => (
           <div className="field" key={q.name}>
-            <label htmlFor={q.name}>{q.label}{!q.required && <small> (opsional)</small>}</label>
+            <label htmlFor={q.name}>
+              {q.label}
+              {!q.required && <small> (opsional)</small>}
+            </label>
             <textarea id={q.name} name={q.name} rows={3} maxLength={2000} required={q.required} defaultValue={motivation?.[q.name] ?? ''} />
           </div>
         ))}
-        <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? 'Menyimpan…' : 'Lanjut isi profil'}</button>
+        <button className="btn btn-primary" type="submit" disabled={busy}>
+          {busy ? 'Menyimpan…' : 'Lanjut isi profil'}
+        </button>
       </form>
     </>
   );
@@ -162,8 +170,8 @@ function Welcome({ groups, next, name }: { groups: WhatsappGroupRow[]; next: str
     <>
       <h1 className="page-title">Profil tersimpan. Selamat bergabung, {name.split(' ')[0]}!</h1>
       <p className="muted" style={{ marginBottom: 22, maxWidth: '58ch' }}>
-        Yuk langsung gabung ke WhatsApp, tempat ngobrol utama yang sudah rame dari awal. Telegram baru dibuka, dan Discord
-        menyusul. Semua link ini juga selalu ada di portal.
+        Yuk langsung gabung ke WhatsApp, tempat ngobrol utama yang sudah rame dari awal. Telegram baru dibuka, dan Discord menyusul. Semua
+        link ini juga selalu ada di portal.
       </p>
 
       <div style={{ marginBottom: 22 }}>
@@ -172,7 +180,9 @@ function Welcome({ groups, next, name }: { groups: WhatsappGroupRow[]; next: str
 
       {groups.length > 0 && (
         <div className="panel" style={{ marginBottom: 22 }}>
-          <div className="panel-head"><h2>Grup per bidang</h2></div>
+          <div className="panel-head">
+            <h2>Grup per bidang</h2>
+          </div>
           <ul className="rows">
             {groups.map((g) => (
               <li key={g.id}>
@@ -180,14 +190,18 @@ function Welcome({ groups, next, name }: { groups: WhatsappGroupRow[]; next: str
                   <strong>{g.name}</strong>
                   {g.description && <span>{g.description}</span>}
                 </div>
-                <a className="btn btn-ghost sm" href={g.invite_url} target="_blank" rel="noopener">Gabung</a>
+                <a className="btn btn-ghost sm" href={g.invite_url} target="_blank" rel="noopener">
+                  Gabung
+                </a>
               </li>
             ))}
           </ul>
         </div>
       )}
 
-      <Link className="btn btn-ghost" to={next}>Lanjut ke portal</Link>
+      <Link className="btn btn-ghost" to={next}>
+        Lanjut ke portal
+      </Link>
     </>
   );
 }

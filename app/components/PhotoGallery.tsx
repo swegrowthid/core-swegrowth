@@ -43,14 +43,26 @@ export function PhotoGallery({ photos, title }: { photos: EventPhoto[]; title: s
             <img src={current.url} alt={current.caption || `Dokumentasi ${title} ${open! + 1}`} />
             <figcaption>
               <span>{current.caption}</span>
-              <span className="muted">{open! + 1} / {photos.length}</span>
+              <span className="muted">
+                {open! + 1} / {photos.length}
+              </span>
             </figcaption>
           </figure>
         )}
         <div className="photo-viewer-actions">
-          {photos.length > 1 && <button type="button" className="btn btn-ghost sm" onClick={() => step(-1)}>← Sebelumnya</button>}
-          {photos.length > 1 && <button type="button" className="btn btn-ghost sm" onClick={() => step(1)}>Berikutnya →</button>}
-          <button type="button" className="btn btn-primary sm" onClick={() => setOpen(null)}>Tutup</button>
+          {photos.length > 1 && (
+            <button type="button" className="btn btn-ghost sm" onClick={() => step(-1)}>
+              ← Sebelumnya
+            </button>
+          )}
+          {photos.length > 1 && (
+            <button type="button" className="btn btn-ghost sm" onClick={() => step(1)}>
+              Berikutnya →
+            </button>
+          )}
+          <button type="button" className="btn btn-primary sm" onClick={() => setOpen(null)}>
+            Tutup
+          </button>
         </div>
       </dialog>
     </>

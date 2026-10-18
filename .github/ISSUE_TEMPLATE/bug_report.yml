@@ -26,4 +26,4 @@ body:
       placeholder: Chrome 130 di Android
   - type: markdown
     attributes:
-      value: "Jangan sertakan email, nomor WhatsApp, atau data pribadi member lain di laporan ini."
+      value: 'Jangan sertakan email, nomor WhatsApp, atau data pribadi member lain di laporan ini.'

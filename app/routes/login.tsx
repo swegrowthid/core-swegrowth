@@ -29,7 +29,8 @@ export default function Login() {
         <div className="form-card auth-card">
           <h1>Daftar / masuk SWE Growth</h1>
           <p className="form-sub">
-            Cukup pakai akun Google, tanpa password. Akun baru langsung dibuat. Setelah itu isi profil singkat, lalu link grup WhatsApp komunitas langsung muncul.
+            Cukup pakai akun Google, tanpa password. Akun baru langsung dibuat. Setelah itu isi profil singkat, lalu link grup WhatsApp
+            komunitas langsung muncul.
           </p>
 
           {!hasSupabase && <p className="form-message error">Login belum dikonfigurasi di environment ini.</p>}
@@ -38,8 +39,8 @@ export default function Login() {
           <GoogleSignIn next={next} onError={setError} />
 
           <p className="auth-foot">
-            Dengan masuk, kamu setuju dengan <Link to="/term-of-service">Syarat Layanan</Link>,{' '}
-            <Link to="/privasi">Kebijakan Privasi</Link>, dan <Link to="/code-of-conduct">Code of Conduct</Link> komunitas.
+            Dengan masuk, kamu setuju dengan <Link to="/term-of-service">Syarat Layanan</Link>, <Link to="/privasi">Kebijakan Privasi</Link>
+            , dan <Link to="/code-of-conduct">Code of Conduct</Link> komunitas.
           </p>
         </div>
       </div>

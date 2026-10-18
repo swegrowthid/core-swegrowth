@@ -20,7 +20,7 @@ npm run dev            # http://localhost:4321
 
 Tanpa `.env` aplikasi tetap jalan, tapi login dan data dari database tidak aktif. Untuk mencoba fitur yang butuh
 database, buat project Supabase gratis sendiri lalu jalankan semua file di `supabase/migrations/` berurutan
-(lihat bagian *Setup Supabase* di [README](README.md)). Jangan minta akses ke database produksi.
+(lihat bagian _Setup Supabase_ di [README](README.md)). Jangan minta akses ke database produksi.
 
 ## Alur kerja
 

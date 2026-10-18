@@ -1,6 +1,15 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import type { Experience, ProfileRow, Seniority } from '~/lib/database.types';
-import { isLinkedinUrl, normalizeUrl, parseTags, SENIORITIES, seniorityLabel, sortExperiences, USERNAME_RE, WHATSAPP_RE } from '~/lib/profile';
+import {
+  isLinkedinUrl,
+  normalizeUrl,
+  parseTags,
+  SENIORITIES,
+  seniorityLabel,
+  sortExperiences,
+  USERNAME_RE,
+  WHATSAPP_RE,
+} from '~/lib/profile';
 import { supabase } from '~/lib/supabase';
 
 type Props = {
@@ -122,10 +131,25 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
             <input id="full_name" name="full_name" required maxLength={80} defaultValue={profile.full_name} autoComplete="name" />
           </Field>
           <Field id="whatsapp" label="Nomor WhatsApp">
-            <input id="whatsapp" name="whatsapp" type="tel" required defaultValue={profile.whatsapp ?? ''} autoComplete="tel" placeholder="08…" />
+            <input
+              id="whatsapp"
+              name="whatsapp"
+              type="tel"
+              required
+              defaultValue={profile.whatsapp ?? ''}
+              autoComplete="tel"
+              placeholder="08…"
+            />
           </Field>
           <Field id="location" label="Domisili" optional>
-            <input id="location" name="location" maxLength={80} defaultValue={profile.location ?? ''} placeholder="Kota" autoComplete="address-level2" />
+            <input
+              id="location"
+              name="location"
+              maxLength={80}
+              defaultValue={profile.location ?? ''}
+              placeholder="Kota"
+              autoComplete="address-level2"
+            />
           </Field>
         </div>
       </Section>
@@ -133,19 +157,40 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
       <Section title="Karier">
         <div className="form-grid">
           <Field id="headline" label="Peran saat ini">
-            <input id="headline" name="headline" required maxLength={120} defaultValue={profile.headline} placeholder="Backend engineer / mahasiswa TI" />
+            <input
+              id="headline"
+              name="headline"
+              required
+              maxLength={120}
+              defaultValue={profile.headline}
+              placeholder="Backend engineer / mahasiswa TI"
+            />
           </Field>
           <Field id="company" label="Perusahaan / kampus" optional>
             <input id="company" name="company" maxLength={80} defaultValue={profile.company ?? ''} autoComplete="organization" />
           </Field>
           <Field id="seniority" label="Level">
             <select id="seniority" name="seniority" required defaultValue={profile.seniority ?? ''}>
-              <option value="" disabled>Pilih level</option>
-              {SENIORITIES.map((s) => <option key={s} value={s}>{seniorityLabel[s]}</option>)}
+              <option value="" disabled>
+                Pilih level
+              </option>
+              {SENIORITIES.map((s) => (
+                <option key={s} value={s}>
+                  {seniorityLabel[s]}
+                </option>
+              ))}
             </select>
           </Field>
           <Field id="years_experience" label="Lama pengalaman (tahun)" optional>
-            <input id="years_experience" name="years_experience" type="number" min={0} max={60} inputMode="numeric" defaultValue={profile.years_experience ?? ''} />
+            <input
+              id="years_experience"
+              name="years_experience"
+              type="number"
+              min={0}
+              max={60}
+              inputMode="numeric"
+              defaultValue={profile.years_experience ?? ''}
+            />
           </Field>
         </div>
       </Section>
@@ -154,18 +199,39 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
         <Field id="username" label="Link profil publik" optional>
           <div className="input-prefix">
             <span>swegrowth.id/member/</span>
-            <input id="username" name="username" maxLength={30} defaultValue={profile.username ?? ''} placeholder="namakamu" autoCapitalize="none" spellCheck={false} />
+            <input
+              id="username"
+              name="username"
+              maxLength={30}
+              defaultValue={profile.username ?? ''}
+              placeholder="namakamu"
+              autoCapitalize="none"
+              spellCheck={false}
+            />
           </div>
         </Field>
         <div className="form-grid">
           <Field id="linkedin_url" label="LinkedIn" hint="Wajib, supaya kami tahu kamu orang asli. Tampil di profil publikmu.">
-            <input id="linkedin_url" name="linkedin_url" required maxLength={200} defaultValue={profile.linkedin_url ?? ''} placeholder="linkedin.com/in/nama-kamu" />
+            <input
+              id="linkedin_url"
+              name="linkedin_url"
+              required
+              maxLength={200}
+              defaultValue={profile.linkedin_url ?? ''}
+              placeholder="linkedin.com/in/nama-kamu"
+            />
           </Field>
           <Field id="github_url" label="GitHub" optional>
             <input id="github_url" name="github_url" maxLength={200} defaultValue={profile.github_url ?? ''} placeholder="github.com/…" />
           </Field>
           <Field id="portfolio_url" label="Portfolio / website" optional>
-            <input id="portfolio_url" name="portfolio_url" maxLength={200} defaultValue={profile.portfolio_url ?? ''} placeholder="namamu.dev" />
+            <input
+              id="portfolio_url"
+              name="portfolio_url"
+              maxLength={200}
+              defaultValue={profile.portfolio_url ?? ''}
+              placeholder="namamu.dev"
+            />
           </Field>
         </div>
       </Section>
@@ -175,7 +241,13 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
           <input id="skills" name="skills" defaultValue={profile.skills.join(', ')} placeholder="Backend, system design, mentoring" />
         </Field>
         <Field id="tech_stack" label="Teknologi yang dikuasai">
-          <input id="tech_stack" name="tech_stack" required defaultValue={profile.tech_stack.join(', ')} placeholder="Go, PostgreSQL, React, AWS" />
+          <input
+            id="tech_stack"
+            name="tech_stack"
+            required
+            defaultValue={profile.tech_stack.join(', ')}
+            placeholder="Go, PostgreSQL, React, AWS"
+          />
         </Field>
       </Section>
 
@@ -186,23 +258,51 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
               <li key={x.key}>
                 <div className="form-grid">
                   <Field id={`role-${x.key}`} label="Peran">
-                    <input id={`role-${x.key}`} maxLength={120} value={x.role} onChange={(e) => updateExperience(x.key, { role: e.target.value })} />
+                    <input
+                      id={`role-${x.key}`}
+                      maxLength={120}
+                      value={x.role}
+                      onChange={(e) => updateExperience(x.key, { role: e.target.value })}
+                    />
                   </Field>
                   <Field id={`company-${x.key}`} label="Perusahaan">
-                    <input id={`company-${x.key}`} maxLength={80} value={x.company} onChange={(e) => updateExperience(x.key, { company: e.target.value })} />
+                    <input
+                      id={`company-${x.key}`}
+                      maxLength={80}
+                      value={x.company}
+                      onChange={(e) => updateExperience(x.key, { company: e.target.value })}
+                    />
                   </Field>
                   <Field id={`start-${x.key}`} label="Mulai">
-                    <input id={`start-${x.key}`} type="month" value={x.start} onChange={(e) => updateExperience(x.key, { start: e.target.value })} />
+                    <input
+                      id={`start-${x.key}`}
+                      type="month"
+                      value={x.start}
+                      onChange={(e) => updateExperience(x.key, { start: e.target.value })}
+                    />
                   </Field>
                   <Field id={`end-${x.key}`} label="Selesai">
-                    <input id={`end-${x.key}`} type="month" disabled={x.current} value={x.current ? '' : (x.end ?? '')} onChange={(e) => updateExperience(x.key, { end: e.target.value || null })} />
+                    <input
+                      id={`end-${x.key}`}
+                      type="month"
+                      disabled={x.current}
+                      value={x.current ? '' : (x.end ?? '')}
+                      onChange={(e) => updateExperience(x.key, { end: e.target.value || null })}
+                    />
                   </Field>
                 </div>
                 <label className="check-field">
-                  <input type="checkbox" checked={x.current} onChange={(e) => updateExperience(x.key, { current: e.target.checked })} /> Masih di sini
+                  <input type="checkbox" checked={x.current} onChange={(e) => updateExperience(x.key, { current: e.target.checked })} />{' '}
+                  Masih di sini
                 </label>
                 <Field id={`desc-${x.key}`} label="Yang dikerjakan" optional>
-                  <textarea id={`desc-${x.key}`} rows={2} maxLength={500} value={x.description} onChange={(e) => updateExperience(x.key, { description: e.target.value })} />
+                  <textarea
+                    id={`desc-${x.key}`}
+                    rows={2}
+                    maxLength={500}
+                    value={x.description}
+                    onChange={(e) => updateExperience(x.key, { description: e.target.value })}
+                  />
                 </Field>
                 <button className="link-btn" type="button" onClick={() => setExperiences((list) => list.filter((e) => e.key !== x.key))}>
                   Hapus pengalaman ini
@@ -220,11 +320,20 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
 
       <Section title="Tentang kamu">
         <Field id="bio" label="Bio singkat" optional>
-          <textarea id="bio" name="bio" rows={4} maxLength={1000} defaultValue={profile.bio} placeholder="Fokus kerja, minat, atau hal yang sedang dipelajari" />
+          <textarea
+            id="bio"
+            name="bio"
+            rows={4}
+            maxLength={1000}
+            defaultValue={profile.bio}
+            placeholder="Fokus kerja, minat, atau hal yang sedang dipelajari"
+          />
         </Field>
       </Section>
 
-      <button className="btn btn-primary" type="submit" disabled={busy}>{busy ? 'Menyimpan…' : submitLabel}</button>
+      <button className="btn btn-primary" type="submit" disabled={busy}>
+        {busy ? 'Menyimpan…' : submitLabel}
+      </button>
     </form>
   );
 }
@@ -239,10 +348,25 @@ function Section({ title, sub, children }: { title: string; sub?: string; childr
   );
 }
 
-function Field({ id, label, optional, hint, children }: { id: string; label: string; optional?: boolean; hint?: string; children: ReactNode }) {
+function Field({
+  id,
+  label,
+  optional,
+  hint,
+  children,
+}: {
+  id: string;
+  label: string;
+  optional?: boolean;
+  hint?: string;
+  children: ReactNode;
+}) {
   return (
     <div className="field">
-      <label htmlFor={id}>{label}{optional && <small> (opsional)</small>}</label>
+      <label htmlFor={id}>
+        {label}
+        {optional && <small> (opsional)</small>}
+      </label>
       {children}
       {hint && <small className="field-hint">{hint}</small>}
     </div>

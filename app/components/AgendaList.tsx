@@ -1,5 +1,13 @@
 import { Link } from 'react-router';
-import { activityPath, activityStatusLabel, isActivityOngoing, organizerOf, recurrenceLabel, type Activity, type CommunityGroup } from '~/lib/activities';
+import {
+  activityPath,
+  activityStatusLabel,
+  isActivityOngoing,
+  organizerOf,
+  recurrenceLabel,
+  type Activity,
+  type CommunityGroup,
+} from '~/lib/activities';
 import { formatWibDate, formatWibTime, wibDayParts } from '~/lib/format';
 import { EventBadges, eventFlags, flagClass, wibDay } from './EventBadges';
 
@@ -26,14 +34,27 @@ export function AgendaList({
         return (
           <li key={a.id} className={flagClass(flags)}>
             <span className="date-tile">
-              {parts ? <><b>{parts.day}</b><span>{parts.month}</span></> : <span>TBA</span>}
+              {parts ? (
+                <>
+                  <b>{parts.day}</b>
+                  <span>{parts.month}</span>
+                </>
+              ) : (
+                <span>TBA</span>
+              )}
             </span>
             <div className="row-main">
               <EventBadges {...flags} />
-              <Link className="title" to={activityPath(a)}>{a.title}</Link>
+              <Link className="title" to={activityPath(a)}>
+                {a.title}
+              </Link>
               <span>
                 {[
-                  isActivityOngoing(a) && !a.recurrence ? `sedang berjalan s.d. ${formatWibDate(a.ends_at!)}` : a.starts_at ? formatWibTime(a.starts_at) : 'Jadwal menyusul',
+                  isActivityOngoing(a) && !a.recurrence
+                    ? `sedang berjalan s.d. ${formatWibDate(a.ends_at!)}`
+                    : a.starts_at
+                      ? formatWibTime(a.starts_at)
+                      : 'Jadwal menyusul',
                   recurrenceLabel(a),
                   a.mode,
                   organizer && `oleh ${organizer.name}`,

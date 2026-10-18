@@ -103,9 +103,11 @@ export function recurrenceLabel(a: Schedule) {
   if (!a.recurrence || !a.starts_at) return null;
   const first = new Date(a.starts_at);
   const base =
-    a.recurrence === 'weekly' ? `Setiap ${weekdayFmt.format(first)}`
-    : a.recurrence === 'biweekly' ? `Dua minggu sekali, ${weekdayFmt.format(first)}`
-    : `Setiap bulan, tanggal ${dayOfMonthFmt.format(first)}`;
+    a.recurrence === 'weekly'
+      ? `Setiap ${weekdayFmt.format(first)}`
+      : a.recurrence === 'biweekly'
+        ? `Dua minggu sekali, ${weekdayFmt.format(first)}`
+        : `Setiap bulan, tanggal ${dayOfMonthFmt.format(first)}`;
   return a.recurrence_until ? `${base} s.d. ${formatDate(a.recurrence_until)}` : base;
 }
 
@@ -192,12 +194,7 @@ export async function getPublishedActivityBySlug(slug: string): Promise<Activity
   const db = client();
   if (!db) return null;
 
-  const { data, error } = await db
-    .from('activities')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_public', true)
-    .maybeSingle();
+  const { data, error } = await db.from('activities').select('*').eq('slug', slug).eq('is_public', true).maybeSingle();
 
   if (error) {
     console.error('Tidak dapat mengambil activity dari Supabase:', error.message);

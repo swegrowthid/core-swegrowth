@@ -2,13 +2,7 @@
 // Setelah migration di-apply, regenerate dengan:
 //   npx supabase gen types typescript --project-id <project-ref> > app/lib/database.types.ts
 
-export type ActivityStatus =
-  | 'coming_soon'
-  | 'scheduled'
-  | 'registration_open'
-  | 'full'
-  | 'completed'
-  | 'cancelled';
+export type ActivityStatus = 'coming_soon' | 'scheduled' | 'registration_open' | 'full' | 'completed' | 'cancelled';
 
 export type ActivityMode = 'online' | 'offline' | 'hybrid';
 export type RegistrationStatus = 'confirmed' | 'waitlisted' | 'cancelled';
@@ -155,9 +149,23 @@ export type ProfileRow = {
 /** Kolom profil yang boleh tampil publik (lihat public_profile()). Tanpa WA & email. */
 export type PublicProfile = Pick<
   ProfileRow,
-  | 'id' | 'username' | 'full_name' | 'headline' | 'company' | 'seniority' | 'years_experience' | 'location'
-  | 'avatar_url' | 'bio' | 'linkedin_url' | 'github_url' | 'portfolio_url' | 'skills' | 'tech_stack'
-  | 'experiences' | 'created_at'
+  | 'id'
+  | 'username'
+  | 'full_name'
+  | 'headline'
+  | 'company'
+  | 'seniority'
+  | 'years_experience'
+  | 'location'
+  | 'avatar_url'
+  | 'bio'
+  | 'linkedin_url'
+  | 'github_url'
+  | 'portfolio_url'
+  | 'skills'
+  | 'tech_stack'
+  | 'experiences'
+  | 'created_at'
 >;
 
 export type MemberMotivationRow = {
@@ -257,8 +265,23 @@ export type RecommendationRow = {
 /** Hasil published_recommendations(): hanya kolom aman. */
 export type PublishedRecommendation = Pick<
   RecommendationRow,
-  | 'id' | 'category' | 'title' | 'url' | 'reason' | 'organizer' | 'topics' | 'price' | 'language'
-  | 'event_date' | 'event_mode' | 'location' | 'is_affiliate' | 'source' | 'is_featured' | 'featured_order' | 'created_at'
+  | 'id'
+  | 'category'
+  | 'title'
+  | 'url'
+  | 'reason'
+  | 'organizer'
+  | 'topics'
+  | 'price'
+  | 'language'
+  | 'event_date'
+  | 'event_mode'
+  | 'location'
+  | 'is_affiliate'
+  | 'source'
+  | 'is_featured'
+  | 'featured_order'
+  | 'created_at'
 > & {
   /** Terisi kalau usulan member yang mengizinkan namanya tampil dan profilnya publik. */
   recommender_name: string | null;
@@ -317,7 +340,10 @@ export type Database = {
       published_recommendations: { Args: Record<string, never>; Returns: PublishedRecommendation[] };
       community_pulse: { Args: Record<string, never>; Returns: CommunityPulseRow[] };
       community_stats: { Args: Record<string, never>; Returns: { member_count: number; session_count: number }[] };
-      check_recommendation_url: { Args: { p_url: string; p_exclude_id?: string | null }; Returns: { title: string; status: RecommendationStatus }[] };
+      check_recommendation_url: {
+        Args: { p_url: string; p_exclude_id?: string | null };
+        Returns: { title: string; status: RecommendationStatus }[];
+      };
       submit_recommendation: {
         Args: {
           p_category: RecommendationCategory;

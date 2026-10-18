@@ -29,9 +29,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const attended = new Set((regs.data ?? []).filter((r) => r.status === 'confirmed').map((r) => r.activity_id));
 
   return {
-    mine: upcoming
-      .filter((a) => statusById.has(a.id))
-      .map((a) => ({ activity: a, status: statusById.get(a.id)! })),
+    mine: upcoming.filter((a) => statusById.has(a.id)).map((a) => ({ activity: a, status: statusById.get(a.id)! })),
     others: upcoming.filter((a) => !statusById.has(a.id)),
     past: pastActivities(activities.data ?? []).slice(0, PAST_LIMIT),
     attended: [...attended],
@@ -65,14 +63,20 @@ export default function Portal({ loaderData }: Route.ComponentProps) {
 
           {mine.length > 0 && (
             <div className="panel">
-              <div className="panel-head"><h2>Kegiatan yang kamu ikuti</h2></div>
-              <EventRows items={mine.map((m) => ({ activity: m.activity, tag: registrationLabel[m.status], href: registeredPath(m.activity) }))} />
+              <div className="panel-head">
+                <h2>Kegiatan yang kamu ikuti</h2>
+              </div>
+              <EventRows
+                items={mine.map((m) => ({ activity: m.activity, tag: registrationLabel[m.status], href: registeredPath(m.activity) }))}
+              />
             </div>
           )}
 
           {others.length > 0 && (
             <div className="panel">
-              <div className="panel-head"><h2>Agenda</h2></div>
+              <div className="panel-head">
+                <h2>Agenda</h2>
+              </div>
               <EventRows items={others.map((a) => ({ activity: a, tag: activityStatusLabel[a.status], href: activityPath(a) }))} />
             </div>
           )}
@@ -88,13 +92,17 @@ export default function Portal({ loaderData }: Route.ComponentProps) {
           )}
 
           <div className="panel">
-            <div className="panel-head"><h2>Gabung komunitas</h2></div>
+            <div className="panel-head">
+              <h2>Gabung komunitas</h2>
+            </div>
             <CommunityChannels />
           </div>
 
           {groups.length > 0 && (
             <div className="panel">
-              <div className="panel-head"><h2>Grup per bidang</h2></div>
+              <div className="panel-head">
+                <h2>Grup per bidang</h2>
+              </div>
               <ul className="rows">
                 {groups.map((g) => (
                   <li key={g.id}>
@@ -102,7 +110,9 @@ export default function Portal({ loaderData }: Route.ComponentProps) {
                       <strong>{g.name}</strong>
                       {g.description && <span>{g.description}</span>}
                     </div>
-                    <a className="btn btn-ghost sm" href={g.invite_url} target="_blank" rel="noopener">Gabung</a>
+                    <a className="btn btn-ghost sm" href={g.invite_url} target="_blank" rel="noopener">
+                      Gabung
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -124,12 +134,22 @@ function EventRows({ items }: { items: { activity: Activity; tag: string; href: 
         return (
           <li key={a.id}>
             <span className="date-tile">
-              {parts ? <><b>{parts.day}</b><span>{parts.month}</span></> : <span>TBA</span>}
+              {parts ? (
+                <>
+                  <b>{parts.day}</b>
+                  <span>{parts.month}</span>
+                </>
+              ) : (
+                <span>TBA</span>
+              )}
             </span>
             <div className="row-main">
-              <Link className="title" to={href}>{a.title}</Link>
+              <Link className="title" to={href}>
+                {a.title}
+              </Link>
               <span>
-                {[a.starts_at && `${relativeFromNow(a.starts_at)} · ${formatWibTime(a.starts_at)}`, a.mode].filter(Boolean).join(' · ') || 'Jadwal menyusul'}
+                {[a.starts_at && `${relativeFromNow(a.starts_at)} · ${formatWibTime(a.starts_at)}`, a.mode].filter(Boolean).join(' · ') ||
+                  'Jadwal menyusul'}
               </span>
             </div>
             <span className="chip">{tag}</span>
@@ -161,7 +181,11 @@ function MyRecommendations({ items }: { items: RecommendationRow[] }) {
       </div>
       {items.length === 0 ? (
         <p className="form-sub">
-          Tahu acara, komunitas, course, atau buku yang bikin kamu grow? <Link className="text-link" to={SUBMIT_PATH}>Rekomendasikan ke member lain</Link>.
+          Tahu acara, komunitas, course, atau buku yang bikin kamu grow?{' '}
+          <Link className="text-link" to={SUBMIT_PATH}>
+            Rekomendasikan ke member lain
+          </Link>
+          .
         </p>
       ) : (
         <ul className="rows">
@@ -176,12 +200,20 @@ function MyRecommendations({ items }: { items: RecommendationRow[] }) {
                 </span>
                 {r.status === 'pending' && (
                   <span className="inline-actions rec-row-actions">
-                    <Link className="text-link" to={`${SUBMIT_PATH}?edit=${r.id}`}>Edit</Link>
-                    <button className="link-btn" type="button" disabled={busy === r.id} onClick={() => withdraw(r)}>Tarik</button>
+                    <Link className="text-link" to={`${SUBMIT_PATH}?edit=${r.id}`}>
+                      Edit
+                    </Link>
+                    <button className="link-btn" type="button" disabled={busy === r.id} onClick={() => withdraw(r)}>
+                      Tarik
+                    </button>
                   </span>
                 )}
                 {r.status === 'approved' && (
-                  <span><Link className="text-link" to={directoryPath(r.category)}>Lihat di direktori</Link></span>
+                  <span>
+                    <Link className="text-link" to={directoryPath(r.category)}>
+                      Lihat di direktori
+                    </Link>
+                  </span>
                 )}
               </div>
               <span className={`chip rec-status ${r.status}`}>{STATUS_LABEL[r.status]}</span>

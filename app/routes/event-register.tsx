@@ -90,14 +90,19 @@ export default function EventRegister({ loaderData }: Route.ComponentProps) {
     const calendar = await Promise.race([syncCalendar(a.id), new Promise<null>((r) => setTimeout(() => r(null), 6000))]);
     navigate(registeredPath(a), {
       replace: true,
-      state: { justRegistered: true, invited: calendar?.status === 'created' || calendar?.status === 'updated' || calendar?.status === 'unchanged' },
+      state: {
+        justRegistered: true,
+        invited: calendar?.status === 'created' || calendar?.status === 'updated' || calendar?.status === 'unchanged',
+      },
     });
   };
 
   return (
     <section className="block">
       <div className="wrap" style={{ maxWidth: 680 }}>
-        <Link className="back" to={activityPath(a)}>← Detail kegiatan</Link>
+        <Link className="back" to={activityPath(a)}>
+          ← Detail kegiatan
+        </Link>
         <h1 className="page-title">{a.status === 'full' ? 'Daftar waitlist' : 'Form pendaftaran'}</h1>
         <EventSummary activity={a} />
 
@@ -129,12 +134,18 @@ export default function EventRegister({ loaderData }: Route.ComponentProps) {
           {a.registration_fields.length > 0 && (
             <fieldset className="profile-section">
               <legend>Pertanyaan tambahan</legend>
-              {a.registration_fields.map((f) => <AnswerField key={f.id} field={f} />)}
+              {a.registration_fields.map((f) => (
+                <AnswerField key={f.id} field={f} />
+              ))}
             </fieldset>
           )}
 
           <label className="check-field">
-            <input type="checkbox" required /> Saya akan mengikuti <Link className="text-link" to="/code-of-conduct" target="_blank">Code of Conduct</Link> SWE Growth.
+            <input type="checkbox" required /> Saya akan mengikuti{' '}
+            <Link className="text-link" to="/code-of-conduct" target="_blank">
+              Code of Conduct
+            </Link>{' '}
+            SWE Growth.
           </label>
 
           <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
@@ -150,13 +161,22 @@ function AnswerField({ field: f }: { field: RegistrationField }) {
   const id = `answer-${f.id}`;
   return (
     <div className="field">
-      <label htmlFor={id}>{f.label}{!f.required && <small> (opsional)</small>}</label>
+      <label htmlFor={id}>
+        {f.label}
+        {!f.required && <small> (opsional)</small>}
+      </label>
       {f.type === 'textarea' ? (
         <textarea id={id} name={id} rows={3} maxLength={2000} required={f.required} />
       ) : f.type === 'select' ? (
         <select id={id} name={id} required={f.required} defaultValue="">
-          <option value="" disabled={f.required}>Pilih…</option>
-          {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+          <option value="" disabled={f.required}>
+            Pilih…
+          </option>
+          {(f.options ?? []).map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
         </select>
       ) : (
         <input id={id} name={id} maxLength={200} required={f.required} />

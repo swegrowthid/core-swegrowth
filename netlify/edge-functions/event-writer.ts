@@ -48,9 +48,12 @@ type EventInput = {
 };
 
 const PLATFORMS: Record<string, string> = {
-  instagram: 'Instagram (feed). Hook kuat di baris pertama, paragraf pendek, emoji secukupnya, ajakan daftar lewat "link di bio" plus link event, 5–8 hashtag relevan di akhir. Maksimal ±1.500 karakter.',
-  linkedin: 'LinkedIn. Nada profesional tapi hangat, buka dengan insight/pertanyaan yang relevan untuk software engineer, poin-poin singkat, emoji minimal, cantumkan link event, 3–5 hashtag. Maksimal ±1.800 karakter.',
-  whatsapp: 'broadcast WhatsApp/Telegram. Ringkas dan mudah dipindai: judul tebal pakai *bintang*, jadwal, tempat, pembicara, 2–4 poin yang dibahas, link daftar. Tanpa hashtag. Maksimal ±900 karakter.',
+  instagram:
+    'Instagram (feed). Hook kuat di baris pertama, paragraf pendek, emoji secukupnya, ajakan daftar lewat "link di bio" plus link event, 5–8 hashtag relevan di akhir. Maksimal ±1.500 karakter.',
+  linkedin:
+    'LinkedIn. Nada profesional tapi hangat, buka dengan insight/pertanyaan yang relevan untuk software engineer, poin-poin singkat, emoji minimal, cantumkan link event, 3–5 hashtag. Maksimal ±1.800 karakter.',
+  whatsapp:
+    'broadcast WhatsApp/Telegram. Ringkas dan mudah dipindai: judul tebal pakai *bintang*, jadwal, tempat, pembicara, 2–4 poin yang dibahas, link daftar. Tanpa hashtag. Maksimal ±900 karakter.',
 };
 
 const SYSTEM = `Kamu copywriter untuk SWE Growth, komunitas software engineer Indonesia yang suportif dan tidak menggurui.
@@ -74,7 +77,10 @@ function describe(e: EventInput, notes: string) {
     ['Deskripsi', e.description],
     ['Link event', e.url],
   ];
-  const data = rows.filter(([, v]) => v && v.trim()).map(([k, v]) => `${k}: ${v!.trim()}`).join('\n');
+  const data = rows
+    .filter(([, v]) => v && v.trim())
+    .map(([k, v]) => `${k}: ${v!.trim()}`)
+    .join('\n');
   return `DATA ACARA\n${data || '(kosong)'}${notes ? `\n\nCATATAN ADMIN (ikuti)\n${notes}` : ''}`;
 }
 
@@ -112,7 +118,12 @@ export default async (req: Request) => {
     title: str(raw.title, 200),
     summary: str(raw.summary, 600),
     description: str(raw.description, 6000),
-    highlights: Array.isArray(raw.highlights) ? raw.highlights.map((h) => str(h, 200) ?? '').filter(Boolean).slice(0, 8) : [],
+    highlights: Array.isArray(raw.highlights)
+      ? raw.highlights
+          .map((h) => str(h, 200) ?? '')
+          .filter(Boolean)
+          .slice(0, 8)
+      : [],
     speaker: str(raw.speaker, 120),
     speaker_title: str(raw.speaker_title, 120),
     organizer: str(raw.organizer, 120),
@@ -147,7 +158,12 @@ export default async (req: Request) => {
       return reply(200, {
         status: 'ok',
         summary: str(result.summary, 500) ?? '',
-        highlights: Array.isArray(result.highlights) ? result.highlights.map((h: unknown) => str(h, 200) ?? '').filter(Boolean).slice(0, 8) : [],
+        highlights: Array.isArray(result.highlights)
+          ? result.highlights
+              .map((h: unknown) => str(h, 200) ?? '')
+              .filter(Boolean)
+              .slice(0, 8)
+          : [],
         description: str(result.description, 6000) ?? '',
       });
     }
@@ -163,7 +179,12 @@ export default async (req: Request) => {
           required: ['captions'],
         },
       );
-      const captions = Array.isArray(result.captions) ? result.captions.map((c: unknown) => str(c, 3000) ?? '').filter(Boolean).slice(0, 3) : [];
+      const captions = Array.isArray(result.captions)
+        ? result.captions
+            .map((c: unknown) => str(c, 3000) ?? '')
+            .filter(Boolean)
+            .slice(0, 3)
+        : [];
       return reply(200, { status: 'ok', captions });
     }
 

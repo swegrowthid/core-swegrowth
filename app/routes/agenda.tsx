@@ -51,9 +51,7 @@ export default function Agenda({ loaderData: { activities, past, groups, externa
   const showPast = params.get('waktu') === 'lalu';
   const group = groups.find((g) => g.slug === params.get('oleh')) ?? null;
   // Hanya subgrup yang punya kegiatan di tab ini.
-  const usedGroups = groups.filter(
-    (g) => g.id === group?.id || (showPast ? past : activities).some((a) => a.organizer_group_id === g.id),
-  );
+  const usedGroups = groups.filter((g) => g.id === group?.id || (showPast ? past : activities).some((a) => a.organizer_group_id === g.id));
   const byGroup = <T extends { organizer_group_id: string | null }>(list: T[]) =>
     group ? list.filter((a) => a.organizer_group_id === group.id) : list;
   const shown = byGroup(activities);
@@ -71,8 +69,8 @@ export default function Agenda({ loaderData: { activities, past, groups, externa
       <div className="wrap narrow-wrap">
         <h1 className="page-title">Agenda</h1>
         <p className="muted" style={{ marginBottom: 28 }}>
-          Kegiatan komunitas SWE Growth, termasuk yang diadakan subgrup seperti English Club. Pilih kegiatan untuk melihat
-          detail dan mendaftar. Daftarnya gratis, cukup login dengan Google.
+          Kegiatan komunitas SWE Growth, termasuk yang diadakan subgrup seperti English Club. Pilih kegiatan untuk melihat detail dan
+          mendaftar. Daftarnya gratis, cukup login dengan Google.
         </p>
 
         <nav className="agenda-time-tabs" aria-label="Waktu kegiatan">
@@ -86,20 +84,32 @@ export default function Agenda({ loaderData: { activities, past, groups, externa
 
         {usedGroups.length > 0 && (
           <nav className="rec-tabs" aria-label="Penyelenggara">
-            <button type="button" aria-pressed={!group} onClick={() => update('oleh', null)}>Semua</button>
+            <button type="button" aria-pressed={!group} onClick={() => update('oleh', null)}>
+              Semua
+            </button>
             {usedGroups.map((g) => (
-              <button key={g.id} type="button" aria-pressed={group?.id === g.id} onClick={() => update('oleh', g.slug)}>{g.name}</button>
+              <button key={g.id} type="button" aria-pressed={group?.id === g.id} onClick={() => update('oleh', g.slug)}>
+                {g.name}
+              </button>
             ))}
           </nav>
         )}
-        {group?.description && <p className="muted" style={{ marginBottom: 16 }}>{group.description}</p>}
+        {group?.description && (
+          <p className="muted" style={{ marginBottom: 16 }}>
+            {group.description}
+          </p>
+        )}
 
         {showPast ? (
           <>
             {shownPast.length === 0 ? (
-              <p className="muted">{group ? `Belum ada kegiatan ${group.name} yang sudah lewat.` : 'Belum ada kegiatan yang sudah lewat.'}</p>
+              <p className="muted">
+                {group ? `Belum ada kegiatan ${group.name} yang sudah lewat.` : 'Belum ada kegiatan yang sudah lewat.'}
+              </p>
             ) : (
-              <div className="panel"><PastEventList activities={shownPast} groups={groups} /></div>
+              <div className="panel">
+                <PastEventList activities={shownPast} groups={groups} />
+              </div>
             )}
             {!group && <PastArchive />}
           </>
@@ -109,12 +119,17 @@ export default function Agenda({ loaderData: { activities, past, groups, externa
             {shownPast.length > 0 && (
               <>
                 {' '}
-                <button type="button" className="link-btn" onClick={() => update('waktu', 'lalu')}>Lihat kegiatan lalu</button>.
+                <button type="button" className="link-btn" onClick={() => update('waktu', 'lalu')}>
+                  Lihat kegiatan lalu
+                </button>
+                .
               </>
             )}
           </p>
         ) : (
-          <div className="panel"><AgendaList activities={shown} groups={groups} now={now} /></div>
+          <div className="panel">
+            <AgendaList activities={shown} groups={groups} now={now} />
+          </div>
         )}
 
         {/* Acara pihak lain tidak punya subgrup, jadi hanya tampil tanpa filter penyelenggara. */}
@@ -135,15 +150,29 @@ function PastArchive() {
             <time>{monthFmt.format(new Date(`${a.month}-01T00:00:00`))}</time>
             <span>
               {a.title}
-              {a.youtube && <> · <a href={a.youtube} target="_blank" rel="noreferrer">tonton rekaman</a></>}
+              {a.youtube && (
+                <>
+                  {' '}
+                  ·{' '}
+                  <a href={a.youtube} target="_blank" rel="noreferrer">
+                    tonton rekaman
+                  </a>
+                </>
+              )}
             </span>
           </li>
         ))}
       </ul>
       <p>
         Dirangkum dari arsip media SWE Growth:{' '}
-        <a href="https://x.com/swegrowthid" target="_blank" rel="noreferrer">X</a> dan{' '}
-        <a href="https://www.youtube.com/@segrowthid" target="_blank" rel="noreferrer">YouTube</a>.
+        <a href="https://x.com/swegrowthid" target="_blank" rel="noreferrer">
+          X
+        </a>{' '}
+        dan{' '}
+        <a href="https://www.youtube.com/@segrowthid" target="_blank" rel="noreferrer">
+          YouTube
+        </a>
+        .
       </p>
     </details>
   );

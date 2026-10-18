@@ -56,8 +56,7 @@ const monthFmt = new Intl.DateTimeFormat('id-ID', { month: 'short', year: 'numer
 /** "2023-04" → "Apr 2023". */
 export const formatMonth = (ym: string) => monthFmt.format(new Date(`${ym}-01T00:00:00Z`));
 
-export const experiencePeriod = (e: Experience) =>
-  `${e.start ? formatMonth(e.start) : '?'} – ${e.end ? formatMonth(e.end) : 'sekarang'}`;
+export const experiencePeriod = (e: Experience) => `${e.start ? formatMonth(e.start) : '?'} – ${e.end ? formatMonth(e.end) : 'sekarang'}`;
 
 /** Terbaru di atas: yang masih berjalan dulu, lalu berdasarkan bulan mulai. */
 export const sortExperiences = (list: Experience[]) =>
@@ -114,9 +113,7 @@ export const MOTIVATION_QUESTIONS = [
 
 /** Bagian opsional yang belum diisi — dipakai untuk mengingatkan member melengkapi data. */
 export function missingProfileParts(p: ProfileRow) {
-  return [
-    !p.username && 'username link profil',
-    p.skills.length === 0 && 'keahlian',
-    p.experiences.length === 0 && 'pengalaman',
-  ].filter((x): x is string => Boolean(x));
+  return [!p.username && 'username link profil', p.skills.length === 0 && 'keahlian', p.experiences.length === 0 && 'pengalaman'].filter(
+    (x): x is string => Boolean(x),
+  );
 }
