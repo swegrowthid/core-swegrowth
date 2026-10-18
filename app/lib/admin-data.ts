@@ -9,6 +9,7 @@ import { supabase } from './supabase';
 
 type Tables = Database['public']['Tables'];
 type Insert<T extends keyof Tables> = Tables[T]['Insert'];
+type Update<T extends keyof Tables> = Tables[T]['Update'];
 
 // ---------------------------------------------------------------------------
 // Dashboard /admin
@@ -54,6 +55,29 @@ export async function loadAdminDashboard() {
 }
 
 export type AdminDashboard = Awaited<ReturnType<typeof loadAdminDashboard>>;
+
+/** Profil lengkap satu member + kegiatan yang pernah diikuti. */
+export async function loadAdminMember(userId: string) {
+  const db = supabase();
+  const [profile, membership, motivation, regs, activities] = await Promise.all([
+    db.from('profiles').select('*').eq('id', userId).maybeSingle(),
+    db.from('memberships').select('*').eq('user_id', userId).maybeSingle(),
+    db.from('member_motivations').select('*').eq('user_id', userId).maybeSingle(),
+    db
+      .from('activity_registrations')
+      .select('activity_id, status, created_at')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+    db.from('activities').select('id, title, slug'),
+  ]);
+  const activityOf = new Map((activities.data ?? []).map((a) => [a.id, a]));
+  return {
+    profile: profile.data,
+    membership: membership.data,
+    motivation: motivation.data,
+    registrations: (regs.data ?? []).map((r) => ({ ...r, activity: activityOf.get(r.activity_id) ?? null })),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Membership
@@ -136,3 +160,22 @@ export const setContributionPublished = (id: string, isPublished: boolean) =>
   supabase().from('member_contributions').update({ is_published: isPublished }).eq('id', id);
 
 export const deleteContribution = (id: string) => supabase().from('member_contributions').delete().eq('id', id);
+
+// ---------------------------------------------------------------------------
+// Rekomendasi
+// ---------------------------------------------------------------------------
+
+export const addRecommendation = (row: Insert<'recommendations'>) => supabase().from('recommendations').insert(row);
+
+export const updateRecommendation = (id: string, patch: Update<'recommendations'>) =>
+  supabase().from('recommendations').update(patch).eq('id', id);
+
+export const deleteRecommendation = (id: string) => supabase().from('recommendations').delete().eq('id', id);
+
+export const addRecommendationTopic = (row: Insert<'recommendation_topics'>) => supabase().from('recommendation_topics').insert(row);
+
+/** Topik dikunci dengan namanya; ganti nama ikut memperbarui rekomendasi lewat trigger di database. */
+export const updateRecommendationTopic = (name: string, patch: Update<'recommendation_topics'>) =>
+  supabase().from('recommendation_topics').update(patch).eq('name', name);
+
+export const deleteRecommendationTopic = (name: string) => supabase().from('recommendation_topics').delete().eq('name', name);

@@ -117,3 +117,23 @@ export function missingProfileParts(p: ProfileRow) {
     (x): x is string => Boolean(x),
   );
 }
+
+type MotivationAnswers = Pick<MemberMotivationRow, 'career_problem' | 'help_wanted' | 'join_reason'> & Partial<MemberMotivationRow>;
+
+/**
+ * Simpan jawaban kenalan. Insert dulu; kalau sudah pernah mengisi (`existingUserId`),
+ * perbarui. Upsert tidak dipakai karena butuh hak update atas user_id.
+ */
+export function saveMotivation(existingUserId: string | null, answers: MotivationAnswers) {
+  const table = supabase().from('member_motivations');
+  return existingUserId ? table.update(answers).eq('user_id', existingUserId).select().single() : table.insert(answers).select().single();
+}
+
+export const updateProfile = (id: string, patch: Partial<ProfileRow>) =>
+  supabase().from('profiles').update(patch).eq('id', id).select().single();
+
+/** Profil publik lewat public_profile(): tanpa WhatsApp, email, dan jawaban kenalan. */
+export async function fetchPublicProfile(handle: string) {
+  const { data } = await supabase().rpc('public_profile', { p_handle: handle }).maybeSingle();
+  return data;
+}

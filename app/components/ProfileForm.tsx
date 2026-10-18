@@ -9,8 +9,8 @@ import {
   sortExperiences,
   USERNAME_RE,
   WHATSAPP_RE,
+  updateProfile,
 } from '~/lib/profile';
-import { supabase } from '~/lib/supabase';
 
 type Props = {
   profile: ProfileRow;
@@ -77,37 +77,32 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
 
     setBusy(true);
     setError(null);
-    const { data, error: saveError } = await supabase()
-      .from('profiles')
-      .update({
-        full_name: val('full_name'),
-        username: username || null,
-        whatsapp,
-        location: val('location') || null,
-        headline: val('headline'),
-        company: val('company') || null,
-        seniority: (val('seniority') || null) as Seniority | null,
-        years_experience: years ? Number.parseInt(years, 10) : null,
-        linkedin_url: linkedin,
-        github_url: normalizeUrl(val('github_url')),
-        portfolio_url: normalizeUrl(val('portfolio_url')),
-        skills: parseTags(val('skills')),
-        tech_stack: techStack,
-        experiences: sortExperiences(
-          filled.map((x) => ({
-            role: x.role.trim(),
-            company: x.company.trim(),
-            start: x.start,
-            end: x.current ? null : x.end,
-            description: x.description.trim(),
-          })),
-        ),
-        bio: val('bio'),
-        onboarded_at: profile.onboarded_at ?? new Date().toISOString(),
-      })
-      .eq('id', profile.id)
-      .select()
-      .single();
+    const { data, error: saveError } = await updateProfile(profile.id, {
+      full_name: val('full_name'),
+      username: username || null,
+      whatsapp,
+      location: val('location') || null,
+      headline: val('headline'),
+      company: val('company') || null,
+      seniority: (val('seniority') || null) as Seniority | null,
+      years_experience: years ? Number.parseInt(years, 10) : null,
+      linkedin_url: linkedin,
+      github_url: normalizeUrl(val('github_url')),
+      portfolio_url: normalizeUrl(val('portfolio_url')),
+      skills: parseTags(val('skills')),
+      tech_stack: techStack,
+      experiences: sortExperiences(
+        filled.map((x) => ({
+          role: x.role.trim(),
+          company: x.company.trim(),
+          start: x.start,
+          end: x.current ? null : x.end,
+          description: x.description.trim(),
+        })),
+      ),
+      bio: val('bio'),
+      onboarded_at: profile.onboarded_at ?? new Date().toISOString(),
+    });
     setBusy(false);
 
     if (saveError) {

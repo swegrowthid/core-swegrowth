@@ -1,5 +1,13 @@
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router';
+import {
+  addRecommendation,
+  addRecommendationTopic,
+  deleteRecommendation,
+  deleteRecommendationTopic,
+  updateRecommendation,
+  updateRecommendationTopic,
+} from '~/lib/admin-data';
 import { Field, useMutation, val } from '~/lib/admin-form';
 import { useAuth } from '~/lib/auth';
 import type {
@@ -24,7 +32,6 @@ import {
   rejectReasonLabel,
   STATUS_LABEL,
 } from '~/lib/recommendations';
-import { supabase } from '~/lib/supabase';
 
 const VIEWS: { id: RecommendationStatus; label: string }[] = [
   { id: 'pending', label: 'Menunggu' },
@@ -69,14 +76,11 @@ export function RecommendationsAdmin({
   const setStatus = (r: RecommendationRow, status: RecommendationStatus, message: string) =>
     run(
       () =>
-        supabase()
-          .from('recommendations')
-          .update({
-            status,
-            ...(status === 'approved' || status === 'rejected' ? reviewed() : {}),
-            ...(status !== 'rejected' ? { reject_reason: null, reject_note: '' } : {}),
-          })
-          .eq('id', r.id),
+        updateRecommendation(r.id, {
+          status,
+          ...(status === 'approved' || status === 'rejected' ? reviewed() : {}),
+          ...(status !== 'rejected' ? { reject_reason: null, reject_note: '' } : {}),
+        }),
       message,
     );
 
@@ -85,16 +89,13 @@ export function RecommendationsAdmin({
     const form = new FormData(e.currentTarget);
     const ok = await run(
       () =>
-        supabase()
-          .from('recommendations')
-          .update({
-            status: 'rejected',
-            reject_reason: val(form, 'reject_reason') as RecommendationRejectReason,
-            reject_note: val(form, 'reject_note'),
-            is_featured: false,
-            ...reviewed(),
-          })
-          .eq('id', r.id),
+        updateRecommendation(r.id, {
+          status: 'rejected',
+          reject_reason: val(form, 'reject_reason') as RecommendationRejectReason,
+          reject_note: val(form, 'reject_note'),
+          is_featured: false,
+          ...reviewed(),
+        }),
       `"${r.title}" ditolak. Pengusul melihat alasannya di portal.`,
     );
     if (ok) setRejecting(null);
@@ -102,13 +103,13 @@ export function RecommendationsAdmin({
 
   const toggleFeatured = (r: RecommendationRow) =>
     run(
-      () => supabase().from('recommendations').update({ is_featured: !r.is_featured }).eq('id', r.id),
+      () => updateRecommendation(r.id, { is_featured: !r.is_featured }),
       r.is_featured ? `"${r.title}" tidak lagi tampil di landing.` : `"${r.title}" tampil di landing.`,
     );
 
   const remove = (r: RecommendationRow) => {
     if (!confirm(`Hapus "${r.title}" permanen?`)) return;
-    void run(() => supabase().from('recommendations').delete().eq('id', r.id), 'Rekomendasi dihapus.');
+    void run(() => deleteRecommendation(r.id), 'Rekomendasi dihapus.');
   };
 
   return (
@@ -124,18 +125,11 @@ export function RecommendationsAdmin({
         save={(row, approve) =>
           editing
             ? run(
-                () =>
-                  supabase()
-                    .from('recommendations')
-                    .update({ ...row, ...(approve ? { status: 'approved' as const, ...reviewed() } : {}) })
-                    .eq('id', editing.id),
+                () => updateRecommendation(editing.id, { ...row, ...(approve ? { status: 'approved' as const, ...reviewed() } : {}) }),
                 approve ? `"${row.title}" disetujui dan tayang.` : 'Rekomendasi diperbarui.',
               )
             : run(
-                () =>
-                  supabase()
-                    .from('recommendations')
-                    .insert({ ...row, source: 'admin', status: 'approved', ...reviewed() }),
+                () => addRecommendation({ ...row, source: 'admin', status: 'approved', ...reviewed() }),
                 'Rekomendasi ditambahkan dan langsung tayang.',
               )
         }
@@ -344,7 +338,7 @@ function TopicsAdmin({ topics, items }: { topics: RecommendationTopicRow[]; item
     const formEl = e.currentTarget;
     const name = val(new FormData(formEl), 'name');
     const sort_order = Math.max(0, ...topics.map((t) => t.sort_order)) + 10;
-    const ok = await run(() => supabase().from('recommendation_topics').insert({ name, sort_order }), `Topik "${name}" ditambahkan.`);
+    const ok = await run(() => addRecommendationTopic({ name, sort_order }), `Topik "${name}" ditambahkan.`);
     if (ok) formEl.reset();
   };
 
@@ -354,13 +348,13 @@ function TopicsAdmin({ topics, items }: { topics: RecommendationTopicRow[]; item
     const name = val(form, 'name');
     const sort_order = Number.parseInt(val(form, 'sort_order') || '0', 10);
     if (name === t.name && sort_order === t.sort_order) return;
-    void run(() => supabase().from('recommendation_topics').update({ name, sort_order }).eq('name', t.name), `Topik "${name}" disimpan.`);
+    void run(() => updateRecommendationTopic(t.name, { name, sort_order }), `Topik "${name}" disimpan.`);
   };
 
   const remove = (t: RecommendationTopicRow) => {
     const n = usage(t.name);
     if (!confirm(n > 0 ? `Hapus topik "${t.name}"? Topik ini dilepas dari ${n} rekomendasi.` : `Hapus topik "${t.name}"?`)) return;
-    void run(() => supabase().from('recommendation_topics').delete().eq('name', t.name), 'Topik dihapus.');
+    void run(() => deleteRecommendationTopic(t.name), 'Topik dihapus.');
   };
 
   return (

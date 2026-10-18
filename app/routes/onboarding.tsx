@@ -4,9 +4,9 @@ import type { Route } from './+types/onboarding';
 import { CommunityChannels } from '~/components/CommunityChannels';
 import { ProfileForm } from '~/components/ProfileForm';
 import { fetchProfile, requireUser, safeNext, useAuth } from '~/lib/auth';
+import { fetchWhatsappGroups } from '~/lib/community';
 import type { MemberMotivationRow, WhatsappGroupRow } from '~/lib/database.types';
-import { fetchMotivation, MOTIVATION_QUESTIONS } from '~/lib/profile';
-import { supabase } from '~/lib/supabase';
+import { fetchMotivation, MOTIVATION_QUESTIONS, saveMotivation } from '~/lib/profile';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Gabung SWE Growth' }];
 
@@ -72,11 +72,8 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
               profile={profile}
               submitLabel="Simpan & dapatkan link komunitas"
               onSaved={async () => {
-                const [{ data }] = await Promise.all([
-                  supabase().from('whatsapp_groups').select('*').order('sort_order').order('created_at'),
-                  refreshProfile(),
-                ]);
-                setGroups(data ?? []);
+                const [list] = await Promise.all([fetchWhatsappGroups(), refreshProfile()]);
+                setGroups(list);
                 goTo('grup');
               }}
             />
@@ -116,11 +113,7 @@ function MotivationStep({ motivation, onSaved }: { motivation: MemberMotivationR
 
     setBusy(true);
     setError(null);
-    const db = supabase().from('member_motivations');
-    // Insert dulu; kalau sudah pernah mengisi, perbarui (upsert butuh hak update atas user_id).
-    const { data, error: saveError } = motivation
-      ? await db.update(answers).eq('user_id', motivation.user_id).select().single()
-      : await db.insert(answers).select().single();
+    const { data, error: saveError } = await saveMotivation(motivation?.user_id ?? null, answers);
     setBusy(false);
 
     if (saveError) {

@@ -25,12 +25,14 @@ import {
   speakerPhoto,
   timeRange,
   type Activity,
+  fetchOrganizer,
+  followActivity,
+  isFollowing,
 } from '~/lib/activities';
 import { useAuth } from '~/lib/auth';
 import type { RegistrationStatus } from '~/lib/database.types';
 import { formatWibDate, formatWibDay, formatWibTime } from '~/lib/format';
 import { pageMeta } from '~/lib/site';
-import { supabase } from '~/lib/supabase';
 import { youtubeId } from '~/lib/youtube';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
@@ -50,17 +52,7 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const activity = await getPublishedActivityBySlug(params.slug);
   if (!activity) throw data(null, { status: 404 });
-  const [stats, organizer] = await Promise.all([
-    fetchPublicStats(activity.id),
-    activity.organizer_group_id
-      ? supabase()
-          .from('community_groups')
-          .select('*')
-          .eq('id', activity.organizer_group_id)
-          .maybeSingle()
-          .then((r) => r.data)
-      : null,
-  ]);
+  const [stats, organizer] = await Promise.all([fetchPublicStats(activity.id), fetchOrganizer(activity.organizer_group_id)]);
   return { activity, stats, organizer };
 }
 
@@ -205,11 +197,8 @@ function useMine(activityId: string) {
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    void Promise.all([
-      fetchMyRegistration(activityId, user.id),
-      supabase().from('activity_interests').select('id').eq('activity_id', activityId).eq('user_id', user.id).maybeSingle(),
-    ]).then(([reg, interest]) => {
-      if (!cancelled) setMine({ status: reg?.status ?? null, following: Boolean(interest.data) });
+    void Promise.all([fetchMyRegistration(activityId, user.id), isFollowing(activityId, user.id)]).then(([reg, following]) => {
+      if (!cancelled) setMine({ status: reg?.status ?? null, following });
     });
     return () => {
       cancelled = true;
@@ -357,7 +346,7 @@ function RegisterCard({ activity: a, stats, my }: { activity: Activity; stats: S
 
   const follow = async () => {
     setBusy(true);
-    const { error: rpcError } = await supabase().rpc('follow_activity', { p_activity_id: a.id });
+    const { error: rpcError } = await followActivity(a.id);
     setBusy(false);
     if (rpcError) setError('Belum berhasil. Coba lagi sebentar lagi.');
     else setMine((m) => ({ status: m?.status ?? null, following: true }));

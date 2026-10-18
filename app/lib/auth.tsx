@@ -239,3 +239,20 @@ export function initials(name: string) {
       .join('') || '?'
   );
 }
+
+/** URL login sekali pakai untuk app lain (edge function app-handoff); null kalau gagal. */
+export async function requestAppHandoff(app: string, returnTo: string | null) {
+  const { data, error } = await supabase().functions.invoke<{ url: string }>('app-handoff', { body: { app, returnTo } });
+  return error || !data?.url ? null : data.url;
+}
+
+/**
+ * Sesi setelah redirect OAuth Supabase. Biasanya kode sudah ditukar otomatis
+ * (detectSessionInUrl); kalau belum (client dibuat sebelum URL berisi code), tukar di sini.
+ */
+export async function sessionFromCallback(code: string | null) {
+  const { data } = await supabase().auth.getSession();
+  if (data.session || !code) return data.session;
+  const exchanged = await supabase().auth.exchangeCodeForSession(code);
+  return exchanged.data.session;
+}

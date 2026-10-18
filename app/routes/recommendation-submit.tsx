@@ -19,8 +19,10 @@ import {
   LANGUAGE_LABEL,
   PRICE_LABEL,
   STATUS_LABEL,
+  checkRecommendationUrl,
+  fetchOwnRecommendation,
+  submitRecommendation,
 } from '~/lib/recommendations';
-import { supabase } from '~/lib/supabase';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Kirim rekomendasi — SWE Growth' }, { name: 'robots', content: 'noindex' }];
 
@@ -35,7 +37,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const topics = await getRecommendationTopics();
   if (!editId) return { editing: null, topics };
 
-  const { data } = await supabase().from('recommendations').select('*').eq('id', editId).eq('submitted_by', user.id).maybeSingle();
+  const data = await fetchOwnRecommendation(editId, user.id);
   if (!data || data.status !== 'pending') throw redirect('/portal');
   return { editing: data, topics };
 }
@@ -73,10 +75,7 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
 
   const checkUrl = async (url: string) => {
     if (!/^https:\/\/\S+\.\S+/.test(url.trim())) return setDuplicate(null);
-    const { data } = await supabase()
-      .rpc('check_recommendation_url', { p_url: url, p_exclude_id: editing?.id ?? null })
-      .maybeSingle();
-    setDuplicate(data ?? null);
+    setDuplicate((await checkRecommendationUrl(url, editing?.id ?? null)) ?? null);
   };
 
   const toggleTopic = (t: string) =>
@@ -94,7 +93,7 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
 
     setBusy(true);
     setError(null);
-    const { error: rpcError } = await supabase().rpc('submit_recommendation', {
+    const { error: rpcError } = await submitRecommendation({
       p_category: category,
       p_title: val('title'),
       p_url: val('url'),

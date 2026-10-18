@@ -1,5 +1,6 @@
 import { client } from './activities';
 import type {
+  Database,
   PublishedRecommendation,
   RecommendationCategory,
   RecommendationLanguage,
@@ -105,3 +106,21 @@ export async function fetchMyRecommendations(userId: string) {
 
 export const directoryPath = (category?: RecommendationCategory) => (category ? `/rekomendasi?kategori=${category}` : '/rekomendasi');
 export const SUBMIT_PATH = '/rekomendasi/kirim';
+
+/** Usulan milik user sendiri (untuk ?edit=); null kalau bukan miliknya. */
+export async function fetchOwnRecommendation(id: string, userId: string) {
+  const { data } = await supabase().from('recommendations').select('*').eq('id', id).eq('submitted_by', userId).maybeSingle();
+  return data;
+}
+
+/** Link yang sudah pernah diusulkan (kecuali `excludeId`), untuk peringatan duplikat. */
+export async function checkRecommendationUrl(url: string, excludeId: string | null) {
+  const { data } = await supabase().rpc('check_recommendation_url', { p_url: url, p_exclude_id: excludeId }).maybeSingle();
+  return data;
+}
+
+export const submitRecommendation = (args: Database['public']['Functions']['submit_recommendation']['Args']) =>
+  supabase().rpc('submit_recommendation', args);
+
+/** Tarik usulan sendiri; RLS hanya mengizinkan selama masih pending. */
+export const withdrawRecommendation = (id: string) => supabase().from('recommendations').delete().eq('id', id);

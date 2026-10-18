@@ -11,11 +11,11 @@ import {
   isPaid,
   registeredPath,
   syncCalendar,
+  joinActivity,
 } from '~/lib/activities';
 import { fetchProfile, requireUser } from '~/lib/auth';
 import type { RegistrationField } from '~/lib/database.types';
 import { WHATSAPP_RE } from '~/lib/profile';
-import { supabase } from '~/lib/supabase';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => [
   { title: `Daftar: ${loaderData?.activity.title ?? 'Kegiatan'} — SWE Growth` },
@@ -75,11 +75,11 @@ export default function EventRegister({ loaderData }: Route.ComponentProps) {
 
     setBusy(true);
     setError(null);
-    const { error: rpcError } = await supabase().rpc('join_activity', {
-      p_activity_id: a.id,
-      p_name: val('name'),
-      p_whatsapp: val('whatsapp'),
-      p_answers: Object.fromEntries(a.registration_fields.map((f) => [f.id, val(`answer-${f.id}`)])),
+    const { error: rpcError } = await joinActivity({
+      activityId: a.id,
+      name: val('name'),
+      whatsapp: val('whatsapp'),
+      answers: Object.fromEntries(a.registration_fields.map((f) => [f.id, val(`answer-${f.id}`)])),
     });
     if (rpcError) {
       setBusy(false);

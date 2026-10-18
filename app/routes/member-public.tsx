@@ -2,8 +2,8 @@ import { data, Link } from 'react-router';
 import type { Route } from './+types/member-public';
 import { ProfileView } from '~/components/ProfileView';
 import { useAuth } from '~/lib/auth';
+import { fetchPublicProfile } from '~/lib/profile';
 import { pageMeta } from '~/lib/site';
-import { supabase } from '~/lib/supabase';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
   const p = loaderData?.profile;
@@ -17,7 +17,7 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
 
 /** Profil publik member. Data lewat public_profile(): tanpa WhatsApp, email, dan jawaban kenalan. */
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
-  const { data: profile } = await supabase().rpc('public_profile', { p_handle: params.handle }).maybeSingle();
+  const profile = await fetchPublicProfile(params.handle);
   if (!profile) throw data(null, { status: 404 });
   return { profile };
 }

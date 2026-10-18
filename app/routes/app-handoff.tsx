@@ -1,7 +1,6 @@
 import { Link } from 'react-router';
 import type { Route } from './+types/app-handoff';
-import { requireUser } from '~/lib/auth';
-import { supabase } from '~/lib/supabase';
+import { requireUser, requestAppHandoff } from '~/lib/auth';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Membuka aplikasi — SWE Growth' }, { name: 'robots', content: 'noindex' }];
 
@@ -12,13 +11,11 @@ export const meta: Route.MetaFunction = () => [{ title: 'Membuka aplikasi — SW
 export async function clientLoader({ request, params }: Route.ClientLoaderArgs) {
   await requireUser(request);
   const returnTo = new URL(request.url).searchParams.get('return');
-  const { data, error } = await supabase().functions.invoke<{ url: string }>('app-handoff', {
-    body: { app: params.app, returnTo },
-  });
-  if (error || !data?.url) return { failed: true };
+  const url = await requestAppHandoff(params.app, returnTo);
+  if (!url) return { failed: true };
 
   // replace: URL berisi token jangan tersimpan di riwayat browser.
-  window.location.replace(data.url);
+  window.location.replace(url);
   return { failed: false };
 }
 

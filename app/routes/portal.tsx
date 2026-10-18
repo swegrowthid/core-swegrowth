@@ -4,36 +4,51 @@ import type { Route } from './+types/portal';
 import { CommunityChannels } from '~/components/CommunityChannels';
 import { PastEventList } from '~/components/PastEventList';
 import { PortalHeader } from '~/components/PortalHeader';
-import { activityPath, activityStatusLabel, pastActivities, registeredPath, upcomingSessions, type Activity } from '~/lib/activities';
+import {
+  activityPath,
+  activityStatusLabel,
+  pastActivities,
+  registeredPath,
+  upcomingSessions,
+  type Activity,
+  fetchMyRegistrationStatuses,
+  getPublishedActivities,
+} from '~/lib/activities';
 import { requireUser } from '~/lib/auth';
+import { fetchWhatsappGroups } from '~/lib/community';
 import type { RecommendationRow, RegistrationStatus } from '~/lib/database.types';
-import { categoryOf, directoryPath, fetchMyRecommendations, rejectReasonLabel, STATUS_LABEL, SUBMIT_PATH } from '~/lib/recommendations';
 import { formatWibTime, relativeFromNow, wibDayParts } from '~/lib/format';
-import { supabase } from '~/lib/supabase';
+import {
+  categoryOf,
+  directoryPath,
+  fetchMyRecommendations,
+  rejectReasonLabel,
+  STATUS_LABEL,
+  SUBMIT_PATH,
+  withdrawRecommendation,
+} from '~/lib/recommendations';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Portal — SWE Growth' }, { name: 'robots', content: 'noindex' }];
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const user = await requireUser(request);
-  const db = supabase();
-
   const [regs, activities, groups, recommendations] = await Promise.all([
-    db.from('activity_registrations').select('activity_id, status').eq('user_id', user.id).neq('status', 'cancelled'),
-    db.from('activities').select('*').eq('is_public', true).order('starts_at', { ascending: true, nullsFirst: false }),
-    db.from('whatsapp_groups').select('*').order('sort_order').order('created_at'),
+    fetchMyRegistrationStatuses(user.id),
+    getPublishedActivities(),
+    fetchWhatsappGroups(),
     fetchMyRecommendations(user.id),
   ]);
 
-  const upcoming = upcomingSessions(activities.data ?? [], { undatedLast: true });
-  const statusById = new Map((regs.data ?? []).map((r) => [r.activity_id, r.status]));
-  const attended = new Set((regs.data ?? []).filter((r) => r.status === 'confirmed').map((r) => r.activity_id));
+  const upcoming = upcomingSessions(activities, { undatedLast: true });
+  const statusById = new Map(regs.map((r) => [r.activity_id, r.status]));
+  const attended = new Set(regs.filter((r) => r.status === 'confirmed').map((r) => r.activity_id));
 
   return {
     mine: upcoming.filter((a) => statusById.has(a.id)).map((a) => ({ activity: a, status: statusById.get(a.id)! })),
     others: upcoming.filter((a) => !statusById.has(a.id)),
-    past: pastActivities(activities.data ?? []).slice(0, PAST_LIMIT),
+    past: pastActivities(activities).slice(0, PAST_LIMIT),
     attended: [...attended],
-    groups: groups.data ?? [],
+    groups,
     recommendations,
   };
 }
@@ -168,7 +183,7 @@ function MyRecommendations({ items }: { items: RecommendationRow[] }) {
   const withdraw = async (r: RecommendationRow) => {
     if (!confirm(`Tarik rekomendasi "${r.title}"? Usulannya dihapus dari antrean review.`)) return;
     setBusy(r.id);
-    await supabase().from('recommendations').delete().eq('id', r.id);
+    await withdrawRecommendation(r.id);
     setBusy(null);
     await revalidator.revalidate();
   };

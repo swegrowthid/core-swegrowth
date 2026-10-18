@@ -11,11 +11,12 @@ import {
   registrationCode,
   syncCalendar,
   timeRange,
+  cancelRegistration,
+  fetchActivityLinks,
 } from '~/lib/activities';
 import { fetchProfile, requireUser } from '~/lib/auth';
 import { formatWibDate, formatWibTime } from '~/lib/format';
 import { fetchMotivation, isOnboarded } from '~/lib/profile';
-import { supabase } from '~/lib/supabase';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => [
   { title: `Terdaftar: ${loaderData?.activity.title ?? 'Kegiatan'} — SWE Growth` },
@@ -30,13 +31,13 @@ export async function clientLoader({ request, params }: Route.ClientLoaderArgs) 
 
   const [registration, links, profile, motivation] = await Promise.all([
     fetchMyRegistration(activity.id, user.id),
-    supabase().rpc('activity_links', { p_activity_id: activity.id }).maybeSingle(),
+    fetchActivityLinks(activity.id),
     fetchProfile(user.id),
     fetchMotivation(user.id),
   ]);
   if (!registration || !isActiveRegistration(registration.status)) throw redirect(activityPath(activity));
 
-  return { activity, registration, links: links.data, onboarded: isOnboarded(profile, motivation) };
+  return { activity, registration, links, onboarded: isOnboarded(profile, motivation) };
 }
 
 export function HydrateFallback() {
@@ -64,7 +65,7 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
   const cancel = async () => {
     if (!confirm('Batalkan pendaftaran untuk kegiatan ini? Kursimu akan diberikan ke peserta lain.')) return;
     setBusy(true);
-    await supabase().rpc('cancel_activity_registration', { p_activity_id: a.id });
+    await cancelRegistration(a.id);
     // Hapus dari tamu Google Calendar (dan undang peserta yang naik dari waitlist).
     void syncCalendar(a.id);
     navigate(activityPath(a), { replace: true });
