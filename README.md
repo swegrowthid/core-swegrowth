@@ -69,6 +69,8 @@ npm run build      # output ke build/client
 6. **Rekaman YouTube**: migration `20261021000000_youtube_recording.sql` menambah kolom `activities.youtube_url`.
    Admin menempel link video di bagian Dokumentasi; rekaman tampil di galeri `/rekaman` dan beranda, diputar di halaman
    event, dan ditandai di Kegiatan lalu. Arsip lama (`app/lib/past-activities.ts`) ikut tampil kalau diberi `youtube`.
+   Video terbaru dari channel YouTube (maks. 15, dari feed channel lewat edge function `/api/youtube-feed`, cache sejam)
+   juga otomatis masuk galeri tanpa perlu diinput.
 
 ### Event komunitas
 
