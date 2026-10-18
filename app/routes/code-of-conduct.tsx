@@ -177,7 +177,7 @@ export default function CodeOfConduct() {
       <section className="block">
         <div className="wrap">
           <h1 className="page-title">Code of Conduct</h1>
-          <p className="muted" style={{ maxWidth: '68ch', marginBottom: 32 }}>
+          <p className="muted measure-68 mb-32">
             Nilai, aturan interaksi, dan batas aman yang kita jaga bersama di semua ruang SWE Growth: grup WhatsApp, kegiatan, dan portal
             member.
           </p>

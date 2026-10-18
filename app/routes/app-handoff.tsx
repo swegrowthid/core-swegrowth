@@ -29,9 +29,7 @@ export default function AppHandoff({ loaderData }: Route.ComponentProps) {
     <section className="block">
       <div className="wrap narrow-wrap">
         <h1 className="page-title">Aplikasi belum bisa dibuka</h1>
-        <p className="muted" style={{ marginBottom: 20 }}>
-          Coba lagi sebentar lagi. Kalau masih gagal, kabari admin.
-        </p>
+        <p className="muted mb-20">Coba lagi sebentar lagi. Kalau masih gagal, kabari admin.</p>
         <div className="inline-actions">
           <button className="btn btn-primary sm" type="button" onClick={() => window.location.reload()}>
             Coba lagi

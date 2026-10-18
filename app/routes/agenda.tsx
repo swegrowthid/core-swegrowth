@@ -68,7 +68,7 @@ export default function Agenda({ loaderData: { activities, past, groups, externa
     <section className="block">
       <div className="wrap narrow-wrap">
         <h1 className="page-title">Agenda</h1>
-        <p className="muted" style={{ marginBottom: 28 }}>
+        <p className="muted mb-28">
           Kegiatan komunitas SWE Growth, termasuk yang diadakan subgrup seperti English Club. Pilih kegiatan untuk melihat detail dan
           mendaftar. Daftarnya gratis, cukup login dengan Google.
         </p>
@@ -94,11 +94,7 @@ export default function Agenda({ loaderData: { activities, past, groups, externa
             ))}
           </nav>
         )}
-        {group?.description && (
-          <p className="muted" style={{ marginBottom: 16 }}>
-            {group.description}
-          </p>
-        )}
+        {group?.description && <p className="muted mb-16">{group.description}</p>}
 
         {showPast ? (
           <>

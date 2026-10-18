@@ -18,12 +18,8 @@ export function LegalPage({
     <section className="block">
       <div className="wrap">
         <h1 className="page-title">{title}</h1>
-        <p className="muted" style={{ maxWidth: '68ch', marginBottom: 8 }}>
-          {intro}
-        </p>
-        <p className="mono" style={{ marginBottom: 32 }}>
-          Terakhir diperbarui: {updated}
-        </p>
+        <p className="muted measure-68 mb-8">{intro}</p>
+        <p className="mono mb-32">Terakhir diperbarui: {updated}</p>
       </div>
       <div className="wrap coc-grid">
         <nav className="toc" aria-label="Daftar isi">

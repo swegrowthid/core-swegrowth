@@ -80,7 +80,7 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <section className="block on-teal registered-hero">
-        <div className="wrap" style={{ maxWidth: 680 }}>
+        <div className="wrap wrap-680">
           <span className="check-badge" aria-hidden="true">
             {confirmed ? '✓' : '⏳'}
           </span>
@@ -96,7 +96,7 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
       </section>
 
       <section className="block">
-        <div className="wrap portal-stack" style={{ maxWidth: 680 }}>
+        <div className="wrap portal-stack wrap-680">
           {/* Tiket */}
           <div className="panel ticket">
             <EventSummary activity={a} />
@@ -202,7 +202,7 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
               Ke portal
             </Link>
             {!done && (
-              <button className="link-btn" type="button" disabled={busy} onClick={cancel} style={{ marginLeft: 'auto' }}>
+              <button className="link-btn push-right" type="button" disabled={busy} onClick={cancel}>
                 Batalkan pendaftaran
               </button>
             )}

@@ -45,7 +45,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
 
   return (
     <section className="block">
-      <div className="wrap" style={{ maxWidth: 760 }}>
+      <div className="wrap wrap-760">
         <Steps current={step} />
 
         {step === 'kenalan' && (
@@ -61,7 +61,7 @@ export default function Onboarding({ loaderData }: Route.ComponentProps) {
         {step === 'profil' && (
           <>
             <h1 className="page-title">Lengkapi profil member</h1>
-            <p className="muted" style={{ marginBottom: 26, maxWidth: '60ch' }}>
+            <p className="muted mb-26 measure-60">
               Setelah profil tersimpan, link komunitas (WhatsApp, Telegram, Discord) langsung muncul. Bagian bertanda (opsional) boleh
               dilengkapi nanti. Profil akan tampil publik; nomor WhatsApp dan email hanya terlihat oleh kamu dan admin. Email akun: {email}.{' '}
               <button className="link-btn" type="button" onClick={() => goTo('kenalan')}>
@@ -126,8 +126,8 @@ function MotivationStep({ motivation, onSaved }: { motivation: MemberMotivationR
   return (
     <>
       <h1 className="page-title">Kenalan dulu, yuk</h1>
-      <div className="panel" style={{ marginBottom: 22 }}>
-        <p style={{ marginBottom: 10 }}>
+      <div className="panel mb-22">
+        <p className="mb-10">
           SWE Growth adalah komunitas software engineer Indonesia yang fokus bareng-bareng belajar <strong>career growth</strong>, bukan
           satu tech stack tertentu. Topiknya seperti Effective Engineer, Going Abroad, sampai System Design Interview.
         </p>
@@ -162,17 +162,17 @@ function Welcome({ groups, next, name }: { groups: WhatsappGroupRow[]; next: str
   return (
     <>
       <h1 className="page-title">Profil tersimpan. Selamat bergabung, {name.split(' ')[0]}!</h1>
-      <p className="muted" style={{ marginBottom: 22, maxWidth: '58ch' }}>
+      <p className="muted mb-22 measure-58">
         Yuk langsung gabung ke WhatsApp, tempat ngobrol utama yang sudah rame dari awal. Telegram baru dibuka, dan Discord menyusul. Semua
         link ini juga selalu ada di portal.
       </p>
 
-      <div style={{ marginBottom: 22 }}>
+      <div className="mb-22">
         <CommunityChannels />
       </div>
 
       {groups.length > 0 && (
-        <div className="panel" style={{ marginBottom: 22 }}>
+        <div className="panel mb-22">
           <div className="panel-head">
             <h2>Grup per bidang</h2>
           </div>

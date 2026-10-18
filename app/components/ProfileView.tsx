@@ -36,7 +36,7 @@ export function ProfileView({ profile: p, actions }: Props) {
           {career.length > 0 && <p className="muted">{career.join(' · ')}</p>}
           <span className="chip yellow member-since">{memberSince(p.created_at)}</span>
           {links.length > 0 && (
-            <div className="inline-actions" style={{ marginTop: 12 }}>
+            <div className="inline-actions mt-12">
               {links.map((l) => (
                 <a key={l.label} className="btn btn-ghost sm" href={l.href} target="_blank" rel="noopener noreferrer">
                   {l.label}

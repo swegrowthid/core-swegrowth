@@ -83,7 +83,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
             </Link>
           </div>
           {details && (
-            <pre style={{ textAlign: 'left', marginTop: 32, overflowX: 'auto' }}>
+            <pre className="error-stack">
               <code>{details}</code>
             </pre>
           )}

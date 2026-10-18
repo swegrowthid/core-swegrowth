@@ -31,7 +31,7 @@ export function Registrants({
   };
 
   return (
-    <div className="panel" style={{ marginTop: 28 }}>
+    <div className="panel mt-28">
       <div className="panel-head">
         <h2>Pendaftar ({rows.length})</h2>
         {rows.length > 0 && (

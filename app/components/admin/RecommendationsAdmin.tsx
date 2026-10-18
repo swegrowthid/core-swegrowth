@@ -153,7 +153,7 @@ export function RecommendationsAdmin({
         </nav>
 
         {shown.length === 0 ? (
-          <p className="form-sub" style={{ marginTop: 16 }}>
+          <p className="form-sub mt-16">
             {view === 'pending'
               ? 'Antrean kosong. Semua usulan sudah diproses.'
               : `Belum ada rekomendasi berstatus "${STATUS_LABEL[view].toLowerCase()}".`}
@@ -373,7 +373,7 @@ function TopicsAdmin({ topics, items }: { topics: RecommendationTopicRow[]; item
           <li key={t.name}>
             <form className="inline-actions" onSubmit={(e) => rename(e, t)}>
               <input name="name" aria-label="Nama topik" required minLength={2} maxLength={40} defaultValue={t.name} />
-              <input name="sort_order" aria-label="Urutan" type="number" style={{ width: 80 }} defaultValue={t.sort_order} />
+              <input className="input-narrow" name="sort_order" aria-label="Urutan" type="number" defaultValue={t.sort_order} />
               <span className="slug">{usage(t.name)} rekomendasi</span>
               <button className="btn btn-ghost sm" type="submit" disabled={busy}>
                 Simpan

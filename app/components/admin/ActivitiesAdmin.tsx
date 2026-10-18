@@ -24,9 +24,7 @@ export function ActivitiesAdmin({
   return (
     <div className="admin-stack">
       <div className="line admin-toolbar">
-        <p className="form-sub" style={{ margin: 0 }}>
-          Setiap event punya halaman publik /agenda/slug untuk dibagikan.
-        </p>
+        <p className="form-sub m-0">Setiap event punya halaman publik /agenda/slug untuk dibagikan.</p>
         <Link className="btn btn-primary sm" to="/admin/event/baru">
           + Tambah event
         </Link>

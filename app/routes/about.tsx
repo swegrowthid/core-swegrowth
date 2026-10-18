@@ -60,7 +60,7 @@ export default function About() {
             </p>
           </div>
 
-          <div className="panel" style={{ marginTop: 28 }}>
+          <div className="panel mt-28">
             <div className="panel-head">
               <h2>Contoh topik yang kita bahas</h2>
             </div>
@@ -73,11 +73,11 @@ export default function About() {
             </div>
           </div>
 
-          <div className="panel" style={{ marginTop: 22 }}>
+          <div className="panel mt-22">
             <div className="panel-head">
               <h2>Program dari pendataan member</h2>
             </div>
-            <p className="muted" style={{ marginBottom: 12 }}>
+            <p className="muted mb-12">
               Supaya bisa menemani perjalanan karier teman-teman dengan efektif, kami minta bantuan mengisi data saat mendaftar. Insyaa
               Allah, dari pendataan ini programnya adalah:
             </p>
@@ -88,7 +88,7 @@ export default function About() {
             </ol>
           </div>
 
-          <div className="inline-actions" style={{ marginTop: 28 }}>
+          <div className="inline-actions mt-28">
             {user ? (
               <Link className="btn btn-primary" to="/portal">
                 Buka portal

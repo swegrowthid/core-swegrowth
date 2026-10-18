@@ -99,14 +99,14 @@ export default function EventRegister({ loaderData }: Route.ComponentProps) {
 
   return (
     <section className="block">
-      <div className="wrap" style={{ maxWidth: 680 }}>
+      <div className="wrap wrap-680">
         <Link className="back" to={activityPath(a)}>
           ← Detail kegiatan
         </Link>
         <h1 className="page-title">{a.status === 'full' ? 'Daftar waitlist' : 'Form pendaftaran'}</h1>
         <EventSummary activity={a} />
 
-        <form className="form-card wide" onSubmit={onSubmit} style={{ marginTop: 20 }}>
+        <form className="form-card wide mt-20" onSubmit={onSubmit}>
           {error && <p className="form-message error">{error}</p>}
           {previous?.status === 'cancelled' && (
             <p className="form-message">Kamu pernah membatalkan pendaftaran ini. Silakan daftar lagi.</p>

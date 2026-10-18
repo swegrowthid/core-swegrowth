@@ -30,7 +30,7 @@ export default function PortalProfile({ loaderData: { profile, onboarded, requir
   return (
     <>
       <PortalHeader />
-      <section className="block" style={{ paddingTop: 8 }}>
+      <section className="block tight-top">
         <div className="wrap narrow-wrap portal-stack">
           {!onboarded && (
             <div className="panel complete-card">
@@ -62,7 +62,7 @@ export default function PortalProfile({ loaderData: { profile, onboarded, requir
               <div className="panel-head">
                 <h2>Profil publik</h2>
               </div>
-              <p className="muted" style={{ marginBottom: 12 }}>
+              <p className="muted mb-12">
                 Siapa pun bisa melihat profilmu lewat link ini. Nomor WhatsApp, email, dan jawaban kenalan tidak ikut tampil.
               </p>
               <div className="share-link">

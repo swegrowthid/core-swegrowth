@@ -25,7 +25,7 @@ export default function Login() {
 
   return (
     <section className="block auth-block">
-      <div className="wrap" style={{ display: 'grid', placeItems: 'center' }}>
+      <div className="wrap center-grid">
         <div className="form-card auth-card">
           <h1>Daftar / masuk SWE Growth</h1>
           <p className="form-sub">

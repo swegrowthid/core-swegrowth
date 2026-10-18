@@ -51,7 +51,7 @@ export default function Admin({ loaderData }: Route.ComponentProps) {
           ))}
         </nav>
 
-        <div style={{ marginTop: 24 }}>
+        <div className="mt-24">
           {tab === 'member' && (
             <MembersAdmin profiles={loaderData.profiles} memberships={loaderData.memberships} motivations={loaderData.motivations} />
           )}

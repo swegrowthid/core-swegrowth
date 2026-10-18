@@ -132,7 +132,7 @@ export function MembersAdmin({
   return (
     <div className="admin-stack">
       <div className="line admin-toolbar">
-        <div className="field" style={{ maxWidth: 420, flex: 1 }}>
+        <div className="field search-field">
           <label htmlFor="member-search">Cari nama, email, WhatsApp, keahlian, atau teknologi</label>
           <input id="member-search" type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>

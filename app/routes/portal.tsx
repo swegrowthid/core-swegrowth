@@ -72,7 +72,7 @@ export default function Portal({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <PortalHeader />
-      <section className="block" style={{ paddingTop: 8 }}>
+      <section className="block tight-top">
         <div className="wrap narrow-wrap portal-stack">
           {empty && <p className="muted">Belum ada agenda. Saat admin menambahkannya, semuanya muncul di halaman ini.</p>}
 

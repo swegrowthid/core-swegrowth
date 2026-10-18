@@ -13,7 +13,7 @@ export default function Membership() {
   return (
     <>
       <PortalHeader />
-      <section className="block" style={{ paddingTop: 8 }}>
+      <section className="block tight-top">
         <div className="wrap narrow-wrap">
           <div className="panel on-teal coming-soon">
             <span className="chip yellow">Segera hadir</span>
@@ -23,7 +23,7 @@ export default function Membership() {
             </p>
             {MEMBER_BENEFITS.length > 0 && (
               <>
-                <p style={{ marginTop: 14 }}>Yang sedang disiapkan:</p>
+                <p className="mt-14">Yang sedang disiapkan:</p>
                 <ul className="plain-list">
                   {MEMBER_BENEFITS.map((b) => (
                     <li key={b}>{b}</li>
@@ -32,7 +32,7 @@ export default function Membership() {
               </>
             )}
           </div>
-          <Link className="back" to="/portal" style={{ marginTop: 18 }}>
+          <Link className="back mt-18" to="/portal">
             ← Kembali ke portal
           </Link>
         </div>
