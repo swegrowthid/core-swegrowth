@@ -27,10 +27,13 @@ export function Nav() {
     ...(isAdmin ? [{ to: '/admin', label: 'Admin' }] : []),
   ];
 
-  useEffect(() => {
+  // Tutup menu setiap pindah halaman (tanpa effect: state disesuaikan saat render).
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
     setOpen(false);
     setSubOpen(null);
-  }, [pathname]);
+  }
 
   useEffect(() => {
     if (!open && !subOpen) return;

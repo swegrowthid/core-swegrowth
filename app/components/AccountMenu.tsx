@@ -12,7 +12,13 @@ export function AccountMenu() {
   const { pathname, hash } = useLocation();
   const name = displayName(profile, user);
 
-  useEffect(() => setOpen(false), [pathname, hash]);
+  // Tutup menu setiap pindah halaman (tanpa effect: state disesuaikan saat render).
+  const route = `${pathname}${hash}`;
+  const [lastRoute, setLastRoute] = useState(route);
+  if (route !== lastRoute) {
+    setLastRoute(route);
+    setOpen(false);
+  }
 
   useEffect(() => {
     if (!open) return;

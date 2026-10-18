@@ -179,6 +179,7 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
 type Links = Route.ComponentProps['loaderData']['links'];
 
 function MeetingLink({ confirmed, links, onRefresh }: { confirmed: boolean; links: Links; onRefresh: () => void }) {
+  const [now] = useState(Date.now);
   if (!confirmed) return <span>Link meeting tersedia setelah kamu naik dari waitlist ke peserta terkonfirmasi.</span>;
   if (links?.meeting_url) {
     return (
@@ -189,7 +190,7 @@ function MeetingLink({ confirmed, links, onRefresh }: { confirmed: boolean; link
     );
   }
   const opensAt = links?.meeting_opens_at;
-  const opensLater = opensAt && Date.parse(opensAt) > Date.now();
+  const opensLater = opensAt && Date.parse(opensAt) > now;
   return (
     <>
       <span>

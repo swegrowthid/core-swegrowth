@@ -39,21 +39,35 @@ export async function fetchMembership(userId: string) {
   return data;
 }
 
+type Account = {
+  profile: ProfileRow | null;
+  isAdmin: boolean;
+  isMember: boolean;
+  membership: MembershipRow | null;
+};
+
+async function fetchAccount(userId: string): Promise<Account> {
+  const [profile, isAdmin, isMember, membership] = await Promise.all([
+    fetchProfile(userId),
+    fetchIsAdmin(),
+    fetchIsMember(),
+    fetchMembership(userId),
+  ]);
+  return { profile, isAdmin, isMember, membership };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMember, setIsMember] = useState(false);
   const [membership, setMembership] = useState<MembershipRow | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(hasSupabase);
 
   const userId = session?.user.id;
 
   useEffect(() => {
-    if (!hasSupabase) {
-      setLoading(false);
-      return;
-    }
+    if (!hasSupabase) return;
     const { data } = supabase().auth.onAuthStateChange((_event, next) => {
       setSession(next);
       setLoading(false);
@@ -61,40 +75,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  const applyAccount = useCallback((a: Account) => {
+    setProfile(a.profile);
+    setIsAdmin(a.isAdmin);
+    setIsMember(a.isMember);
+    setMembership(a.membership);
+  }, []);
+
   const refreshProfile = useCallback(async () => {
-    if (!userId) {
-      setProfile(null);
-      setIsAdmin(false);
-      setIsMember(false);
-      setMembership(null);
-      return;
-    }
-    const [nextProfile, nextIsAdmin, nextIsMember, nextMembership] = await Promise.all([
-      fetchProfile(userId),
-      fetchIsAdmin(),
-      fetchIsMember(),
-      fetchMembership(userId),
-    ]);
-    setProfile(nextProfile);
-    setIsAdmin(nextIsAdmin);
-    setIsMember(nextIsMember);
-    setMembership(nextMembership);
-  }, [userId]);
+    if (userId) applyAccount(await fetchAccount(userId));
+  }, [userId, applyAccount]);
 
   useEffect(() => {
     // Query Supabase jangan di-await di dalam callback onAuthStateChange (bisa deadlock),
     // jadi profil diambil di effect terpisah setiap user berganti.
-    void refreshProfile();
-  }, [refreshProfile]);
+    if (!userId) return;
+    let cancelled = false;
+    void fetchAccount(userId).then((a) => {
+      if (!cancelled) applyAccount(a);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, applyAccount]);
 
   const value = useMemo<AuthState>(
     () => ({
       loading,
       user: session?.user ?? null,
-      profile,
-      isAdmin,
-      isMember,
-      membership,
+      // Data milik user sebelumnya tidak ikut terbaca setelah logout.
+      profile: userId ? profile : null,
+      isAdmin: userId ? isAdmin : false,
+      isMember: userId ? isMember : false,
+      membership: userId ? membership : null,
       refreshProfile,
       signOut: async () => {
         // Kalau server tidak terjangkau, tetap hapus sesi di perangkat ini.
@@ -102,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) await supabase().auth.signOut({ scope: 'local' });
       },
     }),
-    [loading, session, profile, isAdmin, isMember, membership, refreshProfile],
+    [loading, session, userId, profile, isAdmin, isMember, membership, refreshProfile],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

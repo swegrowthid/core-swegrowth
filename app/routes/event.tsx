@@ -174,7 +174,7 @@ function useMine(activityId: string) {
   const [mine, setMine] = useState<Mine | null>(null);
 
   useEffect(() => {
-    if (!user) return setMine(null);
+    if (!user) return;
     let cancelled = false;
     void Promise.all([
       fetchMyRegistration(activityId, user.id),
@@ -187,7 +187,8 @@ function useMine(activityId: string) {
     };
   }, [activityId, user]);
 
-  return { user, mine, setMine, ready: !loading && (!user || mine !== null) };
+  const current = user ? mine : null;
+  return { user, mine: current, setMine, ready: !loading && (!user || current !== null) };
 }
 
 const scrollToRegister = () => document.getElementById('daftar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });

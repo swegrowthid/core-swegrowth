@@ -17,7 +17,7 @@ import {
 } from '~/lib/activities';
 import { Field, isoToWib, useMutation, val, wibToIso } from '~/lib/admin-form';
 import { requireAdmin } from '~/lib/auth';
-import type { ActivityRegistrationRow, ActivityStatus, CommunityGroupRow, EventPhoto, NextStep, Recurrence, RegistrationField } from '~/lib/database.types';
+import type { ActivityRegistrationRow, ActivityStatus, EventPhoto, NextStep, Recurrence, RegistrationField } from '~/lib/database.types';
 import { downloadEventPoster } from '~/lib/event-poster';
 import { formatWibDate, formatWibTime } from '~/lib/format';
 import { SITE_URL } from '~/lib/site';
@@ -403,7 +403,8 @@ type Activity = NonNullable<Route.ComponentProps['loaderData']['activity']>;
 function Stats({ activity: a, registrations }: { activity: Activity; registrations: ActivityRegistrationRow[] }) {
   const count = (s: string) => registrations.filter((r) => r.status === s).length;
   const confirmed = count('confirmed');
-  const weekAgo = Date.now() - 7 * 86_400_000;
+  const [now] = useState(Date.now);
+  const weekAgo = now - 7 * 86_400_000;
   const lastWeek = registrations.filter((r) => r.status !== 'cancelled' && Date.parse(r.created_at) >= weekAgo).length;
   const withQuestion = registrations.filter((r) => r.status !== 'cancelled' && Object.keys(r.answers ?? {}).length > 0).length;
 
