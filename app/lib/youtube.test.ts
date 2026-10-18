@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { youtubeId } from './youtube';
+import { parseChannelFeed, youtubeId } from './youtube';
 
 describe('youtubeId', () => {
   it('membaca semua bentuk link YouTube', () => {
@@ -19,5 +19,21 @@ describe('youtubeId', () => {
     expect(youtubeId('https://youtube.com/watch?v=pendek')).toBeNull();
     expect(youtubeId('bukan url')).toBeNull();
     expect(youtubeId(null)).toBeNull();
+  });
+});
+
+describe('parseChannelFeed', () => {
+  it('mengambil ID, judul (entity didekode), dan tanggal tiap video', () => {
+    const xml = `<feed><title>SWE Growth</title>
+      <entry><yt:videoId>dQw4w9WgXcQ</yt:videoId><title>Ngobrol &amp; &quot;sharing&quot;</title><published>2026-09-21T03:00:00+00:00</published></entry>
+      <entry><yt:videoId>rusak</yt:videoId><title>Tanpa ID valid</title><published>2026-09-20T03:00:00+00:00</published></entry>
+    </feed>`;
+    expect(parseChannelFeed(xml)).toEqual([
+      { videoId: 'dQw4w9WgXcQ', title: 'Ngobrol & "sharing"', published: '2026-09-21T03:00:00+00:00' },
+    ]);
+  });
+
+  it('mengembalikan daftar kosong untuk respons yang bukan feed', () => {
+    expect(parseChannelFeed('<!doctype html><html></html>')).toEqual([]);
   });
 });

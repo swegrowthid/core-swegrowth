@@ -35,7 +35,14 @@ export function recordingsFrom(activities: Activity[], channel: ChannelVideo[] =
       ? [{ key: `${a.month}-${a.title}`, title: a.title, videoId, date: `${a.month}-01`, monthOnly: true, eventPath: null }]
       : [];
   });
-  const fromChannel = channel.map((v) => ({ key: v.videoId, title: v.title, videoId: v.videoId, date: v.published, monthOnly: false, eventPath: null }));
+  const fromChannel = channel.map((v) => ({
+    key: v.videoId,
+    title: v.title,
+    videoId: v.videoId,
+    date: v.published,
+    monthOnly: false,
+    eventPath: null,
+  }));
   // Video yang sama bisa tercatat di event, arsip, dan channel; simpan yang dari event.
   const seen = new Set<string>();
   return [...fromEvents, ...fromArchive, ...fromChannel]

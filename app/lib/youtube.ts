@@ -33,16 +33,24 @@ const FEED_URL = `https://www.youtube.com/feeds/videos.xml?channel_id=${YOUTUBE_
 export type ChannelVideo = { videoId: string; title: string; published: string };
 
 const decode = (s: string) =>
-  s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+  s
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&');
 
 /** Feed Atom YouTube (maks. 15 video terbaru). Pakai regex supaya jalan juga saat prerender di Node. */
 export function parseChannelFeed(xml: string): ChannelVideo[] {
-  return xml.split('<entry>').slice(1).flatMap((entry) => {
-    const videoId = entry.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/)?.[1];
-    const title = entry.match(/<title>([\s\S]*?)<\/title>/)?.[1];
-    const published = entry.match(/<published>([^<]+)<\/published>/)?.[1];
-    return videoId && title && published ? [{ videoId, title: decode(title.trim()), published }] : [];
-  });
+  return xml
+    .split('<entry>')
+    .slice(1)
+    .flatMap((entry) => {
+      const videoId = entry.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/)?.[1];
+      const title = entry.match(/<title>([\s\S]*?)<\/title>/)?.[1];
+      const published = entry.match(/<published>([^<]+)<\/published>/)?.[1];
+      return videoId && title && published ? [{ videoId, title: decode(title.trim()), published }] : [];
+    });
 }
 
 /**
