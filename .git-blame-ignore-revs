@@ -1,0 +1,3 @@
+# Commit yang hanya mengubah format. Pakai: git config blame.ignoreRevsFile .git-blame-ignore-revs
+# Format seluruh kode dengan Prettier
+16894325887cd545c00acc08d1ea9754ba921141

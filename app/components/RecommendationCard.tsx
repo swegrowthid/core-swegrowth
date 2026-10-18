@@ -12,17 +12,27 @@ export function RecommendationCard({ r }: { r: Recommendation }) {
     <li className="rec-card" data-category={r.category}>
       <div className="rec-top">
         <span className="rec-cat">{category.label}</span>
-        <span className="rec-go" aria-hidden="true"><ArrowUpRight /></span>
+        <span className="rec-go" aria-hidden="true">
+          <ArrowUpRight />
+        </span>
       </div>
       {/* Link judul menutupi seluruh kartu; link pengusul ada di atasnya. */}
       <h3>
-        <a className="rec-link" href={r.url} target="_blank" rel={r.is_affiliate ? 'noopener sponsored' : 'noopener'}>{r.title}</a>
+        <a className="rec-link" href={r.url} target="_blank" rel={r.is_affiliate ? 'noopener sponsored' : 'noopener'}>
+          {r.title}
+        </a>
       </h3>
-      {r.organizer && <span className="rec-organizer">{category.organizerLabel}: {r.organizer}</span>}
+      {r.organizer && (
+        <span className="rec-organizer">
+          {category.organizerLabel}: {r.organizer}
+        </span>
+      )}
       <p className="rec-reason">{r.reason}</p>
       {meta.length > 0 && (
         <ul className="rec-meta">
-          {meta.map((m) => <li key={m}>{m}</li>)}
+          {meta.map((m) => (
+            <li key={m}>{m}</li>
+          ))}
         </ul>
       )}
       <div className="rec-by">
@@ -39,7 +49,11 @@ export function RecommendationCard({ r }: { r: Recommendation }) {
         ) : (
           <span>Direkomendasikan member</span>
         )}
-        {r.is_affiliate && <span className="rec-aff" title="Pembelian lewat link ini ikut mendukung SWE Growth">Link afiliasi SWE Growth</span>}
+        {r.is_affiliate && (
+          <span className="rec-aff" title="Pembelian lewat link ini ikut mendukung SWE Growth">
+            Link afiliasi SWE Growth
+          </span>
+        )}
       </div>
     </li>
   );

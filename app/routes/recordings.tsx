@@ -23,15 +23,22 @@ export default function Recordings({ loaderData: { recordings } }: Route.Compone
     <section className="block">
       <div className="wrap narrow-wrap">
         <h1 className="page-title">Rekaman</h1>
-        <p className="muted" style={{ marginBottom: 28 }}>
+        <p className="muted mb-28">
           Nonton lagi sesi komunitas yang sudah lewat. Semua video juga ada di{' '}
-          <a className="text-link" href={YOUTUBE_CHANNEL_URL} target="_blank" rel="noopener">channel YouTube SWE Growth</a>.
+          <a className="text-link" href={YOUTUBE_CHANNEL_URL} target="_blank" rel="noopener">
+            channel YouTube SWE Growth
+          </a>
+          .
         </p>
         {recordings.length > 0 ? (
           <RecordingGrid recordings={recordings} />
         ) : (
           <p className="muted">
-            Belum ada rekaman di sini. Lihat <Link className="text-link" to="/agenda">agenda</Link> untuk sesi berikutnya.
+            Belum ada rekaman di sini. Lihat{' '}
+            <Link className="text-link" to="/agenda">
+              agenda
+            </Link>{' '}
+            untuk sesi berikutnya.
           </p>
         )}
       </div>

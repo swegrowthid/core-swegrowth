@@ -10,9 +10,7 @@ import './styles/global.css';
 import './styles/pages.css';
 import './styles/app.css';
 
-export const links: Route.LinksFunction = () => [
-  { rel: 'icon', type: 'image/png', href: '/assets/swe-growth-logo.png' },
-];
+export const links: Route.LinksFunction = () => [{ rel: 'icon', type: 'image/png', href: '/assets/swe-growth-logo.png' }];
 
 export function Layout({ children }: { children: ReactNode }) {
   return (
@@ -77,10 +75,18 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
               : 'Coba muat ulang halaman. Kalau masih error, kabari admin.'}
           </p>
           <div className="center-actions">
-            <Link className="btn btn-primary" to="/">Kembali ke beranda</Link>
-            <Link className="btn btn-ghost" to="/agenda">Lihat agenda</Link>
+            <Link className="btn btn-primary" to="/">
+              Kembali ke beranda
+            </Link>
+            <Link className="btn btn-ghost" to="/agenda">
+              Lihat agenda
+            </Link>
           </div>
-          {details && <pre style={{ textAlign: 'left', marginTop: 32, overflowX: 'auto' }}><code>{details}</code></pre>}
+          {details && (
+            <pre className="error-stack">
+              <code>{details}</code>
+            </pre>
+          )}
         </div>
       </section>
     </Shell>

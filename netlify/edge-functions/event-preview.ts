@@ -21,12 +21,15 @@ type Activity = {
 };
 
 const wibDay = new Intl.DateTimeFormat('id-ID', {
-  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta',
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'Asia/Jakarta',
 });
 const wibTime = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' });
 
-const escape = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 async function fetchActivity(slug: string): Promise<Activity | null> {
   const url = Netlify.env.get('VITE_SUPABASE_URL');
@@ -83,10 +86,7 @@ export default async function handler(request: Request, context: Context) {
   const slug = new URL(request.url).pathname.match(/^\/agenda\/([^/]+)\/?$/)?.[1];
   if (!slug) return;
 
-  const [response, activity] = await Promise.all([
-    context.next(),
-    fetchActivity(decodeURIComponent(slug)).catch(() => null),
-  ]);
+  const [response, activity] = await Promise.all([context.next(), fetchActivity(decodeURIComponent(slug)).catch(() => null)]);
   if (!activity || !response.headers.get('content-type')?.includes('text/html')) return response;
 
   const html = (await response.text())

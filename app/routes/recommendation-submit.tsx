@@ -10,8 +10,19 @@ import type {
   RecommendationPrice,
   RecommendationRow,
 } from '~/lib/database.types';
-import { CATEGORIES, categoryOf, directoryPath, getRecommendationTopics, isCategory, LANGUAGE_LABEL, PRICE_LABEL, STATUS_LABEL } from '~/lib/recommendations';
-import { supabase } from '~/lib/supabase';
+import {
+  CATEGORIES,
+  categoryOf,
+  directoryPath,
+  getRecommendationTopics,
+  isCategory,
+  LANGUAGE_LABEL,
+  PRICE_LABEL,
+  STATUS_LABEL,
+  checkRecommendationUrl,
+  fetchOwnRecommendation,
+  submitRecommendation,
+} from '~/lib/recommendations';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Kirim rekomendasi — SWE Growth' }, { name: 'robots', content: 'noindex' }];
 
@@ -26,7 +37,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const topics = await getRecommendationTopics();
   if (!editId) return { editing: null, topics };
 
-  const { data } = await supabase().from('recommendations').select('*').eq('id', editId).eq('submitted_by', user.id).maybeSingle();
+  const data = await fetchOwnRecommendation(editId, user.id);
   if (!data || data.status !== 'pending') throw redirect('/portal');
   return { editing: data, topics };
 }
@@ -64,8 +75,7 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
 
   const checkUrl = async (url: string) => {
     if (!/^https:\/\/\S+\.\S+/.test(url.trim())) return setDuplicate(null);
-    const { data } = await supabase().rpc('check_recommendation_url', { p_url: url, p_exclude_id: editing?.id ?? null }).maybeSingle();
-    setDuplicate(data ?? null);
+    setDuplicate((await checkRecommendationUrl(url, editing?.id ?? null)) ?? null);
   };
 
   const toggleTopic = (t: string) =>
@@ -83,7 +93,7 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
 
     setBusy(true);
     setError(null);
-    const { error: rpcError } = await supabase().rpc('submit_recommendation', {
+    const { error: rpcError } = await submitRecommendation({
       p_category: category,
       p_title: val('title'),
       p_url: val('url'),
@@ -112,15 +122,19 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
       <section className="block">
         <div className="wrap narrow-wrap">
           <div className="form-card rec-done">
-            <span className="check-badge" aria-hidden="true">✓</span>
+            <span className="check-badge" aria-hidden="true">
+              ✓
+            </span>
             <h1 className="page-title">{editing ? 'Perubahan tersimpan' : 'Makasih udah berbagi!'}</h1>
-            <p className="form-sub">
-              Admin cek dulu sebelum tayang di direktori, biasanya 1–3 hari. Statusnya bisa kamu pantau di portal.
-            </p>
+            <p className="form-sub">Admin cek dulu sebelum tayang di direktori, biasanya 1–3 hari. Statusnya bisa kamu pantau di portal.</p>
             <div className="inline-actions">
-              <Link className="btn btn-primary" to="/portal#rekomendasiku">Lihat status di portal</Link>
+              <Link className="btn btn-primary" to="/portal#rekomendasiku">
+                Lihat status di portal
+              </Link>
               {!editing && (
-                <button className="btn btn-ghost" type="button" onClick={startOver}>Kirim rekomendasi lain</button>
+                <button className="btn btn-ghost" type="button" onClick={startOver}>
+                  Kirim rekomendasi lain
+                </button>
               )}
             </div>
           </div>
@@ -132,12 +146,19 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
   return (
     <section className="block">
       <div className="wrap narrow-wrap rec-form-wrap">
-        <Link className="back" to={directoryPath()}>← Rekomendasi</Link>
+        <Link className="back" to={directoryPath()}>
+          ← Rekomendasi
+        </Link>
         <form className="form-card rec-form" onSubmit={onSubmit}>
           <h1 className="page-title">{editing ? 'Edit rekomendasi' : 'Kirim rekomendasi'}</h1>
           <p className="form-sub">
             Acara, komunitas, course, buku, atau apa pun yang bikin kamu grow. Admin cek dulu sebelum tayang.
-            {editing && <> Status sekarang: <b>{STATUS_LABEL[editing.status]}</b>.</>}
+            {editing && (
+              <>
+                {' '}
+                Status sekarang: <b>{STATUS_LABEL[editing.status]}</b>.
+              </>
+            )}
           </p>
 
           <fieldset className="field">
@@ -153,7 +174,15 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
           </fieldset>
 
           <Field id="r_title" label="Nama">
-            <input id="r_title" name="title" required minLength={2} maxLength={120} defaultValue={editing?.title} placeholder="Mis. Designing Data-Intensive Applications" />
+            <input
+              id="r_title"
+              name="title"
+              required
+              minLength={2}
+              maxLength={120}
+              defaultValue={editing?.title}
+              placeholder="Mis. Designing Data-Intensive Applications"
+            />
           </Field>
 
           <Field id="r_url" label="Link">
@@ -177,7 +206,11 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
             </p>
           )}
 
-          <Field id="r_reason" label="Kenapa kamu rekomendasikan?" hint={`${reasonLength}/${REASON_MAX} · minimal ${REASON_MIN} karakter. Ini isi utama kartunya.`}>
+          <Field
+            id="r_reason"
+            label="Kenapa kamu rekomendasikan?"
+            hint={`${reasonLength}/${REASON_MAX} · minimal ${REASON_MIN} karakter. Ini isi utama kartunya.`}
+          >
             <textarea
               id="r_reason"
               name="reason"
@@ -215,7 +248,9 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
           )}
 
           <fieldset className="field">
-            <legend>Topik <small>(opsional, maks. {MAX_TOPICS})</small></legend>
+            <legend>
+              Topik <small>(opsional, maks. {MAX_TOPICS})</small>
+            </legend>
             <div className="rec-pick">
               {topicNames.map((t) => {
                 const on = topics.includes(t);
@@ -233,13 +268,21 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
             <Field id="r_price" label="Harga" optional>
               <select id="r_price" name="price" defaultValue={editing?.price ?? ''}>
                 <option value="">—</option>
-                {(Object.keys(PRICE_LABEL) as RecommendationPrice[]).map((p) => <option key={p} value={p}>{PRICE_LABEL[p]}</option>)}
+                {(Object.keys(PRICE_LABEL) as RecommendationPrice[]).map((p) => (
+                  <option key={p} value={p}>
+                    {PRICE_LABEL[p]}
+                  </option>
+                ))}
               </select>
             </Field>
             <Field id="r_lang" label="Bahasa" optional>
               <select id="r_lang" name="language" defaultValue={editing?.language ?? ''}>
                 <option value="">—</option>
-                {(Object.keys(LANGUAGE_LABEL) as RecommendationLanguage[]).map((l) => <option key={l} value={l}>{LANGUAGE_LABEL[l]}</option>)}
+                {(Object.keys(LANGUAGE_LABEL) as RecommendationLanguage[]).map((l) => (
+                  <option key={l} value={l}>
+                    {LANGUAGE_LABEL[l]}
+                  </option>
+                ))}
               </select>
             </Field>
           </div>
@@ -250,8 +293,8 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
           </label>
 
           <p className="rec-rules">
-            Course berbayar boleh. Link afiliasi dan promosi diri tidak, kecuali afiliasi resmi SWE Growth yang dipasang admin.
-            Selengkapnya di <Link to="/code-of-conduct">Code of Conduct</Link>.
+            Course berbayar boleh. Link afiliasi dan promosi diri tidak, kecuali afiliasi resmi SWE Growth yang dipasang admin. Selengkapnya
+            di <Link to="/code-of-conduct">Code of Conduct</Link>.
           </p>
 
           {error && <p className="form-message error">{error}</p>}

@@ -15,8 +15,7 @@ const dayParts = (day: string) => {
 };
 
 /** Acara rekomendasi yang tanggalnya terdekat dulu; yang belum ada tanggal di akhir. */
-export const byEventDate = (a: Recommendation, b: Recommendation) =>
-  (a.event_date ?? '9999').localeCompare(b.event_date ?? '9999');
+export const byEventDate = (a: Recommendation, b: Recommendation) => (a.event_date ?? '9999').localeCompare(b.event_date ?? '9999');
 
 /**
  * Baris acara dari luar SWE Growth (rekomendasi kategori "acara" yang tayang
@@ -31,7 +30,14 @@ export function ExternalEventRows({ events, now = null }: { events: Recommendati
         return (
           <li key={r.id} className={flagClass(flags)}>
             <span className="date-tile">
-              {parts ? <><b>{parts.day}</b><span>{parts.month}</span></> : <span>TBA</span>}
+              {parts ? (
+                <>
+                  <b>{parts.day}</b>
+                  <span>{parts.month}</span>
+                </>
+              ) : (
+                <span>TBA</span>
+              )}
             </span>
             <div className="row-main">
               <EventBadges {...flags} />

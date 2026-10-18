@@ -11,11 +11,12 @@ import {
   registrationCode,
   syncCalendar,
   timeRange,
+  cancelRegistration,
+  fetchActivityLinks,
 } from '~/lib/activities';
 import { fetchProfile, requireUser } from '~/lib/auth';
 import { formatWibDate, formatWibTime } from '~/lib/format';
 import { fetchMotivation, isOnboarded } from '~/lib/profile';
-import { supabase } from '~/lib/supabase';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => [
   { title: `Terdaftar: ${loaderData?.activity.title ?? 'Kegiatan'} — SWE Growth` },
@@ -30,13 +31,13 @@ export async function clientLoader({ request, params }: Route.ClientLoaderArgs) 
 
   const [registration, links, profile, motivation] = await Promise.all([
     fetchMyRegistration(activity.id, user.id),
-    supabase().rpc('activity_links', { p_activity_id: activity.id }).maybeSingle(),
+    fetchActivityLinks(activity.id),
     fetchProfile(user.id),
     fetchMotivation(user.id),
   ]);
   if (!registration || !isActiveRegistration(registration.status)) throw redirect(activityPath(activity));
 
-  return { activity, registration, links: links.data, onboarded: isOnboarded(profile, motivation) };
+  return { activity, registration, links, onboarded: isOnboarded(profile, motivation) };
 }
 
 export function HydrateFallback() {
@@ -64,7 +65,7 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
   const cancel = async () => {
     if (!confirm('Batalkan pendaftaran untuk kegiatan ini? Kursimu akan diberikan ke peserta lain.')) return;
     setBusy(true);
-    await supabase().rpc('cancel_activity_registration', { p_activity_id: a.id });
+    await cancelRegistration(a.id);
     // Hapus dari tamu Google Calendar (dan undang peserta yang naik dari waitlist).
     void syncCalendar(a.id);
     navigate(activityPath(a), { replace: true });
@@ -79,8 +80,10 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
   return (
     <>
       <section className="block on-teal registered-hero">
-        <div className="wrap" style={{ maxWidth: 680 }}>
-          <span className="check-badge" aria-hidden="true">{confirmed ? '✓' : '⏳'}</span>
+        <div className="wrap wrap-680">
+          <span className="check-badge" aria-hidden="true">
+            {confirmed ? '✓' : '⏳'}
+          </span>
           <h1 className="page-title">
             {confirmed ? (justRegistered ? 'Pendaftaran berhasil!' : 'Kamu sudah terdaftar') : 'Kamu masuk waitlist'}
           </h1>
@@ -93,21 +96,34 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
       </section>
 
       <section className="block">
-        <div className="wrap portal-stack" style={{ maxWidth: 680 }}>
+        <div className="wrap portal-stack wrap-680">
           {/* Tiket */}
           <div className="panel ticket">
             <EventSummary activity={a} />
             <dl className="ticket-meta">
-              <div><dt>Peserta</dt><dd>{r.name}</dd></div>
-              <div><dt>Kode pendaftaran</dt><dd className="mono-code">{registrationCode(r.id)}</dd></div>
-              <div><dt>Status</dt><dd><span className={`chip ${confirmed ? 'yellow' : ''}`}>{confirmed ? 'Terkonfirmasi' : 'Waitlist'}</span></dd></div>
+              <div>
+                <dt>Peserta</dt>
+                <dd>{r.name}</dd>
+              </div>
+              <div>
+                <dt>Kode pendaftaran</dt>
+                <dd className="mono-code">{registrationCode(r.id)}</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd>
+                  <span className={`chip ${confirmed ? 'yellow' : ''}`}>{confirmed ? 'Terkonfirmasi' : 'Waitlist'}</span>
+                </dd>
+              </div>
             </dl>
           </div>
 
           {/* Langkah berikutnya */}
           {!done && (
             <div className="panel">
-              <div className="panel-head"><h2>Langkah berikutnya</h2></div>
+              <div className="panel-head">
+                <h2>Langkah berikutnya</h2>
+              </div>
               <ol className="next-steps">
                 <li>
                   <strong>{invited ? 'Terima undangan kalender' : 'Simpan jadwal'}</strong>
@@ -130,14 +146,20 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
                   <li key={i}>
                     <strong>{step.title}</strong>
                     {step.description && <span>{step.description}</span>}
-                    {step.url && <a className="btn btn-ghost sm" href={step.url} target="_blank" rel="noopener">Buka link</a>}
+                    {step.url && (
+                      <a className="btn btn-ghost sm" href={step.url} target="_blank" rel="noopener">
+                        Buka link
+                      </a>
+                    )}
                   </li>
                 ))}
                 {!onboarded && (
                   <li>
                     <strong>Gabung grup WhatsApp komunitas</strong>
                     <span>Lengkapi profil member, lalu link grupnya langsung muncul.</span>
-                    <Link className="btn btn-ghost sm" to={`/onboarding?next=${encodeURIComponent(location.pathname)}`}>Lengkapi profil</Link>
+                    <Link className="btn btn-ghost sm" to={`/onboarding?next=${encodeURIComponent(location.pathname)}`}>
+                      Lengkapi profil
+                    </Link>
                   </li>
                 )}
               </ol>
@@ -146,26 +168,41 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
 
           {answered.length > 0 && (
             <div className="panel">
-              <div className="panel-head"><h2>Jawabanmu</h2></div>
+              <div className="panel-head">
+                <h2>Jawabanmu</h2>
+              </div>
               <dl className="answers">
-                {answered.map((f) => <div key={f.id}><dt>{f.label}</dt><dd>{r.answers[f.id]}</dd></div>)}
+                {answered.map((f) => (
+                  <div key={f.id}>
+                    <dt>{f.label}</dt>
+                    <dd>{r.answers[f.id]}</dd>
+                  </div>
+                ))}
               </dl>
             </div>
           )}
 
           <div className="panel">
-            <div className="panel-head"><h2>Ajak teman</h2></div>
+            <div className="panel-head">
+              <h2>Ajak teman</h2>
+            </div>
             <div className="share-link">
               <code>{eventUrl.replace(/^https?:\/\//, '')}</code>
-              <button className="btn btn-ghost sm" type="button" onClick={copyLink}>{copied ? 'Tersalin ✓' : 'Salin link'}</button>
+              <button className="btn btn-ghost sm" type="button" onClick={copyLink}>
+                {copied ? 'Tersalin ✓' : 'Salin link'}
+              </button>
             </div>
           </div>
 
           <div className="inline-actions">
-            <Link className="btn btn-ghost" to={activityPath(a)}>Detail kegiatan</Link>
-            <Link className="btn btn-ghost" to="/portal">Ke portal</Link>
+            <Link className="btn btn-ghost" to={activityPath(a)}>
+              Detail kegiatan
+            </Link>
+            <Link className="btn btn-ghost" to="/portal">
+              Ke portal
+            </Link>
             {!done && (
-              <button className="link-btn" type="button" disabled={busy} onClick={cancel} style={{ marginLeft: 'auto' }}>
+              <button className="link-btn push-right" type="button" disabled={busy} onClick={cancel}>
                 Batalkan pendaftaran
               </button>
             )}
@@ -179,17 +216,20 @@ export default function EventRegistered({ loaderData }: Route.ComponentProps) {
 type Links = Route.ComponentProps['loaderData']['links'];
 
 function MeetingLink({ confirmed, links, onRefresh }: { confirmed: boolean; links: Links; onRefresh: () => void }) {
+  const [now] = useState(Date.now);
   if (!confirmed) return <span>Link meeting tersedia setelah kamu naik dari waitlist ke peserta terkonfirmasi.</span>;
   if (links?.meeting_url) {
     return (
       <>
         <span>Link sudah dibuka. Masuk beberapa menit sebelum acara dimulai.</span>
-        <a className="btn btn-primary sm" href={links.meeting_url} target="_blank" rel="noopener">Buka link meeting</a>
+        <a className="btn btn-primary sm" href={links.meeting_url} target="_blank" rel="noopener">
+          Buka link meeting
+        </a>
       </>
     );
   }
   const opensAt = links?.meeting_opens_at;
-  const opensLater = opensAt && Date.parse(opensAt) > Date.now();
+  const opensLater = opensAt && Date.parse(opensAt) > now;
   return (
     <>
       <span>
@@ -198,7 +238,9 @@ function MeetingLink({ confirmed, links, onRefresh }: { confirmed: boolean; link
           : 'Link meeting akan muncul di halaman ini sebelum acara dimulai.'}
       </span>
       {!opensLater && (
-        <button className="link-btn" type="button" onClick={onRefresh}>Cek lagi</button>
+        <button className="link-btn" type="button" onClick={onRefresh}>
+          Cek lagi
+        </button>
       )}
     </>
   );

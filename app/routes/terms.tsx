@@ -4,7 +4,10 @@ import { LegalPage, type LegalSection } from '~/components/LegalPage';
 import { adminWaLink, pageMeta } from '~/lib/site';
 
 export const meta: Route.MetaFunction = () =>
-  pageMeta('Syarat Layanan — SWE Growth', 'Ketentuan memakai swegrowth.id: akun, profil member, pendaftaran kegiatan, dan aturan komunitas.');
+  pageMeta(
+    'Syarat Layanan — SWE Growth',
+    'Ketentuan memakai swegrowth.id: akun, profil member, pendaftaran kegiatan, dan aturan komunitas.',
+  );
 
 const sections: LegalSection[] = [
   {
@@ -12,9 +15,9 @@ const sections: LegalSection[] = [
     title: 'Penerimaan syarat',
     body: (
       <p>
-        Dengan membuat akun atau memakai swegrowth.id (situs, portal member, dan pendaftaran kegiatan), kamu setuju
-        dengan syarat layanan ini, <Link to="/privasi">Kebijakan Privasi</Link>, dan{' '}
-        <Link to="/code-of-conduct">Code of Conduct</Link> SWE Growth. Kalau tidak setuju, mohon tidak memakai layanan ini.
+        Dengan membuat akun atau memakai swegrowth.id (situs, portal member, dan pendaftaran kegiatan), kamu setuju dengan syarat layanan
+        ini, <Link to="/privasi">Kebijakan Privasi</Link>, dan <Link to="/code-of-conduct">Code of Conduct</Link> SWE Growth. Kalau tidak
+        setuju, mohon tidak memakai layanan ini.
       </p>
     ),
   },
@@ -35,8 +38,8 @@ const sections: LegalSection[] = [
     body: (
       <ul>
         <li>
-          Sebagian profilmu tampil publik di swegrowth.id/member/… (lihat <Link to="/privasi#visibilitas">Kebijakan Privasi</Link>).
-          Nomor WhatsApp dan email tidak ikut tampil.
+          Sebagian profilmu tampil publik di swegrowth.id/member/… (lihat <Link to="/privasi#visibilitas">Kebijakan Privasi</Link>). Nomor
+          WhatsApp dan email tidak ikut tampil.
         </li>
         <li>Isi profil adalah tanggung jawabmu. Jangan mencantumkan data pribadi orang lain atau informasi yang menyesatkan.</li>
         <li>Admin boleh menyunting atau menyembunyikan isi profil yang melanggar Code of Conduct.</li>
@@ -48,11 +51,16 @@ const sections: LegalSection[] = [
     title: 'Pendaftaran kegiatan',
     body: (
       <ul>
-        <li>Kegiatan bertanda "Gratis" tidak dipungut biaya. Kegiatan berbayar akan menampilkan harga dan ketentuannya sebelum mendaftar.</li>
+        <li>
+          Kegiatan bertanda "Gratis" tidak dipungut biaya. Kegiatan berbayar akan menampilkan harga dan ketentuannya sebelum mendaftar.
+        </li>
         <li>Kalau kuota penuh, pendaftar masuk waitlist dan otomatis naik saat ada peserta yang batal.</li>
         <li>Peserta terkonfirmasi diundang lewat Google Calendar ke email akunnya. Link meeting juga tersedia di halaman pendaftaran.</li>
         <li>Batalkan pendaftaran kalau berhalangan, supaya kursinya bisa dipakai orang lain.</li>
-        <li>Jadwal, pembicara, atau format kegiatan bisa berubah atau dibatalkan. Perubahan diumumkan di halaman kegiatan dan lewat undangan kalender.</li>
+        <li>
+          Jadwal, pembicara, atau format kegiatan bisa berubah atau dibatalkan. Perubahan diumumkan di halaman kegiatan dan lewat undangan
+          kalender.
+        </li>
         <li>Kegiatan bisa direkam. Rekaman dapat dibagikan kembali ke member SWE Growth.</li>
       </ul>
     ),
@@ -64,7 +72,9 @@ const sections: LegalSection[] = [
       <>
         <p>Selama memakai layanan dan mengikuti kegiatan, kamu setuju untuk tidak:</p>
         <ul>
-          <li>Melanggar <Link to="/code-of-conduct">Code of Conduct</Link>, termasuk harassment, spam, atau provokasi.</li>
+          <li>
+            Melanggar <Link to="/code-of-conduct">Code of Conduct</Link>, termasuk harassment, spam, atau provokasi.
+          </li>
           <li>Membagikan link meeting kepada orang yang tidak terdaftar.</li>
           <li>Mengumpulkan atau menyalahgunakan data member lain dari halaman profil publik.</li>
           <li>Mencoba mengakses data atau bagian situs yang bukan hakmu, atau mengganggu jalannya layanan.</li>
@@ -77,8 +87,8 @@ const sections: LegalSection[] = [
     title: 'Membership',
     body: (
       <p>
-        Membership berbayar dan verified member sedang disiapkan. Ketentuan, harga, dan manfaatnya akan diumumkan
-        sebelum dibuka. Sampai saat itu, semua fitur portal bisa dipakai gratis.
+        Membership berbayar dan verified member sedang disiapkan. Ketentuan, harga, dan manfaatnya akan diumumkan sebelum dibuka. Sampai
+        saat itu, semua fitur portal bisa dipakai gratis.
       </p>
     ),
   },
@@ -87,8 +97,8 @@ const sections: LegalSection[] = [
     title: 'Materi & hak cipta',
     body: (
       <p>
-        Materi kegiatan (slide, rekaman, tulisan) tetap milik pembicara atau SWE Growth. Materi boleh dipakai untuk
-        belajar pribadi, tetapi tidak boleh dijual atau disebarkan ulang tanpa izin.
+        Materi kegiatan (slide, rekaman, tulisan) tetap milik pembicara atau SWE Growth. Materi boleh dipakai untuk belajar pribadi, tetapi
+        tidak boleh dijual atau disebarkan ulang tanpa izin.
       </p>
     ),
   },
@@ -97,8 +107,8 @@ const sections: LegalSection[] = [
     title: 'Penangguhan akun',
     body: (
       <p>
-        Admin dapat membatasi atau menutup akses akun yang melanggar syarat ini atau Code of Conduct. Kamu juga bisa
-        meminta penghapusan akun kapan saja dengan menghubungi admin.
+        Admin dapat membatasi atau menutup akses akun yang melanggar syarat ini atau Code of Conduct. Kamu juga bisa meminta penghapusan
+        akun kapan saja dengan menghubungi admin.
       </p>
     ),
   },
@@ -107,9 +117,8 @@ const sections: LegalSection[] = [
     title: 'Batasan tanggung jawab',
     body: (
       <p>
-        Layanan disediakan apa adanya oleh komunitas. Kami berusaha menjaga situs tetap berjalan dan data tetap aman,
-        tetapi tidak menjamin layanan selalu tersedia tanpa gangguan. Isi yang disampaikan pembicara atau member adalah
-        pendapat mereka masing-masing.
+        Layanan disediakan apa adanya oleh komunitas. Kami berusaha menjaga situs tetap berjalan dan data tetap aman, tetapi tidak menjamin
+        layanan selalu tersedia tanpa gangguan. Isi yang disampaikan pembicara atau member adalah pendapat mereka masing-masing.
       </p>
     ),
   },
@@ -119,12 +128,15 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Syarat ini bisa diperbarui sewaktu-waktu. Tanggal "Terakhir diperbarui" di atas ikut berubah, dan perubahan
-          penting diumumkan di grup komunitas. Syarat ini tunduk pada hukum Republik Indonesia.
+          Syarat ini bisa diperbarui sewaktu-waktu. Tanggal "Terakhir diperbarui" di atas ikut berubah, dan perubahan penting diumumkan di
+          grup komunitas. Syarat ini tunduk pada hukum Republik Indonesia.
         </p>
         <p>
           Pertanyaan: hubungi admin lewat{' '}
-          <a href={adminWaLink('Halo admin SWE Growth, saya ingin bertanya soal syarat layanan.')} target="_blank" rel="noopener">WhatsApp</a>.
+          <a href={adminWaLink('Halo admin SWE Growth, saya ingin bertanya soal syarat layanan.')} target="_blank" rel="noopener">
+            WhatsApp
+          </a>
+          .
         </p>
       </>
     ),

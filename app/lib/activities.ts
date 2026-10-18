@@ -103,9 +103,11 @@ export function recurrenceLabel(a: Schedule) {
   if (!a.recurrence || !a.starts_at) return null;
   const first = new Date(a.starts_at);
   const base =
-    a.recurrence === 'weekly' ? `Setiap ${weekdayFmt.format(first)}`
-    : a.recurrence === 'biweekly' ? `Dua minggu sekali, ${weekdayFmt.format(first)}`
-    : `Setiap bulan, tanggal ${dayOfMonthFmt.format(first)}`;
+    a.recurrence === 'weekly'
+      ? `Setiap ${weekdayFmt.format(first)}`
+      : a.recurrence === 'biweekly'
+        ? `Dua minggu sekali, ${weekdayFmt.format(first)}`
+        : `Setiap bulan, tanggal ${dayOfMonthFmt.format(first)}`;
   return a.recurrence_until ? `${base} s.d. ${formatDate(a.recurrence_until)}` : base;
 }
 
@@ -192,12 +194,7 @@ export async function getPublishedActivityBySlug(slug: string): Promise<Activity
   const db = client();
   if (!db) return null;
 
-  const { data, error } = await db
-    .from('activities')
-    .select('*')
-    .eq('slug', slug)
-    .eq('is_public', true)
-    .maybeSingle();
+  const { data, error } = await db.from('activities').select('*').eq('slug', slug).eq('is_public', true).maybeSingle();
 
   if (error) {
     console.error('Tidak dapat mengambil activity dari Supabase:', error.message);
@@ -340,3 +337,51 @@ export const slugify = (input: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
     .slice(0, 80);
+
+// ---------------------------------------------------------------------------
+// Peserta: ikuti, daftar, batal
+// ---------------------------------------------------------------------------
+
+export async function fetchOrganizer(groupId: string | null) {
+  if (!groupId) return null;
+  const { data } = await supabase().from('community_groups').select('*').eq('id', groupId).maybeSingle();
+  return data;
+}
+
+export async function isFollowing(activityId: string, userId: string) {
+  const { data } = await supabase()
+    .from('activity_interests')
+    .select('id')
+    .eq('activity_id', activityId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  return Boolean(data);
+}
+
+export const followActivity = (activityId: string) => supabase().rpc('follow_activity', { p_activity_id: activityId });
+
+export const joinActivity = (args: { activityId: string; name: string; whatsapp: string; answers: Record<string, string> }) =>
+  supabase().rpc('join_activity', {
+    p_activity_id: args.activityId,
+    p_name: args.name,
+    p_whatsapp: args.whatsapp,
+    p_answers: args.answers,
+  });
+
+export const cancelRegistration = (activityId: string) => supabase().rpc('cancel_activity_registration', { p_activity_id: activityId });
+
+/** Link meeting & rekaman; RPC hanya mengembalikan isinya untuk peserta terkonfirmasi. */
+export async function fetchActivityLinks(activityId: string) {
+  const { data } = await supabase().rpc('activity_links', { p_activity_id: activityId }).maybeSingle();
+  return data;
+}
+
+/** Status pendaftaran aktif (bukan batal) milik user, per event. */
+export async function fetchMyRegistrationStatuses(userId: string) {
+  const { data } = await supabase()
+    .from('activity_registrations')
+    .select('activity_id, status')
+    .eq('user_id', userId)
+    .neq('status', 'cancelled');
+  return data ?? [];
+}

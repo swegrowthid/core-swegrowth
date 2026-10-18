@@ -76,9 +76,13 @@ export default function Recommendations({ loaderData: { items, topics: topicName
         <div className="rec-head">
           <div>
             <h1 className="page-title">Tempat buat grow</h1>
-            <p className="muted">Acara, komunitas, course, buku, podcast, YouTube, newsletter, dan web yang kami dan member rekomendasikan.</p>
+            <p className="muted">
+              Acara, komunitas, course, buku, podcast, YouTube, newsletter, dan web yang kami dan member rekomendasikan.
+            </p>
           </div>
-          <Link className="btn btn-primary" to={SUBMIT_PATH}>Kirim rekomendasi</Link>
+          <Link className="btn btn-primary" to={SUBMIT_PATH}>
+            Kirim rekomendasi
+          </Link>
         </div>
 
         <nav className="rec-tabs" aria-label="Kategori">
@@ -102,26 +106,42 @@ export default function Recommendations({ loaderData: { items, topics: topicName
           />
           <select aria-label="Topik" value={topic} onChange={(e) => set('topik', e.target.value)}>
             <option value="">Semua topik</option>
-            {usedTopics.map((t) => <option key={t} value={t}>{t}</option>)}
+            {usedTopics.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
           </select>
           <select aria-label="Harga" value={price} onChange={(e) => set('harga', e.target.value)}>
             <option value="">Semua harga</option>
-            {(Object.keys(PRICE_LABEL) as RecommendationPrice[]).map((p) => <option key={p} value={p}>{PRICE_LABEL[p]}</option>)}
+            {(Object.keys(PRICE_LABEL) as RecommendationPrice[]).map((p) => (
+              <option key={p} value={p}>
+                {PRICE_LABEL[p]}
+              </option>
+            ))}
           </select>
           <select aria-label="Bahasa" value={language} onChange={(e) => set('bahasa', e.target.value)}>
             <option value="">Semua bahasa</option>
-            {(Object.keys(LANGUAGE_LABEL) as RecommendationLanguage[]).map((l) => <option key={l} value={l}>{LANGUAGE_LABEL[l]}</option>)}
+            {(Object.keys(LANGUAGE_LABEL) as RecommendationLanguage[]).map((l) => (
+              <option key={l} value={l}>
+                {LANGUAGE_LABEL[l]}
+              </option>
+            ))}
           </select>
         </div>
 
         {shown.length > 0 ? (
           <ul className="rec-grid start">
-            {shown.map((r) => <RecommendationCard key={r.id} r={r} />)}
+            {shown.map((r) => (
+              <RecommendationCard key={r.id} r={r} />
+            ))}
           </ul>
         ) : (
           <div className="empty-note rec-empty">
             <p>{filtered || isCategory(category) ? 'Belum ada rekomendasi buat filter ini.' : 'Belum ada rekomendasi.'} Tahu yang bagus?</p>
-            <Link className="btn btn-primary" to={SUBMIT_PATH}>Kirim ke kita</Link>
+            <Link className="btn btn-primary" to={SUBMIT_PATH}>
+              Kirim ke kita
+            </Link>
           </div>
         )}
       </div>
