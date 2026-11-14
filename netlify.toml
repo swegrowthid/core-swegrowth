@@ -98,6 +98,13 @@
   to = "/"
   status = 301
 
+# Gambar preview link dibuat saat build (scripts/og-images.mjs). Kegiatan yang
+# dibuat setelah build belum punya gambar sampai build ulang: pakai kartu komunitas.
+[[redirects]]
+  from = "/og/*"
+  to = "/og/home.png"
+  status = 200
+
 # Semua path tanpa file prerender (course, profil member, activity baru, dst.)
 # dilayani app shell SPA. Netlify mendahulukan file yang ada, jadi ini hanya fallback.
 [[redirects]]

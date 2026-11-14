@@ -15,6 +15,7 @@
     "dev": "react-router dev",
     "prebuild": "node scripts/check-node.mjs",
     "build": "react-router build",
+    "postbuild": "node scripts/og-images.mjs",
     "preview": "vite preview --outDir build/client --port 4321",
     "typecheck": "react-router typegen && tsc",
     "lint": "eslint .",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@napi-rs/canvas": "^1.1.1",
     "@react-router/dev": "^8.4.0",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
