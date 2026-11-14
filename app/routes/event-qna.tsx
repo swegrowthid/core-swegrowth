@@ -24,18 +24,15 @@ import {
 } from '~/lib/qna';
 import type { QuestionStatus } from '~/lib/database.types';
 import { useQuestions } from '~/lib/use-questions';
-import { ogImage, ogPaths } from '~/lib/og';
+import { ogImage, ogPaths, qnaShareCopy } from '~/lib/og';
 import { pageMeta } from '~/lib/site';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
   const a = loaderData?.activity;
   if (!a) return [{ title: 'Tanya jawab — SWE Growth' }];
   // Crawler preview tidak menjalankan JS; meta untuk mereka disisipkan edge function event-preview.
-  return pageMeta(
-    `Tanya di ${a.title} — SWE Growth`,
-    `Kirim pertanyaan untuk ${a.speaker || 'pembicara'} dan vote pertanyaan yang ingin kamu dengar jawabannya.`,
-    ogImage(ogPaths.qna(a.slug), a.updated_at),
-  );
+  const copy = qnaShareCopy(a);
+  return pageMeta(`${copy.title} — SWE Growth`, copy.description, ogImage(ogPaths.qna(a.slug), a.updated_at));
 };
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
