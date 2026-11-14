@@ -14,14 +14,14 @@ export const ogImage = (path: string, version?: string | null) =>
 
 type QnaCopyInput = { title: string; speaker: string | null; qna_status: string };
 
-/** Kalimat utama gambar & meta tanya jawab. Netlify edge function event-preview menyalin ini. */
-export const qnaHeadline = (a: Pick<QnaCopyInput, 'speaker'>) => `Punya pertanyaan untuk ${a.speaker || 'pembicara'}?`;
+/** Kalimat utama gambar & judul preview tanya jawab. Netlify edge function event-preview menyalin ini. */
+export const QNA_HEADLINE = 'Tanya di sini';
 
-/** Judul & deskripsi preview link halaman tanya jawab, dimulai dengan "Tanya jawab" supaya tidak tertukar dengan halaman kegiatan. */
+/** Judul & deskripsi preview link halaman tanya jawab; diawali "Tanya di sini" supaya tidak tertukar dengan halaman kegiatan. */
 export const qnaShareCopy = (a: QnaCopyInput) => ({
-  title: `Tanya jawab: ${a.title}`,
+  title: `${QNA_HEADLINE}: ${a.title}`,
   description:
     a.qna_status === 'closed'
       ? `Sesi tanya jawab untuk ${a.speaker || 'pembicara'} sudah ditutup. Lihat pertanyaan yang masuk.`
-      : `${qnaHeadline(a)} Kirim pertanyaanmu dan vote pertanyaan yang paling ingin kamu dengar jawabannya.`,
+      : `Kirim pertanyaan untuk ${a.speaker || 'pembicara'} dan vote pertanyaan yang paling ingin kamu dengar jawabannya.`,
 });

@@ -81,11 +81,11 @@ function eventPreview(a: Activity): Preview {
 
 /** Sama dengan qnaShareCopy() di app/lib/og.ts (dipakai routes/event-qna.tsx). */
 const qnaPreview = (a: Activity): Preview => ({
-  title: `Tanya jawab: ${a.title} — SWE Growth`,
+  title: `Tanya di sini: ${a.title} — SWE Growth`,
   description:
     a.qna_status === 'closed'
       ? `Sesi tanya jawab untuk ${a.speaker || 'pembicara'} sudah ditutup. Lihat pertanyaan yang masuk.`
-      : `Punya pertanyaan untuk ${a.speaker || 'pembicara'}? Kirim pertanyaanmu dan vote pertanyaan yang paling ingin kamu dengar jawabannya.`,
+      : `Kirim pertanyaan untuk ${a.speaker || 'pembicara'} dan vote pertanyaan yang paling ingin kamu dengar jawabannya.`,
   url: `${SITE_URL}/agenda/${a.slug}/tanya`,
   image: ogImage(`/og/tanya/${a.slug}.png`, a.updated_at),
 });

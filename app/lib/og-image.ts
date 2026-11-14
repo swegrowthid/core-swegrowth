@@ -13,7 +13,7 @@ import {
   type Ctx,
 } from '~/lib/event-poster';
 import { formatWibTime, wibDayParts } from '~/lib/format';
-import { qnaHeadline } from '~/lib/og';
+import { QNA_HEADLINE } from '~/lib/og';
 import { qnaPath } from '~/lib/qna';
 import { SITE_URL } from '~/lib/site';
 
@@ -287,22 +287,26 @@ export function drawQnaOg(ctx: Ctx, logo: CanvasImageSource, a: Activity) {
   const status = qnaStatusChip[a.qna_status];
   header(ctx, logo, [{ text: 'Tanya jawab', filled: true }, ...(status ? [{ text: status, filled: false }] : [])]);
 
-  // Yang paling besar ajakan bertanya, bukan judul kegiatan: preview harus langsung terbaca "ini link tanya jawab".
+  // "Tanya di sini" paling besar, bukan judul kegiatan: preview harus langsung terbaca sebagai link untuk bertanya.
   const leftW = INNER - 340;
   const bodyH = BODY.bottom - BODY.top;
-  const leadH = 50;
+  const headSize = 104;
+  const headH = headSize * 1.08;
+  const forWho = `Kirim pertanyaan untuk ${a.speaker || 'pembicara'}`;
   const event = `di ${a.title}`;
-  const eventOpts = { size: 28, weight: 600, color: C.onTeal, lines: 2 };
-  const eventH = 20 + paragraph(ctx, event, 0, 0, leftW, eventOpts, false);
-  const headline = fitTitle(ctx, qnaHeadline(a), leftW, 3, bodyH - leadH - eventH, [76, 48]);
-  let y = BODY.top + Math.max(0, (bodyH - leadH - headline.height - eventH) / 2);
+  const eventOpts = { size: 26, weight: 500, color: C.onTeal, lines: 2 };
+  const whoH = 18 + 44;
+  const eventH = 4 + paragraph(ctx, event, 0, 0, leftW, eventOpts, false);
+  let y = BODY.top + Math.max(0, (bodyH - headH - whoH - eventH) / 2);
 
-  setFont(ctx, 700, 30, 0.02);
+  setFont(ctx, 800, headSize, -0.03);
+  ctx.fillStyle = C.cream;
+  ctx.fillText(QNA_HEADLINE, PAD, y + headH - headSize * 0.2);
+  y += headH + 18;
+  setFont(ctx, 700, 32, -0.01);
   ctx.fillStyle = C.yellow;
-  ctx.fillText('Sesi tanya jawab', PAD, y + 30);
-  y += leadH;
-  drawTitle(ctx, headline, PAD, y);
-  y += headline.height + 20;
+  ctx.fillText(ellipsize(ctx, forWho, leftW), PAD, y + 34);
+  y += 44 + 4;
   paragraph(ctx, event, PAD, y, leftW, eventOpts);
 
   questionBubble(ctx, OG_W - PAD - 150, BODY.top + bodyH / 2 - 10);
