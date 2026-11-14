@@ -42,6 +42,11 @@ Prinsip isi: tidak ada data contoh atau angka karangan. Bagian yang datanya koso
 Halaman publik di-prerender saat build; sisanya SPA lewat `__spa-fallback.html` (lihat `netlify.toml`). URL lama
 (`/events`, `/blog`, `/jobs`, `/videos`, `/mentorship`, `/courses`, `/dashboard`, `/u/*`) diarahkan 301.
 
+**Preview link** (WhatsApp, Telegram, X, LinkedIn): gambar 1200×630 bergaya poster event dibuat setelah build
+(`scripts/og-images.mjs` → `build/client/og/`, gambarnya di `app/lib/og-image.ts`): kartu komunitas untuk beranda &
+halaman umum, daftar agenda untuk `/agenda`, poster per kegiatan, dan kartu "Tanya di …" untuk `/agenda/:slug/tanya`.
+Halaman SPA (tanya jawab, kegiatan baru) mendapat meta-nya dari edge function `event-preview` khusus untuk crawler.
+
 Tidak ada server dan tidak ada secret key di aplikasi. Hak akses dijaga di database: RLS + fungsi `is_admin()`,
 `is_member()`, `is_curator()` di `supabase/migrations/`. Link meeting, rekaman, dan grup WhatsApp hanya terbaca oleh
 member aktif.
