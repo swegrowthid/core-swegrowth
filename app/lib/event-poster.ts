@@ -25,7 +25,7 @@ const PAD = 84;
 const FONT = '"Plus Jakarta Sans Variable", "Plus Jakarta Sans", system-ui, sans-serif';
 
 // Sama dengan token di styles/global.css.
-const C = {
+export const C = {
   teal: '#0b3d40',
   panel: '#2d5759',
   cream: '#efe3d0',
@@ -36,19 +36,19 @@ const C = {
 
 const modeLabel = { online: 'Online', offline: 'Offline', hybrid: 'Hybrid' } as const;
 
-type Ctx = CanvasRenderingContext2D;
+export type Ctx = CanvasRenderingContext2D;
 type Run = { text: string; weight: number; color?: string };
 
 const font = (weight: number, size: number) => `${weight} ${size}px ${FONT}`;
 
-function setFont(ctx: Ctx, weight: number, size: number, tracking = 0) {
+export function setFont(ctx: Ctx, weight: number, size: number, tracking = 0) {
   ctx.font = font(weight, size);
   // letterSpacing belum ada di semua browser; tanpa itu teks hanya sedikit lebih renggang.
   if ('letterSpacing' in ctx) (ctx as Ctx & { letterSpacing: string }).letterSpacing = `${tracking * size}px`;
 }
 
 /** Potong teks ke maxWidth dengan "…". */
-function ellipsize(ctx: Ctx, text: string, maxWidth: number) {
+export function ellipsize(ctx: Ctx, text: string, maxWidth: number) {
   if (ctx.measureText(text).width <= maxWidth) return text;
   let t = text;
   while (t.length > 1 && ctx.measureText(`${t}…`).width > maxWidth) t = t.slice(0, -1);
@@ -56,7 +56,7 @@ function ellipsize(ctx: Ctx, text: string, maxWidth: number) {
 }
 
 /** Bungkus teks per kata; baris terakhir diberi "…" kalau melebihi maxLines. */
-function wrap(ctx: Ctx, text: string, maxWidth: number, maxLines: number) {
+export function wrap(ctx: Ctx, text: string, maxWidth: number, maxLines: number) {
   const lines: string[] = [];
   let line = '';
   for (const word of text.split(/\s+/).filter(Boolean)) {
@@ -109,7 +109,7 @@ const ICONS: Record<'calendar' | 'clock' | 'repeat' | 'pin', Icon[]> = {
   ],
 };
 
-function drawIcon(ctx: Ctx, name: keyof typeof ICONS, x: number, y: number, size: number, color: string) {
+export function drawIcon(ctx: Ctx, name: keyof typeof ICONS, x: number, y: number, size: number, color: string) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(size / 24, size / 24);
@@ -121,11 +121,12 @@ function drawIcon(ctx: Ctx, name: keyof typeof ICONS, x: number, y: number, size
   ctx.restore();
 }
 
-/** Chip pil seperti .chip di situs; mengembalikan lebarnya. */
-function chip(ctx: Ctx, text: string, x: number, y: number, filled: boolean) {
+/** Chip pil seperti .chip di situs; mengembalikan lebarnya. paint=false hanya mengukur. */
+export function chip(ctx: Ctx, text: string, x: number, y: number, filled: boolean, paint = true) {
   const h = 62;
   setFont(ctx, 700, 28);
   const w = ctx.measureText(text).width + 52;
+  if (!paint) return w;
   ctx.beginPath();
   ctx.roundRect(x + 1.5, y + 1.5, w - 3, h - 3, h / 2);
   if (filled) {
@@ -166,7 +167,7 @@ function loadImage(src: string) {
 }
 
 type Poster = {
-  logo: HTMLImageElement;
+  logo: CanvasImageSource;
   chips: { text: string; filled: boolean }[];
   organizer: string;
   title: string;
@@ -281,6 +282,26 @@ function layout(ctx: Ctx, p: Poster, { titleSize, summaryLines }: Fit, paint: bo
   return y;
 }
 
+/** Chevron lime samar di pojok kanan atas, gema logo. */
+export function chevrons(ctx: Ctx, width: number, top: number) {
+  ctx.save();
+  ctx.globalAlpha = 0.07;
+  ctx.fillStyle = C.green;
+  for (let i = 0; i < 3; i++) {
+    const cy = top + i * 120;
+    ctx.beginPath();
+    ctx.moveTo(width - 300, cy + 90);
+    ctx.lineTo(width - 150, cy);
+    ctx.lineTo(width, cy + 90);
+    ctx.lineTo(width, cy + 160);
+    ctx.lineTo(width - 150, cy + 70);
+    ctx.lineTo(width - 300, cy + 160);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 // Garis pemisah s.d. baseline link (92px) + margin bawah sama dengan sisi.
 const FOOTER_H = 92 + PAD;
 
@@ -299,8 +320,8 @@ function footer(ctx: Ctx, link: string) {
   ctx.fillText(ellipsize(ctx, link, W - PAD * 2), PAD, top + 92);
 }
 
-/** Data poster dari baris activity; event berulang memakai sesi berikutnya. */
-function posterData(a: Activity, organizerName: string | null, logo: HTMLImageElement): Poster {
+/** Baris jadwal & tempat (ikon + teks), dipakai poster dan gambar preview link. */
+export function scheduleRows(a: Activity) {
   const s = withNextSession(a);
   const place = [s.mode && modeLabel[s.mode], s.location].filter(Boolean).join(' · ');
   const meta: Poster['meta'] = [];
@@ -316,17 +337,27 @@ function posterData(a: Activity, organizerName: string | null, logo: HTMLImageEl
   const rec = recurrenceLabel(a);
   if (rec) meta.push({ icon: 'repeat', parts: [{ text: rec, weight: 400 }] });
   if (place) meta.push({ icon: 'pin', parts: [{ text: place, weight: 400 }] });
+  return meta;
+}
 
+/** Chip status & harga, sama dengan hero halaman event. */
+export const eventChips = (a: Activity) => [
+  { text: activityStatusLabel[a.status], filled: true },
+  { text: priceLabel(a), filled: false },
+];
+
+export const organizerLine = (organizerName: string | null) =>
+  `Kegiatan komunitas SWE Growth${organizerName ? ` · diadakan ${organizerName}` : ''}`;
+
+/** Data poster dari baris activity; event berulang memakai sesi berikutnya. */
+function posterData(a: Activity, organizerName: string | null, logo: CanvasImageSource): Poster {
   return {
     logo,
-    chips: [
-      { text: activityStatusLabel[a.status], filled: true },
-      { text: priceLabel(a), filled: false },
-    ],
-    organizer: `Kegiatan komunitas SWE Growth${organizerName ? ` · diadakan ${organizerName}` : ''}`,
+    chips: eventChips(a),
+    organizer: organizerLine(organizerName),
     title: a.title,
     summary: a.summary?.trim() ?? '',
-    meta,
+    meta: scheduleRows(a),
     speaker: a.speaker ? { name: a.speaker, role: a.speaker_title } : null,
     link: `${new URL(SITE_URL).host}${activityPath(a)}`,
   };
@@ -361,23 +392,7 @@ export async function renderEventPoster(a: Activity, organizerName: string | nul
 
   ctx.fillStyle = C.teal;
   ctx.fillRect(0, 0, W, H);
-  // Chevron lime samar di pojok, gema logo.
-  ctx.save();
-  ctx.globalAlpha = 0.07;
-  ctx.fillStyle = C.green;
-  for (let i = 0; i < 3; i++) {
-    const cy = 150 + i * 120;
-    ctx.beginPath();
-    ctx.moveTo(W - 300, cy + 90);
-    ctx.lineTo(W - 150, cy);
-    ctx.lineTo(W, cy + 90);
-    ctx.lineTo(W, cy + 160);
-    ctx.lineTo(W - 150, cy + 70);
-    ctx.lineTo(W - 300, cy + 160);
-    ctx.closePath();
-    ctx.fill();
-  }
-  ctx.restore();
+  chevrons(ctx, W, 150);
 
   layout(ctx, p, fit, true, offset);
   footer(ctx, p.link);

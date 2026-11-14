@@ -33,6 +33,7 @@ import {
 import { useAuth } from '~/lib/auth';
 import type { RegistrationStatus } from '~/lib/database.types';
 import { formatWibDate, formatWibDay, formatWibTime } from '~/lib/format';
+import { ogImage, ogPaths } from '~/lib/og';
 import { qnaPath } from '~/lib/qna';
 import { pageMeta } from '~/lib/site';
 import { youtubeId } from '~/lib/youtube';
@@ -41,10 +42,9 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
   const a = loaderData?.activity;
   if (!a) return [{ title: 'Kegiatan tidak ditemukan — SWE Growth' }];
   const when = a.starts_at ? `${formatWibDate(a.starts_at)}, ${formatWibTime(a.starts_at)}. ` : '';
-  return [
-    ...pageMeta(`${a.title} — SWE Growth`, `${when}${a.summary || 'Kegiatan komunitas SWE Growth.'}`),
-    ...(a.image_url ? [{ property: 'og:image', content: a.image_url }] : []),
-  ];
+  // Poster dari admin diutamakan; kalau tidak ada, kartu bergaya poster yang dibuat saat build.
+  const image = a.image_url || ogImage(ogPaths.event(a.slug), a.updated_at);
+  return pageMeta(`${a.title} — SWE Growth`, `${when}${a.summary || 'Kegiatan komunitas SWE Growth.'}`, image);
 };
 
 /**

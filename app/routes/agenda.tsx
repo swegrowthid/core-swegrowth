@@ -6,12 +6,13 @@ import { PastEventList } from '~/components/PastEventList';
 import { getCommunityGroups, getPublishedActivities, pastActivities, upcomingSessions } from '~/lib/activities';
 import { PAST_ACTIVITIES } from '~/lib/past-activities';
 import { getPublishedRecommendations } from '~/lib/recommendations';
+import { ogImage, ogPaths } from '~/lib/og';
 import { pageMeta } from '~/lib/site';
 
 const monthFmt = new Intl.DateTimeFormat('id-ID', { month: 'short', year: 'numeric' });
 
 export const meta: Route.MetaFunction = () =>
-  pageMeta('Agenda — SWE Growth', 'Agenda kegiatan komunitas SWE Growth. Daftar gratis dengan akun Google.');
+  pageMeta('Agenda — SWE Growth', 'Agenda kegiatan komunitas SWE Growth. Daftar gratis dengan akun Google.', ogImage(ogPaths.agenda));
 
 const load = async () => {
   const [activities, groups, recommendations] = await Promise.all([

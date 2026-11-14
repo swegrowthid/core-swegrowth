@@ -24,11 +24,19 @@ import {
 } from '~/lib/qna';
 import type { QuestionStatus } from '~/lib/database.types';
 import { useQuestions } from '~/lib/use-questions';
+import { ogImage, ogPaths } from '~/lib/og';
+import { pageMeta } from '~/lib/site';
 
-export const meta: Route.MetaFunction = ({ loaderData }) => [
-  { title: `Tanya jawab: ${loaderData?.activity.title ?? 'Kegiatan'} — SWE Growth` },
-  { name: 'description', content: 'Kirim pertanyaan untuk pembicara dan vote pertanyaan yang ingin kamu dengar jawabannya.' },
-];
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  const a = loaderData?.activity;
+  if (!a) return [{ title: 'Tanya jawab — SWE Growth' }];
+  // Crawler preview tidak menjalankan JS; meta untuk mereka disisipkan edge function event-preview.
+  return pageMeta(
+    `Tanya di ${a.title} — SWE Growth`,
+    `Kirim pertanyaan untuk ${a.speaker || 'pembicara'} dan vote pertanyaan yang ingin kamu dengar jawabannya.`,
+    ogImage(ogPaths.qna(a.slug), a.updated_at),
+  );
+};
 
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const activity = await getPublishedActivityBySlug(params.slug);

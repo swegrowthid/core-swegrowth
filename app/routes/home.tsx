@@ -26,7 +26,11 @@ import { getChannelVideos } from '~/lib/youtube';
 import { TOPICS } from '~/lib/topics';
 import { pageMeta } from '~/lib/site';
 
-export const meta: Route.MetaFunction = () => pageMeta('SWE Growth — komunitas software engineer Indonesia');
+export const meta: Route.MetaFunction = () =>
+  pageMeta(
+    'SWE Growth — komunitas software engineer Indonesia',
+    'Komunitas software engineer Indonesia: ngobrol per bidang di grup WhatsApp, diskusi online, belajar bareng, kelas, dan talkshow dari praktisi.',
+  );
 
 const load = async () => {
   const [activities, groups, contributions, recommendations, stats, pulse, channel] = await Promise.all([
