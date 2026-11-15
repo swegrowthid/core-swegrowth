@@ -51,9 +51,9 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
  * Detail event publik. Pendaftaran tiga langkah:
  * detail (tombol Daftar) → /daftar (form, terisi dari profil) → /terdaftar (konfirmasi).
  *
- * Kegiatan publik di-prerender saat build (lihat react-router.config.ts) supaya
- * isinya langsung tampil; di browser data selalu diambil ulang. Slug yang belum
- * ada saat build dilayani SPA fallback.
+ * Dimuat di browser (SPA). Meta preview link untuk crawler disisipkan edge
+ * function event-preview, jadi halaman ini tidak perlu di-build ulang saat
+ * event diubah.
  */
 const load = async (slug: string) => {
   // Subgrup diambil bersamaan (tabel kecil) supaya tidak menunggu id penyelenggara dulu.
@@ -62,18 +62,11 @@ const load = async (slug: string) => {
   return { activity, organizer: organizerOf(activity, groups) };
 };
 
-/** Saat build: snapshot untuk HTML prerender. */
-export async function loader({ params }: Route.LoaderArgs) {
-  const loaded = await load(params.slug);
-  return { ...loaded, stats: await fetchPublicStats(loaded.activity.id), now: Date.now() };
-}
-
-/** Di browser: halaman tampil begitu kegiatannya ada, kuota menyusul (butuh id kegiatan). */
+/** Halaman tampil begitu kegiatannya ada, kuota menyusul (butuh id kegiatan). */
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const loaded = await load(params.slug);
   return { ...loaded, stats: fetchPublicStats(loaded.activity.id), now: Date.now() };
 }
-clientLoader.hydrate = true as const;
 
 type Stats = Awaited<ReturnType<typeof fetchPublicStats>>;
 type StatsData = Stats | Promise<Stats>;

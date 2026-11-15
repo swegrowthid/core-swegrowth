@@ -99,7 +99,7 @@
   status = 301
 
 # Gambar preview link dibuat saat build (scripts/og-images.mjs). Kegiatan yang
-# dibuat setelah build belum punya gambar sampai build ulang: pakai kartu komunitas.
+# dibuat setelah build belum punya gambar sampai deploy berikutnya: pakai kartu komunitas.
 [[redirects]]
   from = "/og/*"
   to = "/og/home.png"
