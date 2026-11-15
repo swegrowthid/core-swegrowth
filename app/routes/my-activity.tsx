@@ -3,7 +3,7 @@ import { marked } from 'marked';
 import { useMemo, useState, type FormEvent } from 'react';
 import { data, Link, redirect } from 'react-router';
 import type { Route } from './+types/my-activity';
-import { PortalShell, type PortalSection } from '~/components/PortalShell';
+import { PortalPage } from '~/components/Portal';
 import { YouTubeEmbed } from '~/components/YouTubeEmbed';
 import {
   activityPath,
@@ -31,7 +31,7 @@ import { qnaPath } from '~/lib/qna';
 import { youtubeId } from '~/lib/youtube';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => [
-  { title: `${loaderData?.activity.title ?? 'Kegiatan'} — Kegiatanku — SWE Growth` },
+  { title: `${loaderData?.activity.title ?? 'Kegiatan'} — Kegiatan — SWE Growth` },
   { name: 'robots', content: 'noindex' },
 ];
 
@@ -60,29 +60,31 @@ export default function MyActivity({ loaderData }: Route.ComponentProps) {
   const upcoming = isActivityUpcoming(a, now);
   const confirmed = status === 'confirmed';
 
-  const sections: PortalSection[] = [
-    { id: 'ringkasan', label: 'Ringkasan' },
-    { id: 'rekaman', label: 'Rekaman' },
-    { id: 'feedback', label: 'Feedback' },
-    ...(upcoming ? [{ to: registeredPath(a), label: 'Tiket & link meeting' }] : []),
-    ...(a.qna_status !== 'off' ? [{ to: qnaPath(a), label: 'Tanya jawab' }] : []),
-    { to: activityPath(a), label: 'Detail acara' },
-  ];
-
   return (
-    <PortalShell
+    <PortalPage
       title={a.title}
       intro={
         <>
           <Link className="text-link" to={MY_ACTIVITIES_PATH}>
-            ← Kegiatanku
+            ← Kegiatan
           </Link>
           {' · '}
           {a.starts_at ? `${formatWibDate(a.starts_at)}, ${timeRange(a)}` : 'Jadwal menyusul'}
           {status === 'waitlisted' && ' · kamu di waitlist'}
         </>
       }
-      sections={sections}
+      actions={
+        <>
+          {a.qna_status !== 'off' && (
+            <Link className="btn btn-ghost sm" to={qnaPath(a)}>
+              Tanya jawab
+            </Link>
+          )}
+          <Link className="btn btn-ghost sm" to={activityPath(a)}>
+            Detail acara
+          </Link>
+        </>
+      }
     >
       <div className="portal-stack">
         {upcoming && (
@@ -137,7 +139,7 @@ export default function MyActivity({ loaderData }: Route.ComponentProps) {
           )}
         </div>
       </div>
-    </PortalShell>
+    </PortalPage>
   );
 }
 

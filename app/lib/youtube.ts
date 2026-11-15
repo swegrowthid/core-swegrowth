@@ -57,10 +57,15 @@ export function parseChannelFeed(xml: string): ChannelVideo[] {
     });
 }
 
+export const isChannelFeed = (text: string) => /<feed[\s>]/.test(text);
+
 async function fetchFeed(url: string): Promise<ChannelVideo[] | null> {
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    return res.ok ? parseChannelFeed(await res.text()) : null;
+    if (!res.ok) return null;
+    const xml = await res.text();
+    // Balasan yang bukan feed (mis. halaman HTML saat endpoint tidak ada di `npm run dev`) = gagal, bukan channel kosong.
+    return isChannelFeed(xml) ? parseChannelFeed(xml) : null;
   } catch {
     return null;
   }

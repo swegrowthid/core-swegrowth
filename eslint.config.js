@@ -4,7 +4,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['build/', '.react-router/', 'node_modules/', 'supabase/functions/', 'netlify/edge-functions/'] },
+  { ignores: ['build/', '.react-router/', 'node_modules/', 'supabase/functions/', 'netlify/edge-functions/', '.claude/', '.impeccable/'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

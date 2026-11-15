@@ -57,14 +57,14 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
  */
 const load = async (slug: string) => {
   // Subgrup diambil bersamaan (tabel kecil) supaya tidak menunggu id penyelenggara dulu.
-  const [activity, groups] = await Promise.all([getPublishedActivityBySlug(slug), getCommunityGroups()]);
-  if (!activity) throw data(null, { status: 404 });
-  return { activity, organizer: organizerOf(activity, groups) };
+  const [activity, groups] = await Promise.all([getPublishedActivityBySlug(slug, { strict: true }), getCommunityGroups({ strict: true })]);
+  return activity ? { activity, organizer: organizerOf(activity, groups) } : null;
 };
 
-/** Halaman tampil begitu kegiatannya ada, kuota menyusul (butuh id kegiatan). */
+/** Halaman tampil begitu kegiatannya ada, kuota menyusul (butuh id kegiatan). Gagal muat ke ErrorBoundary, bukan "tidak ditemukan". */
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const loaded = await load(params.slug);
+  if (!loaded) throw data(null, { status: 404 });
   return { ...loaded, stats: fetchPublicStats(loaded.activity.id), now: Date.now() };
 }
 

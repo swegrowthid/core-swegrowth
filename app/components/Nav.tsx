@@ -6,7 +6,8 @@ import { AccountMenu } from './AccountMenu';
 type NavLinkItem = { to: string; label: string };
 type NavItem = NavLinkItem | { label: string; items: (NavLinkItem & { hint: string })[] };
 
-export function Nav() {
+/** `portal`: bar tipis ruang member (logo ke portal, link situs publik, menu akun); navigasinya ada di menu portal. */
+export function Nav({ portal = false }: { portal?: boolean }) {
   const [open, setOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
@@ -53,8 +54,30 @@ export function Nav() {
     };
   }, [open, subOpen]);
 
+  if (portal) {
+    return (
+      <nav className="site-nav on-teal nav-portal" aria-label="Utama">
+        <div className="nav-in">
+          <Link className="brand" to="/portal" aria-label="SWE Growth, beranda portal">
+            <img className="brand-logo" src="/assets/swe-growth-logo.png" alt="" width="32" height="32" />
+            <span className="b-name">
+              <b>SWE Growth</b>
+            </span>
+            <span className="nav-portal-tag">Portal</span>
+          </Link>
+          <div className="nav-cta">
+            <Link className="nav-public" to="/">
+              Situs publik
+            </Link>
+            {loading ? <span className="nav-account-slot" aria-hidden="true" /> : user && <AccountMenu portal />}
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
-    <nav className={`site-nav on-teal${open ? ' menu-open' : ''}`} ref={navRef}>
+    <nav className={`site-nav on-teal${open ? ' menu-open' : ''}`} ref={navRef} aria-label="Utama">
       <div className="wrap nav-in">
         <Link className="brand" to="/" aria-label="SWE Growth Community">
           <img className="brand-logo" src="/assets/swe-growth-logo.png" alt="SWE Growth Community" width="32" height="32" />

@@ -53,8 +53,8 @@ export function HydrateFallback() {
 
 /** Kontrol & kursor disembunyikan setelah mouse diam selama ini, supaya layar bersih untuk audiens. */
 const IDLE_MS = 2_500;
-/** Kartu di layar (termasuk "pertanyaan terbaru"), muat satu layar 16:9. */
-const CARD_COUNT = 4;
+/** Kartu yang punya shortcut angka (1–9); sisanya tetap bisa disorot lewat ikonnya. */
+const SHORTCUT_COUNT = 9;
 /** Ukuran layar (zoom isi), seperti "Screen size" di Slido; diingat per browser. */
 const SCALE_KEY = 'swegrowth:qna-screen-scale';
 const SCALE_MIN = 0.6;
@@ -82,7 +82,7 @@ function readScale() {
  * layar), dan layar penuh.
  * Shortcut keyboard:
  *   → / N  tandai terjawab lalu sorot pertanyaan berikutnya
- *   1–4    sorot/lepas kartu nomor itu
+ *   1–9    sorot/lepas kartu nomor itu
  *   0 / Esc lepas sorotan
  *   R      perbarui daftar
  *   F      layar penuh
@@ -102,9 +102,10 @@ export default function EventQnaScreen({ loaderData: { activity: a } }: Route.Co
 
   const groups = groupQuestions(questions ?? []);
   // Yang disorot naik ke paling atas; yang sudah dijawab/disembunyikan otomatis lepas dari sorotan.
-  const { current, list, latest } = screenQuestions(groups.open, sort, CARD_COUNT, currentId);
-  /** Urutan nomor shortcut 1–4 = urutan kartu di layar. */
-  const cards = [...(current ? [current] : []), ...list, ...(latest ? [latest] : [])];
+  // Semua pertanyaan terbuka tampil; layar bisa digulir kalau tidak muat.
+  const { current, list } = screenQuestions(groups.open, sort, undefined, currentId);
+  /** Urutan nomor shortcut 1–9 = urutan kartu di layar. */
+  const cards = [...(current ? [current] : []), ...list];
   const upNext = nextToPresent(questions ?? [], current?.id ?? null);
   const joinUrl = typeof window === 'undefined' ? qnaPath(a) : `${window.location.host}${qnaPath(a)}`;
 
@@ -228,7 +229,7 @@ export default function EventQnaScreen({ loaderData: { activity: a } }: Route.Co
   const icons = (q: Question, n: number) => (
     <span className="qna-screen-icons">
       <IconButton
-        label={q.id === current?.id ? `Lepas sorotan (${n})` : `Sorot (${n})`}
+        label={`${q.id === current?.id ? 'Lepas sorotan' : 'Sorot'}${n <= SHORTCUT_COUNT ? ` (${n})` : ''}`}
         pressed={q.id === current?.id}
         onClick={() => toggleHighlight(q)}
       >
@@ -300,14 +301,6 @@ export default function EventQnaScreen({ loaderData: { activity: a } }: Route.Co
                   {icons(q, cards.indexOf(q) + 1)}
                 </Card>
               ))}
-              {latest && (
-                <>
-                  <p className="qna-screen-divider">Pertanyaan terbaru</p>
-                  <Card key={latest.id} q={latest}>
-                    {icons(latest, cards.length)}
-                  </Card>
-                </>
-              )}
             </section>
           )}
           {error && <p className="qna-screen-error">{error}</p>}
@@ -344,7 +337,7 @@ export default function EventQnaScreen({ loaderData: { activity: a } }: Route.Co
               </button>
             </div>
             <p className="qna-screen-menu-help">
-              Shortcut: → terjawab & sorot berikutnya · 1–{CARD_COUNT} sorot/lepas · Esc lepas · R perbarui · F layar penuh.{' '}
+              Shortcut: → terjawab & sorot berikutnya · 1–{SHORTCUT_COUNT} sorot/lepas · Esc lepas · R perbarui · F layar penuh.{' '}
               {groups.answered.length} pertanyaan sudah terjawab.
             </p>
           </div>

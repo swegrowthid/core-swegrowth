@@ -458,7 +458,7 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
               id="summary_session"
               label="Ringkasan sesi (dari Zoom)"
               optional
-              hint="Tempel ringkasan dari Zoom AI Companion (meeting summary) atau tulis sendiri; boleh markdown. Hanya terlihat oleh peserta kegiatan di Portal → Kegiatanku."
+              hint="Tempel ringkasan dari Zoom AI Companion (meeting summary) atau tulis sendiri; boleh markdown. Hanya terlihat oleh peserta kegiatan di Portal → Kegiatan."
             >
               <textarea
                 id="summary_session"

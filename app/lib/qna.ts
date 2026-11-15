@@ -55,11 +55,11 @@ export function nextToPresent(list: Question[], currentId: string | null) {
 
 /**
  * Isi tampilan present: pertanyaan yang disorot (kalau ada) di paling atas,
- * lalu pertanyaan teratas sesuai urutan, plus "pertanyaan terbaru" di bawah
- * kalau yang terbaru belum masuk daftar (seperti Slido). Total kartu tetap
- * `count` supaya muat satu layar.
+ * lalu semua pertanyaan lain sesuai urutan (daftarnya bisa digulir).
+ * Kalau `count` diisi, total kartu dibatasi sejumlah itu dan "pertanyaan
+ * terbaru" ditaruh di bawah kalau belum masuk daftar (seperti Slido).
  */
-export function screenQuestions(open: Question[], sort: QuestionSort, count = 4, currentId: string | null = null) {
+export function screenQuestions(open: Question[], sort: QuestionSort, count = Infinity, currentId: string | null = null) {
   const current = open.find((q) => q.id === currentId) ?? null;
   const rest = current ? open.filter((q) => q.id !== current.id) : open;
   const slots = count - (current ? 1 : 0);
