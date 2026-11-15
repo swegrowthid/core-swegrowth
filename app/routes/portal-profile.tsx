@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import type { Route } from './+types/portal-profile';
-import { PortalShell } from '~/components/PortalShell';
+import { PortalPage, PortalSection } from '~/components/Portal';
 import { ProfileView } from '~/components/ProfileView';
-import { fetchProfile, requireUser, useSignOut } from '~/lib/auth';
+import { fetchProfile, requireUser } from '~/lib/auth';
 import { fetchMotivation, isOnboarded, missingOnboardingParts, missingProfileParts, publicProfilePath } from '~/lib/profile';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Profil — SWE Growth' }, { name: 'robots', content: 'noindex' }];
@@ -16,9 +16,12 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 }
 
 export default function PortalProfile({ loaderData: { profile, onboarded, required } }: Route.ComponentProps) {
-  const { signOut, busy } = useSignOut();
+  // Dikirim halaman edit setelah simpan berhasil.
+  const saved = (useLocation().state as { saved?: boolean } | null)?.saved === true;
   const missing = missingProfileParts(profile);
   const publicPath = publicProfilePath(profile);
+  // Domain yang tampil mengikuti situs yang sedang dibuka, sama dengan yang disalin.
+  const publicUrl = `${window.location.host}${publicPath}`;
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const linkRef = useRef<HTMLElement>(null);
 
@@ -36,43 +39,57 @@ export default function PortalProfile({ loaderData: { profile, onboarded, requir
   };
 
   return (
-    <PortalShell title="Profil">
-      <div className="portal-stack">
-        {!onboarded && (
-          <div className="panel complete-card">
-            <div>
-              <h2>Lengkapi profilmu dulu, yuk</h2>
-              <p className="muted">
-                Tinggal sedikit lagi. Setelah lengkap, kamu dapat link komunitas (WhatsApp, Telegram), bisa daftar kegiatan, dan profil
-                publikmu aktif.
-              </p>
-              <p className="complete-missing">Yang belum: {required.join(', ')}.</p>
-            </div>
-            <Link className="btn btn-primary" to="/onboarding?next=/portal/profil">
-              Lengkapi sekarang
-            </Link>
+    <PortalPage
+      title="Profil"
+      actions={
+        onboarded && (
+          <Link className="btn btn-primary" to="/portal/profil/edit">
+            Edit profil
+          </Link>
+        )
+      }
+    >
+      {saved && (
+        <p className="form-message success" role="status">
+          Profil tersimpan.
+        </p>
+      )}
+
+      {!onboarded && (
+        <div className="panel complete-card">
+          <div>
+            <h2>Lengkapi profilmu dulu, yuk</h2>
+            <p className="muted">
+              Tinggal sedikit lagi. Setelah lengkap, kamu dapat link komunitas (WhatsApp, Telegram), bisa daftar kegiatan, dan profil
+              publikmu aktif.
+            </p>
+            <p className="complete-missing">Yang belum: {required.join(', ')}.</p>
           </div>
-        )}
+          <Link className="btn btn-primary" to="/onboarding?next=/portal/profil">
+            Lengkapi sekarang
+          </Link>
+        </div>
+      )}
 
-        {onboarded && missing.length > 0 && (
-          <p className="form-message success">
-            Tambahkan {missing.join(', ')} supaya profilmu makin lengkap.{' '}
-            <Link className="text-link" to="/portal/profil/edit">
-              Lengkapi
-            </Link>
-          </p>
-        )}
+      {onboarded && missing.length > 0 && (
+        <p className="portal-nudge">
+          Tambahkan {missing.join(', ')} supaya profilmu makin lengkap.{' '}
+          <Link className="text-link" to="/portal/profil/edit">
+            Lengkapi
+          </Link>
+        </p>
+      )}
 
-        {onboarded && (
+      <ProfileView profile={profile} />
+
+      {onboarded && (
+        <PortalSection title="Link profil publik">
           <div className="panel">
-            <div className="panel-head">
-              <h2>Profil publik</h2>
-            </div>
             <p className="muted mb-12">
               Siapa pun bisa melihat profilmu lewat link ini. Nomor WhatsApp, email, dan jawaban kenalan tidak ikut tampil.
             </p>
             <div className="share-link">
-              <code ref={linkRef}>swegrowth.id{publicPath}</code>
+              <code ref={linkRef}>{publicUrl}</code>
               <button className="btn btn-ghost sm" type="button" onClick={copyLink}>
                 {copyState === 'copied' ? 'Tersalin' : 'Salin link'}
               </button>
@@ -85,23 +102,20 @@ export default function PortalProfile({ loaderData: { profile, onboarded, requir
               {copyState === 'failed' && 'Tidak bisa menyalin otomatis. Link sudah dipilih, tekan Ctrl+C atau ⌘C.'}
             </p>
           </div>
-        )}
+        </PortalSection>
+      )}
 
-        <ProfileView
-          profile={profile}
-          actions={
-            <Link className="btn btn-primary sm" to={onboarded ? '/portal/profil/edit' : '/onboarding?next=/portal/profil'}>
-              {onboarded ? 'Edit profil' : 'Lengkapi profil'}
-            </Link>
-          }
-        />
-
-        <div className="profile-signout">
-          <button className="btn btn-ghost sm" type="button" disabled={busy} onClick={signOut}>
-            {busy ? 'Keluar…' : 'Keluar dari akun'}
-          </button>
-        </div>
-      </div>
-    </PortalShell>
+      <p className="portal-footnote">
+        Usulan rekomendasimu ada di{' '}
+        <Link className="text-link" to="/portal/rekomendasiku">
+          Rekomendasiku
+        </Link>
+        . Membership dan badge verified member{' '}
+        <Link className="text-link" to="/portal/membership">
+          segera hadir
+        </Link>
+        .
+      </p>
+    </PortalPage>
   );
 }

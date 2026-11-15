@@ -13,7 +13,6 @@ import type {
 import {
   CATEGORIES,
   categoryOf,
-  directoryPath,
   getRecommendationTopics,
   isCategory,
   LANGUAGE_LABEL,
@@ -38,7 +37,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   if (!editId) return { editing: null, topics };
 
   const data = await fetchOwnRecommendation(editId, user.id);
-  if (!data || data.status !== 'pending') throw redirect('/portal');
+  if (!data || data.status !== 'pending') throw redirect('/portal/rekomendasiku');
   return { editing: data, topics };
 }
 
@@ -119,8 +118,8 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
 
   if (done) {
     return (
-      <section className="block">
-        <div className="wrap narrow-wrap">
+      <div className="portal-narrow">
+        <div>
           <div className="form-card rec-done">
             <span className="check-badge" aria-hidden="true">
               ✓
@@ -128,7 +127,7 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
             <h1 className="page-title">{editing ? 'Perubahan tersimpan' : 'Makasih udah berbagi!'}</h1>
             <p className="form-sub">Admin cek dulu sebelum tayang di direktori, biasanya 1–3 hari. Statusnya bisa kamu pantau di portal.</p>
             <div className="inline-actions">
-              <Link className="btn btn-primary" to="/portal#rekomendasiku">
+              <Link className="btn btn-primary" to="/portal/rekomendasiku">
                 Lihat status di portal
               </Link>
               {!editing && (
@@ -139,15 +138,15 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
             </div>
           </div>
         </div>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="block">
-      <div className="wrap narrow-wrap rec-form-wrap">
-        <Link className="back" to={directoryPath()}>
-          ← Rekomendasi
+    <div className="portal-narrow">
+      <div className="rec-form-wrap">
+        <Link className="back" to="/portal/rekomendasiku">
+          ← Rekomendasiku
         </Link>
         <form className="form-card rec-form" onSubmit={onSubmit}>
           <h1 className="page-title">{editing ? 'Edit rekomendasi' : 'Kirim rekomendasi'}</h1>
@@ -303,6 +302,6 @@ function SubmitForm({ editing, topicNames }: { editing: RecommendationRow | null
           </button>
         </form>
       </div>
-    </section>
+    </div>
   );
 }

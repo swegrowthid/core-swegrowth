@@ -6,7 +6,7 @@ import { formatWibDate } from '~/lib/format';
 import { RATING_LABEL } from '~/lib/my-activities';
 import { csvCell } from './Registrants';
 
-/** Ringkasan feedback peserta (Portal → Kegiatanku): rata-rata, sebaran nilai, dan komentar. */
+/** Ringkasan feedback peserta (Portal → Kegiatan): rata-rata, sebaran nilai, dan komentar. */
 export function FeedbackPanel({
   activityId,
   activityTitle,
@@ -60,9 +60,7 @@ export function FeedbackPanel({
       ) : rows === null ? (
         <p className="muted">Memuat…</p>
       ) : list.length === 0 ? (
-        <p className="muted">
-          Belum ada feedback. Peserta terkonfirmasi bisa memberi feedback di Portal → Kegiatanku setelah acara dimulai.
-        </p>
+        <p className="muted">Belum ada feedback. Peserta terkonfirmasi bisa memberi feedback di Portal → Kegiatan setelah acara dimulai.</p>
       ) : (
         <>
           <div className="feedback-summary">

@@ -28,7 +28,7 @@ export async function clientLoader({ request, params }: Route.ClientLoaderArgs) 
   const activity = await getPublishedActivityBySlug(params.slug);
   if (!activity) throw data(null, { status: 404 });
 
-  const [profile, registration] = await Promise.all([fetchProfile(user.id), fetchMyRegistration(activity.id, user.id)]);
+  const [profile, registration] = await Promise.all([fetchProfile(user.id).catch(() => null), fetchMyRegistration(activity.id, user.id)]);
   if (isActiveRegistration(registration?.status)) throw redirect(registeredPath(activity));
   if (!canRegister(activity) || isPaid(activity)) throw redirect(activityPath(activity));
 
