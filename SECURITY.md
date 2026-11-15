@@ -3,7 +3,7 @@
 ## Melaporkan celah keamanan
 
 **Jangan buka issue publik** untuk celah keamanan. Laporkan secara privat lewat
-[GitHub Security Advisories](https://github.com/zikrulihsan/core-swegrowth/security/advisories/new)
+[GitHub Security Advisories](https://github.com/swegrowthid/core-swegrowth/security/advisories/new)
 (tab **Security → Report a vulnerability**).
 
 Sertakan:

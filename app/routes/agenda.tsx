@@ -8,17 +8,18 @@ import { PAST_ACTIVITIES } from '~/lib/past-activities';
 import { getPublishedRecommendations } from '~/lib/recommendations';
 import { ogImage, ogPaths } from '~/lib/og';
 import { pageMeta } from '~/lib/site';
+import { liveOrSnapshot } from '~/lib/snapshot';
 
 const monthFmt = new Intl.DateTimeFormat('id-ID', { month: 'short', year: 'numeric' });
 
 export const meta: Route.MetaFunction = () =>
   pageMeta('Agenda — SWE Growth', 'Agenda kegiatan komunitas SWE Growth. Daftar gratis dengan akun Google.', ogImage(ogPaths.agenda));
 
-const load = async () => {
+const load = async (strict = false) => {
   const [activities, groups, recommendations] = await Promise.all([
-    getPublishedActivities(),
-    getCommunityGroups(),
-    getPublishedRecommendations(),
+    getPublishedActivities({ strict }),
+    getCommunityGroups({ strict }),
+    getPublishedRecommendations({ strict }),
   ]);
   // Acara dari luar = rekomendasi kategori acara (yang sudah lewat tidak ikut tayang).
   const external = recommendations.filter((r) => r.category === 'acara').sort(byEventDate);
@@ -37,9 +38,12 @@ export async function loader() {
   return load();
 }
 
-/** Di browser: selalu ambil agenda terbaru. */
-export async function clientLoader() {
-  return load();
+/** Di browser: ambil agenda terbaru; kalau gagal, snapshot build tetap dipakai. */
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+  return liveOrSnapshot(
+    () => load(true),
+    async () => ({ ...(await serverLoader()), now: Date.now() }),
+  );
 }
 clientLoader.hydrate = true as const;
 

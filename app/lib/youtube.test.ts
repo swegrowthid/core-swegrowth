@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseChannelFeed, youtubeId } from './youtube';
+import { isChannelFeed, parseChannelFeed, youtubeId } from './youtube';
 
 describe('youtubeId', () => {
   it('membaca semua bentuk link YouTube', () => {
@@ -35,5 +35,14 @@ describe('parseChannelFeed', () => {
 
   it('mengembalikan daftar kosong untuk respons yang bukan feed', () => {
     expect(parseChannelFeed('<!doctype html><html></html>')).toEqual([]);
+  });
+});
+
+describe('isChannelFeed', () => {
+  it('feed Atom diterima, halaman HTML ditolak', () => {
+    expect(isChannelFeed('<?xml version="1.0"?><feed xmlns:yt="http://www.youtube.com/xml/schemas/2015"></feed>')).toBe(true);
+    // `npm run dev` dan endpoint yang hilang membalas app shell, bukan feed.
+    expect(isChannelFeed('<!DOCTYPE html><html lang="id"><head></head><body></body></html>')).toBe(false);
+    expect(isChannelFeed('')).toBe(false);
   });
 });

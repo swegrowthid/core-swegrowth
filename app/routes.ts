@@ -39,14 +39,20 @@ export default [
   // Wajib login (lihat member-layout); isi khusus verified dijaga per halaman
   layout('routes/member-layout.tsx', [
     route('onboarding', 'routes/onboarding.tsx'),
-    route('portal', 'routes/portal.tsx'),
-    // Kegiatanku: kegiatan yang diikuti + rekap (ringkasan, rekaman, feedback)
-    route('portal/kegiatan', 'routes/my-activities.tsx'),
-    route('portal/kegiatan/:slug', 'routes/my-activity.tsx'),
-    route('portal/profil', 'routes/portal-profile.tsx'),
-    route('portal/profil/edit', 'routes/portal-profile-edit.tsx'),
-    route('portal/membership', 'routes/membership.tsx'),
-    route('rekomendasi/kirim', 'routes/recommendation-submit.tsx'),
+    // Ruang member: menu samping/bar bawah sendiri (lihat portal-layout)
+    layout('routes/portal-layout.tsx', [
+      route('portal', 'routes/portal.tsx'),
+      // Kegiatan: yang diikuti + rekap (ringkasan, rekaman, feedback), agenda, acara dari luar
+      route('portal/kegiatan', 'routes/my-activities.tsx'),
+      route('portal/kegiatan/:slug', 'routes/my-activity.tsx'),
+      route('portal/komunitas', 'routes/portal-community.tsx'),
+      route('portal/rekomendasiku', 'routes/portal-recommendations.tsx'),
+      route('portal/profil', 'routes/portal-profile.tsx'),
+      route('portal/profil/edit', 'routes/portal-profile-edit.tsx'),
+      // Belum dibuka (MEMBERSHIP_LIVE), tidak ada di menu; ditautkan dari Profil
+      route('portal/membership', 'routes/membership.tsx'),
+      route('rekomendasi/kirim', 'routes/recommendation-submit.tsx'),
+    ]),
     // Masuk ke app lain dengan akun ini, mis. /ke/trellonotes
     route('ke/:app', 'routes/app-handoff.tsx'),
   ]),

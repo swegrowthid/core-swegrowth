@@ -69,26 +69,28 @@ export function recommendationMeta(
 }
 
 /** Direktori publik (prerender saat build, diperbarui di browser). */
-export async function getPublishedRecommendations(): Promise<Recommendation[]> {
+export async function getPublishedRecommendations({ strict = false } = {}): Promise<Recommendation[]> {
   const db = client();
   if (!db) return [];
 
   const { data, error } = await db.rpc('published_recommendations');
   if (error) {
     console.error('Tidak dapat mengambil rekomendasi dari Supabase:', error.message);
+    if (strict) throw error;
     return [];
   }
   return data;
 }
 
 /** Nama topik yang bisa dipilih, urut sesuai yang diatur admin. */
-export async function getRecommendationTopics(): Promise<string[]> {
+export async function getRecommendationTopics({ strict = false } = {}): Promise<string[]> {
   const db = client();
   if (!db) return [];
 
   const { data, error } = await db.from('recommendation_topics').select('name').order('sort_order').order('name');
   if (error) {
     console.error('Tidak dapat mengambil topik rekomendasi:', error.message);
+    if (strict) throw error;
     return [];
   }
   return data.map((t) => t.name);

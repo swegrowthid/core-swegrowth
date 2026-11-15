@@ -1,309 +1,168 @@
-import { useState } from 'react';
-import { Link, useRevalidator } from 'react-router';
+import { Link } from 'react-router';
 import type { Route } from './+types/portal';
-import { CommunityChannels } from '~/components/CommunityChannels';
-import { PortalShell, type PortalSection } from '~/components/PortalShell';
+import { EventRows, LoadError, PORTAL_ICONS, PortalPage, PortalSection, type EventRow } from '~/components/Portal';
 import {
   activityPath,
   activityStatusLabel,
-  upcomingSessions,
-  type Activity,
+  canRegister,
   fetchMyRegistrationStatuses,
   getPublishedActivities,
+  isPaid,
+  registeredPath,
+  registerPath,
+  upcomingSessions,
+  type Activity,
 } from '~/lib/activities';
 import { displayName, requireUser, useAuth } from '~/lib/auth';
-import { fetchWhatsappGroups } from '~/lib/community';
-import type { RecommendationRow, RegistrationStatus } from '~/lib/database.types';
-import { formatWibTime, relativeFromNow, wibDayParts } from '~/lib/format';
+import type { RegistrationStatus } from '~/lib/database.types';
+import { formatWibDay, formatWibTime, relativeFromNow, wibDayParts } from '~/lib/format';
 import { MY_ACTIVITIES_PATH, myActivityPath } from '~/lib/my-activities';
-import {
-  categoryOf,
-  directoryPath,
-  fetchMyRecommendations,
-  rejectReasonLabel,
-  STATUS_LABEL,
-  SUBMIT_PATH,
-  withdrawRecommendation,
-} from '~/lib/recommendations';
+import { missingProfileParts } from '~/lib/profile';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Portal — SWE Growth' }, { name: 'robots', content: 'noindex' }];
 
+/** Berapa baris agenda di beranda; sisanya di halaman Kegiatan. */
+const UPCOMING_LIMIT = 3;
+
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const user = await requireUser(request);
-  // Panel tambahan boleh gagal sendiri-sendiri: null = gagal dimuat, beda dengan daftar kosong.
-  const [regs, activities, groups, recommendations] = await Promise.all([
-    fetchMyRegistrationStatuses(user.id),
-    getPublishedActivities(),
-    fetchWhatsappGroups().catch(() => null),
-    fetchMyRecommendations(user.id).catch(() => null),
+  // Gagal muat = null, supaya tidak tampil seolah agendanya kosong.
+  const [regs, activities] = await Promise.all([
+    fetchMyRegistrationStatuses(user.id).catch(() => null),
+    getPublishedActivities({ strict: true }).catch(() => null),
   ]);
+  if (!regs || !activities) return { failed: true as const };
 
-  const upcoming = upcomingSessions(activities, { undatedLast: true });
   const statusById = new Map(regs.map((r) => [r.activity_id, r.status]));
-  const others = upcoming.filter((a) => !statusById.has(a.id));
-
-  return {
-    mine: upcoming.filter((a) => statusById.has(a.id)).map((a) => ({ activity: a, status: statusById.get(a.id)! })),
-    // Beranda hanya cuplikan; agenda lengkap & kegiatan lalu ada di /agenda.
-    others: others.slice(0, AGENDA_LIMIT),
-    moreAgenda: others.length > AGENDA_LIMIT,
-    groups,
-    recommendations,
-  };
+  const upcoming = upcomingSessions(activities, { undatedLast: true }).map((a) => ({ activity: a, status: statusById.get(a.id) ?? null }));
+  return { failed: false as const, upcoming };
 }
-
-const AGENDA_LIMIT = 3;
 
 export function HydrateFallback() {
   return <div className="loading-block">Memuat portal…</div>;
 }
 
-const registrationLabel: Record<RegistrationStatus, string> = {
-  confirmed: 'terdaftar',
-  waitlisted: 'waitlist',
-  cancelled: 'batal',
-};
+type Upcoming = { activity: Activity; status: RegistrationStatus | null };
+
+const rowOf = ({ activity, status }: Upcoming): EventRow =>
+  status
+    ? { activity, tag: status === 'waitlisted' ? 'waitlist' : 'kamu terdaftar', href: myActivityPath(activity), mine: true }
+    : { activity, tag: activityStatusLabel[activity.status], href: activityPath(activity) };
 
 export default function Portal({ loaderData }: Route.ComponentProps) {
-  const { mine, others, moreAgenda, groups, recommendations } = loaderData;
-  const empty = mine.length === 0 && others.length === 0;
   const { user, profile } = useAuth();
   const firstName = displayName(profile, user).split(' ')[0];
+  const missing = profile ? missingProfileParts(profile) : [];
 
-  const sections: PortalSection[] = [
-    ...(mine.length > 0 ? [{ id: 'diikuti', label: 'Kegiatanmu berikutnya' }] : []),
-    ...(others.length > 0 ? [{ id: 'agenda', label: 'Agenda mendatang' }] : []),
-    { id: 'komunitas', label: 'Komunitas' },
-    ...(groups === null || groups.length > 0 ? [{ id: 'grup', label: 'Grup per bidang' }] : []),
-    { id: 'rekomendasiku', label: 'Rekomendasiku' },
-  ];
+  if (loaderData.failed) {
+    return (
+      <PortalPage title={`Halo, ${firstName}`}>
+        <LoadError what="Agenda dan kegiatanmu" />
+      </PortalPage>
+    );
+  }
 
-  return (
-    <PortalShell title={`Halo, ${firstName}`} sections={sections}>
-      <div className="portal-stack">
-        {empty && <p className="muted">Belum ada agenda. Saat admin menambahkannya, semuanya muncul di halaman ini.</p>}
+  const { upcoming } = loaderData;
+  // Sorotan: sesi terdekat yang kamu ikuti; kalau belum ada, satu sesi yang pendaftarannya dibuka.
+  const next = upcoming.find((u) => u.status);
+  const featured = next ? null : upcoming.find((u) => u.activity.starts_at && canRegister(u.activity));
+  const lead = next ?? featured;
+  const rest = upcoming.filter((u) => u !== lead).slice(0, UPCOMING_LIMIT);
 
-        {mine.length > 0 && (
-          <div className="panel" id="diikuti">
-            <div className="panel-head">
-              <h2>Kegiatanmu berikutnya</h2>
-              <Link to={MY_ACTIVITIES_PATH}>Semua kegiatanku</Link>
-            </div>
-            <EventRows
-              items={mine.map((m) => ({ activity: m.activity, tag: registrationLabel[m.status], href: myActivityPath(m.activity) }))}
-            />
-          </div>
-        )}
-
-        {others.length > 0 && (
-          <div className="panel" id="agenda">
-            <div className="panel-head">
-              <h2>Agenda mendatang</h2>
-              <Link to="/agenda">Lihat selengkapnya</Link>
-            </div>
-            <EventRows items={others.map((a) => ({ activity: a, tag: activityStatusLabel[a.status], href: activityPath(a) }))} />
-            {moreAgenda && (
-              <p className="panel-more">
-                <Link className="text-link" to="/agenda">
-                  Lihat agenda lainnya di halaman Agenda →
-                </Link>
-              </p>
-            )}
-          </div>
-        )}
-
-        <div className="panel" id="komunitas">
-          <div className="panel-head">
-            <h2>Gabung komunitas</h2>
-          </div>
-          <CommunityChannels />
-        </div>
-
-        {groups === null ? (
-          <div className="panel" id="grup">
-            <div className="panel-head">
-              <h2>Grup per bidang</h2>
-            </div>
-            <LoadError what="Daftar grup" />
-          </div>
-        ) : (
-          groups.length > 0 && (
-            <div className="panel" id="grup">
-              <div className="panel-head">
-                <h2>Grup per bidang</h2>
-              </div>
-              <ul className="rows">
-                {groups.map((g) => (
-                  <li key={g.id}>
-                    <div className="row-main">
-                      <strong>{g.name}</strong>
-                      {g.description && <span>{g.description}</span>}
-                    </div>
-                    <a className="btn btn-ghost sm" href={g.invite_url} target="_blank" rel="noopener">
-                      Gabung
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )
-        )}
-
-        <MyRecommendations items={recommendations} />
-      </div>
-    </PortalShell>
-  );
-}
-
-function EventRows({ items }: { items: { activity: Activity; tag: string; href: string }[] }) {
-  return (
-    <ul className="rows event-rows">
-      {items.map(({ activity: a, tag, href }) => {
-        const parts = a.starts_at ? wibDayParts(a.starts_at) : null;
-        return (
-          <li key={a.id}>
-            <span className="date-tile">
-              {parts ? (
-                <>
-                  <b>{parts.day}</b>
-                  <span>{parts.month}</span>
-                </>
-              ) : (
-                <span>TBA</span>
-              )}
-            </span>
-            <div className="row-main">
-              <Link className="title" to={href}>
-                {a.title}
-              </Link>
-              <span>
-                {[a.starts_at && `${relativeFromNow(a.starts_at)} · ${formatWibTime(a.starts_at)}`, a.mode].filter(Boolean).join(' · ') ||
-                  'Jadwal menyusul'}
-              </span>
-            </div>
-            <span className="chip">{tag}</span>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-/** Pesan gagal muat per panel, dengan tombol muat ulang data portal. */
-function LoadError({ what }: { what: string }) {
-  const revalidator = useRevalidator();
-  const loading = revalidator.state === 'loading';
-  return (
-    <p className="form-message error load-error" role="status">
-      {what} belum bisa dimuat. Cek koneksi, lalu{' '}
-      <button className="link-btn" type="button" disabled={loading} onClick={() => revalidator.revalidate()}>
-        {loading ? 'memuat ulang…' : 'muat ulang'}
-      </button>
-      .
-    </p>
-  );
-}
-
-const WITHDRAW_ERROR = {
-  locked: 'Usulan ini sudah direview, jadi tidak bisa ditarik lagi.',
-  failed: 'Gagal menarik usulan. Cek koneksi, lalu coba lagi.',
-} as const;
-
-/** Usulan rekomendasi milik member: status review, edit/tarik selama masih menunggu. */
-function MyRecommendations({ items }: { items: RecommendationRow[] | null }) {
-  const revalidator = useRevalidator();
-  const [confirming, setConfirming] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [notice, setNotice] = useState<{ id: string; text: string } | null>(null);
-
-  const withdraw = async (r: RecommendationRow) => {
-    setBusy(r.id);
-    setNotice(null);
-    try {
-      const result = await withdrawRecommendation(r.id);
-      if (result !== 'ok') setNotice({ id: r.id, text: WITHDRAW_ERROR[result] });
-      await revalidator.revalidate();
-    } catch {
-      setNotice({ id: r.id, text: WITHDRAW_ERROR.failed });
-    } finally {
-      setBusy(null);
-      setConfirming(null);
-    }
-  };
+  const intro = next
+    ? next.status === 'waitlisted'
+      ? 'Kamu masuk waitlist untuk sesi berikutnya. Kami kabari kalau ada kursi.'
+      : next.activity.starts_at
+        ? `Sesi berikutnya kamu ${relativeFromNow(next.activity.starts_at)}.`
+        : 'Kamu terdaftar di sesi berikutnya; jadwalnya menyusul.'
+    : featured
+      ? 'Kamu belum terdaftar di sesi mana pun. Yang ini pendaftarannya sedang dibuka.'
+      : upcoming.length > 0
+        ? 'Belum ada sesi yang pendaftarannya dibuka. Ini yang akan datang.'
+        : 'Belum ada agenda baru. Sambil menunggu, tonton lagi sesi yang sudah lewat.';
 
   return (
-    <div className="panel" id="rekomendasiku">
-      <div className="panel-head">
-        <h2>Rekomendasiku</h2>
-        <Link to={SUBMIT_PATH}>Kirim rekomendasi</Link>
-      </div>
-      {items === null ? (
-        <LoadError what="Rekomendasimu" />
-      ) : items.length === 0 ? (
-        <p className="form-sub">
-          Tahu acara, komunitas, course, atau buku yang bikin kamu grow?{' '}
-          <Link className="text-link" to={SUBMIT_PATH}>
-            Rekomendasikan ke member lain
+    <PortalPage title={`Halo, ${firstName}`} intro={intro}>
+      {lead && <LeadSession item={lead} />}
+
+      {!lead && upcoming.length === 0 && (
+        <div className="inline-actions">
+          <Link className="btn btn-primary" to="/rekaman">
+            Tonton rekaman
           </Link>
-          .
-        </p>
-      ) : (
-        <ul className="rows">
-          {items.map((r) => (
-            <li key={r.id}>
-              <div className="row-main">
-                <strong>{r.title}</strong>
-                <span>
-                  {categoryOf(r.category).label}
-                  {r.status === 'rejected' && rejectReasonLabel(r.reject_reason) && ` · ${rejectReasonLabel(r.reject_reason)}`}
-                  {r.status === 'rejected' && r.reject_note && ` · ${r.reject_note}`}
-                </span>
-                {r.status === 'pending' &&
-                  (confirming === r.id ? (
-                    <span className="inline-actions rec-row-actions rec-confirm">
-                      <span>Tarik dari antrean review?</span>
-                      <button className="link-btn danger" type="button" disabled={busy === r.id} onClick={() => withdraw(r)}>
-                        {busy === r.id ? 'Menarik…' : 'Ya, tarik'}
-                      </button>
-                      <button className="link-btn" type="button" disabled={busy === r.id} onClick={() => setConfirming(null)} autoFocus>
-                        Batal
-                      </button>
-                    </span>
-                  ) : (
-                    <span className="inline-actions rec-row-actions">
-                      <Link className="text-link" to={`${SUBMIT_PATH}?edit=${r.id}`}>
-                        Edit
-                      </Link>
-                      <button
-                        className="link-btn"
-                        type="button"
-                        onClick={() => {
-                          setNotice(null);
-                          setConfirming(r.id);
-                        }}
-                      >
-                        Tarik
-                      </button>
-                    </span>
-                  ))}
-                {r.status === 'approved' && (
-                  <span>
-                    <Link className="text-link" to={directoryPath(r.category)}>
-                      Lihat di direktori
-                    </Link>
-                  </span>
-                )}
-                {notice?.id === r.id && (
-                  <span className="row-error" role="alert">
-                    {notice.text}
-                  </span>
-                )}
-              </div>
-              <span className={`chip rec-status ${r.status}`}>{STATUS_LABEL[r.status]}</span>
-            </li>
-          ))}
-        </ul>
+        </div>
       )}
-    </div>
+
+      {rest.length > 0 && (
+        <PortalSection title={lead ? 'Berikutnya' : 'Akan datang'} link={{ to: MY_ACTIVITIES_PATH, label: 'Semua kegiatan' }}>
+          <div className="panel">
+            <EventRows items={rest.map(rowOf)} />
+          </div>
+        </PortalSection>
+      )}
+
+      <div className="portal-shortcuts">
+        <Link className="shortcut" to="/portal/komunitas">
+          <span className="shortcut-ic">{PORTAL_ICONS.community}</span>
+          <span className="shortcut-body">
+            <strong>Ngobrol di grup komunitas</strong>
+            <span>WhatsApp umum, Telegram, dan grup per bidang</span>
+          </span>
+          <span className="shortcut-go">{PORTAL_ICONS.arrow}</span>
+        </Link>
+        {missing.length > 0 && (
+          <Link className="shortcut" to="/portal/profil/edit">
+            <span className="shortcut-ic">{PORTAL_ICONS.profile}</span>
+            <span className="shortcut-body">
+              <strong>Lengkapi profilmu</strong>
+              <span>Belum ada: {missing.join(', ')}</span>
+            </span>
+            <span className="shortcut-go">{PORTAL_ICONS.arrow}</span>
+          </Link>
+        )}
+      </div>
+    </PortalPage>
+  );
+}
+
+/** Kartu teal: satu-satunya hal yang paling penting di beranda. */
+function LeadSession({ item: { activity: a, status } }: { item: Upcoming }) {
+  const parts = a.starts_at ? wibDayParts(a.starts_at) : null;
+  const registerable = !status && canRegister(a) && !isPaid(a);
+  return (
+    <article className="lead-session on-teal" aria-labelledby="sesi-utama">
+      <div className="lead-date" aria-hidden="true">
+        {parts ? (
+          <>
+            <b>{parts.day}</b>
+            <span>{parts.month}</span>
+          </>
+        ) : (
+          <span>TBA</span>
+        )}
+      </div>
+      <div className="lead-body">
+        <h2 id="sesi-utama">{a.title}</h2>
+        <p className="lead-meta">
+          {[a.starts_at && formatWibDay(a.starts_at), a.starts_at && formatWibTime(a.starts_at), a.mode].filter(Boolean).join(' · ') ||
+            'Jadwal menyusul'}
+        </p>
+        {status === 'waitlisted' && <p className="lead-note">Status: waitlist</p>}
+        <div className="inline-actions lead-actions">
+          {status ? (
+            <Link className="btn btn-primary" to={registeredPath(a)}>
+              Tiket & link meeting
+            </Link>
+          ) : registerable ? (
+            <Link className="btn btn-primary" to={registerPath(a)}>
+              {a.status === 'full' ? 'Masuk waitlist' : 'Daftar'}
+            </Link>
+          ) : null}
+          <Link className={`btn ${status || registerable ? 'btn-ghost' : 'btn-primary'}`} to={activityPath(a)}>
+            Detail acara
+          </Link>
+        </div>
+      </div>
+    </article>
   );
 }

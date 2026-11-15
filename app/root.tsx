@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
+import { isRouteErrorResponse, Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useMatches } from 'react-router';
 import type { Route } from './+types/root';
 import { Footer } from './components/Footer';
 import { Nav } from './components/Nav';
@@ -11,6 +11,20 @@ import './styles/pages.css';
 import './styles/app.css';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+
+/**
+ * Tab yang dibuka sebelum deploy baru masih merujuk file JS/CSS lama yang sudah tidak ada.
+ * Muat ulang sekali supaya dapat versi baru; penanda mencegah muat ulang berulang.
+ */
+if (typeof window !== 'undefined') {
+  window.addEventListener('vite:preloadError', () => {
+    const key = 'swe-reload-after-deploy';
+    const last = Number(sessionStorage.getItem(key) ?? 0);
+    if (Date.now() - last < 60_000) return;
+    sessionStorage.setItem(key, String(Date.now()));
+    window.location.reload();
+  });
+}
 
 export const links: Route.LinksFunction = () => [
   { rel: 'icon', type: 'image/png', href: '/assets/swe-growth-logo.png' },
@@ -38,11 +52,18 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 function Shell({ children }: { children: ReactNode }) {
+  // Halaman ruang member (handle.portal di portal-layout) punya menu sendiri dan tanpa footer situs.
+  const portal = useMatches().some((m) => (m.handle as { portal?: boolean } | undefined)?.portal === true);
   return (
     <AuthProvider>
-      <Nav />
-      <main>{children}</main>
-      <Footer />
+      <a className="skip-link" href="#konten">
+        Lewati ke konten
+      </a>
+      <Nav portal={portal} />
+      <main id="konten" tabIndex={-1}>
+        {children}
+      </main>
+      {!portal && <Footer />}
     </AuthProvider>
   );
 }
