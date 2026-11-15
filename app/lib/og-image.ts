@@ -13,6 +13,7 @@ import {
   type Ctx,
 } from '~/lib/event-poster';
 import { formatWibTime, wibDayParts } from '~/lib/format';
+import { QNA_HEADLINE } from '~/lib/og';
 import { qnaPath } from '~/lib/qna';
 import { SITE_URL } from '~/lib/site';
 
@@ -286,25 +287,31 @@ export function drawQnaOg(ctx: Ctx, logo: CanvasImageSource, a: Activity) {
   const status = qnaStatusChip[a.qna_status];
   header(ctx, logo, [{ text: 'Tanya jawab', filled: true }, ...(status ? [{ text: status, filled: false }] : [])]);
 
+  // "Tanya di sini" paling besar, bukan judul kegiatan: preview harus langsung terbaca sebagai link untuk bertanya.
   const leftW = INNER - 340;
   const bodyH = BODY.bottom - BODY.top;
-  const leadH = 58;
-  const note = `Kirim pertanyaan untuk ${a.speaker || 'pembicara'} dan vote pertanyaan yang ingin kamu dengar jawabannya.`;
-  const noteOpts = { size: 24, weight: 400, color: C.onTeal, lines: 2 };
-  const noteH = 22 + paragraph(ctx, note, 0, 0, leftW, noteOpts, false);
-  const title = fitTitle(ctx, a.title, leftW, 3, bodyH - leadH - noteH, [72, 40]);
-  let y = BODY.top + Math.max(0, (bodyH - leadH - title.height - noteH) / 2);
+  const headSize = 104;
+  const headH = headSize * 1.08;
+  const forWho = `Kirim pertanyaan untuk ${a.speaker || 'pembicara'}`;
+  const event = `di ${a.title}`;
+  const eventOpts = { size: 26, weight: 500, color: C.onTeal, lines: 2 };
+  const whoH = 18 + 44;
+  const eventH = 4 + paragraph(ctx, event, 0, 0, leftW, eventOpts, false);
+  let y = BODY.top + Math.max(0, (bodyH - headH - whoH - eventH) / 2);
 
-  setFont(ctx, 700, 40, -0.01);
+  setFont(ctx, 800, headSize, -0.03);
+  ctx.fillStyle = C.cream;
+  ctx.fillText(QNA_HEADLINE, PAD, y + headH - headSize * 0.2);
+  y += headH + 18;
+  setFont(ctx, 700, 32, -0.01);
   ctx.fillStyle = C.yellow;
-  ctx.fillText('Tanya di', PAD, y + 38);
-  y += leadH;
-  drawTitle(ctx, title, PAD, y);
-  y += title.height + 22;
-  paragraph(ctx, note, PAD, y, leftW, noteOpts);
+  ctx.fillText(ellipsize(ctx, forWho, leftW), PAD, y + 34);
+  y += 44 + 4;
+  paragraph(ctx, event, PAD, y, leftW, eventOpts);
 
   questionBubble(ctx, OG_W - PAD - 150, BODY.top + bodyH / 2 - 10);
-  footer(ctx, 'Kirim pertanyaanmu', `${HOST}${qnaPath(a)}`);
+  const cta = a.qna_status === 'closed' ? 'Lihat pertanyaan yang masuk' : 'Kirim & vote pertanyaanmu';
+  footer(ctx, cta, `${HOST}${qnaPath(a)}`);
 }
 
 // ── Komunitas (beranda & halaman umum) ───────────────────────────────────

@@ -26,6 +26,7 @@ type Activity = {
   image_url: string | null;
   slug: string;
   speaker: string | null;
+  qna_status: string;
   updated_at: string | null;
 };
 
@@ -49,7 +50,7 @@ async function fetchActivity(slug: string): Promise<Activity | null> {
   if (!url || !key) return null;
 
   const query = new URLSearchParams({
-    select: 'title,summary,starts_at,mode,image_url,slug,speaker,updated_at',
+    select: 'title,summary,starts_at,mode,image_url,slug,speaker,qna_status,updated_at',
     slug: `eq.${slug}`,
     is_public: 'eq.true',
     limit: '1',
@@ -78,10 +79,13 @@ function eventPreview(a: Activity): Preview {
   };
 }
 
-/** Sama dengan meta di routes/event-qna.tsx. */
+/** Sama dengan qnaShareCopy() di app/lib/og.ts (dipakai routes/event-qna.tsx). */
 const qnaPreview = (a: Activity): Preview => ({
-  title: `Tanya di ${a.title} — SWE Growth`,
-  description: `Kirim pertanyaan untuk ${a.speaker || 'pembicara'} dan vote pertanyaan yang ingin kamu dengar jawabannya.`,
+  title: `Tanya di sini: ${a.title} — SWE Growth`,
+  description:
+    a.qna_status === 'closed'
+      ? `Sesi tanya jawab untuk ${a.speaker || 'pembicara'} sudah ditutup. Lihat pertanyaan yang masuk.`
+      : `Kirim pertanyaan untuk ${a.speaker || 'pembicara'} dan vote pertanyaan yang paling ingin kamu dengar jawabannya.`,
   url: `${SITE_URL}/agenda/${a.slug}/tanya`,
   image: ogImage(`/og/tanya/${a.slug}.png`, a.updated_at),
 });
