@@ -2856,9 +2856,6 @@ a.contrib-maker:hover {
 .qna-screen-main {
   width: 100%;
   min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 .qna-screen-cards {
   display: grid;

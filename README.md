@@ -1,6 +1,6 @@
 # SWE Growth — Portal Member
 
-[![CI](https://github.com/zikrulihsan/core-swegrowth/actions/workflows/ci.yml/badge.svg)](https://github.com/zikrulihsan/core-swegrowth/actions/workflows/ci.yml)
+[![CI](https://github.com/swegrowthid/core-swegrowth/actions/workflows/ci.yml/badge.svg)](https://github.com/swegrowthid/core-swegrowth/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Kode sumber [swegrowth.id](https://swegrowth.id), portal komunitas software engineer Indonesia: agenda kegiatan,
