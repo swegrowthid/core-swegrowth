@@ -33,6 +33,7 @@ const jobs = await ogJobs();
 
 // Satu gambar gagal tidak menggagalkan deploy: link-nya jatuh ke kartu komunitas (netlify.toml).
 let done = 0;
+const versions = {};
 for (const job of jobs) {
   try {
     const canvas = createCanvas(OG_W, OG_H);
@@ -40,9 +41,13 @@ for (const job of jobs) {
     const file = join(out, job.path);
     await mkdir(dirname(file), { recursive: true });
     await writeFile(file, await canvas.encode('png'));
+    if (job.version) versions[job.path] = job.version;
     done++;
   } catch (error) {
     console.warn(`⚠ Gagal membuat ${job.path}:`, error);
   }
 }
+// Dibaca edge function event-preview: kartu kegiatan yang diubah setelah build tidak dipakai.
+await mkdir(join(out, 'og'), { recursive: true });
+await writeFile(join(out, 'og/versions.json'), JSON.stringify(versions));
 console.log(`✓ ${done}/${jobs.length} gambar preview link di build/client/og/`);

@@ -36,7 +36,6 @@ import { formatWibDate, formatWibDay, formatWibTime } from '~/lib/format';
 import { ogImage, ogPaths } from '~/lib/og';
 import { qnaPath } from '~/lib/qna';
 import { pageMeta } from '~/lib/site';
-import { liveOrSnapshot } from '~/lib/snapshot';
 import { youtubeId } from '~/lib/youtube';
 
 export const meta: Route.MetaFunction = ({ loaderData }) => {
@@ -52,37 +51,22 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
  * Detail event publik. Pendaftaran tiga langkah:
  * detail (tombol Daftar) → /daftar (form, terisi dari profil) → /terdaftar (konfirmasi).
  *
- * Kegiatan publik di-prerender saat build (lihat react-router.config.ts) supaya
- * isinya langsung tampil; di browser data selalu diambil ulang. Slug yang belum
- * ada saat build dilayani SPA fallback.
+ * Dimuat di browser (SPA). Meta preview link untuk crawler disisipkan edge
+ * function event-preview, jadi halaman ini tidak perlu di-build ulang saat
+ * event diubah.
  */
-const load = async (slug: string, strict = false) => {
+const load = async (slug: string) => {
   // Subgrup diambil bersamaan (tabel kecil) supaya tidak menunggu id penyelenggara dulu.
-  const [activity, groups] = await Promise.all([getPublishedActivityBySlug(slug, { strict }), getCommunityGroups({ strict })]);
+  const [activity, groups] = await Promise.all([getPublishedActivityBySlug(slug, { strict: true }), getCommunityGroups({ strict: true })]);
   return activity ? { activity, organizer: organizerOf(activity, groups) } : null;
 };
 
-/** Saat build: snapshot untuk HTML prerender. */
-export async function loader({ params }: Route.LoaderArgs) {
+/** Halaman tampil begitu kegiatannya ada, kuota menyusul (butuh id kegiatan). Gagal muat ke ErrorBoundary, bukan "tidak ditemukan". */
+export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const loaded = await load(params.slug);
-  if (!loaded) throw data(null, { status: 404 });
-  return { ...loaded, stats: await fetchPublicStats(loaded.activity.id), now: Date.now() };
-}
-
-/** Di browser: halaman tampil begitu kegiatannya ada, kuota menyusul (butuh id kegiatan). */
-export async function clientLoader({ params, serverLoader }: Route.ClientLoaderArgs) {
-  // Gagal muat tidak boleh tampil sebagai "tidak ditemukan": pakai snapshot build kalau ada.
-  const loaded = await liveOrSnapshot(
-    () => load(params.slug, true),
-    async () => {
-      const { activity, organizer } = await serverLoader();
-      return { activity, organizer };
-    },
-  );
   if (!loaded) throw data(null, { status: 404 });
   return { ...loaded, stats: fetchPublicStats(loaded.activity.id), now: Date.now() };
 }
-clientLoader.hydrate = true as const;
 
 type Stats = Awaited<ReturnType<typeof fetchPublicStats>>;
 type StatsData = Stats | Promise<Stats>;

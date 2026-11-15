@@ -7,7 +7,8 @@ export { OG_H, OG_W } from '~/lib/og-image';
 import { PAST_ACTIVITIES } from '~/lib/past-activities';
 import { TOPICS } from '~/lib/topics';
 
-export type OgJob = { path: string; draw: (ctx: Ctx, logo: CanvasImageSource) => void };
+/** `version` = updated_at kegiatan yang digambar; edge function event-preview hanya memakai kartu yang versinya masih sama. */
+export type OgJob = { path: string; version?: string; draw: (ctx: Ctx, logo: CanvasImageSource) => void };
 
 const count = (n: number) => n.toLocaleString('id-ID');
 
@@ -34,8 +35,8 @@ export async function ogJobs(): Promise<OgJob[]> {
     { path: ogPaths.home, draw: (ctx, logo) => drawCommunityOg(ctx, logo, community) },
     { path: ogPaths.agenda, draw: (ctx, logo) => drawAgendaOg(ctx, logo, upcoming, groups) },
     ...activities.flatMap((a): OgJob[] => [
-      { path: ogPaths.event(a.slug), draw: (ctx, logo) => drawEventOg(ctx, logo, a, groups) },
-      { path: ogPaths.qna(a.slug), draw: (ctx, logo) => drawQnaOg(ctx, logo, a) },
+      { path: ogPaths.event(a.slug), version: a.updated_at, draw: (ctx, logo) => drawEventOg(ctx, logo, a, groups) },
+      { path: ogPaths.qna(a.slug), version: a.updated_at, draw: (ctx, logo) => drawQnaOg(ctx, logo, a) },
     ]),
   ];
 }

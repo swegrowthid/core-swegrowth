@@ -16,7 +16,6 @@ import {
   UserIcon,
 } from '~/components/Icons';
 import { getPublishedActivityBySlug } from '~/lib/activities';
-import { requestRebuild } from '~/lib/admin-data';
 import { fetchIsAdmin, requireUser } from '~/lib/auth';
 import type { QnaStatus, QuestionStatus } from '~/lib/database.types';
 import {
@@ -175,8 +174,6 @@ export default function EventQnaScreen({ loaderData: { activity: a } }: Route.Co
       return;
     }
     setQnaStatusState(next);
-    // Halaman event yang di-prerender ikut menampilkan status tanya jawab terbaru.
-    void requestRebuild();
   };
 
   // Menu pengaturan tertutup saat klik di luar dock.
