@@ -22,6 +22,12 @@ Tanpa `.env` aplikasi tetap jalan, tapi login dan data dari database tidak aktif
 database, buat project Supabase gratis sendiri lalu jalankan semua file di `supabase/migrations/` berurutan
 (lihat bagian _Setup Supabase_ di [README](README.md)). Jangan minta akses ke database produksi.
 
+Supaya halaman tidak kosong, isi project Supabase-mu dengan data contoh: tempel `supabase/seed.sql` di SQL editor
+(atau `psql "$DATABASE_URL" -f supabase/seed.sql`). Isinya event, rekomendasi, dan grup berawalan "[Contoh]".
+
+Endpoint `/api/*` (feed YouTube untuk rekaman, bantu tulis event, build ulang) adalah edge function Netlify dan
+tidak ada saat `npm run dev`. Halaman tetap jalan tanpa itu; untuk mencobanya pakai `netlify dev`.
+
 ## Alur kerja
 
 1. Fork repo, lalu buat branch dari `develop` (mis. `fix/agenda-timezone`, `feat/filter-rekomendasi`).
@@ -34,6 +40,7 @@ database, buat project Supabase gratis sendiri lalu jalankan semua file di `supa
    npm run typecheck
    npm test              # Vitest
    npm run build
+   npm run check:build   # halaman prerender & aset hasil build lengkap
    # Kalau mengubah supabase/migrations atau app/lib/database.types.ts (butuh Postgres kosong + psql):
    DATABASE_URL=postgres://postgres@localhost:5432/postgres npm run check:db-types
    ```
@@ -55,6 +62,9 @@ database, buat project Supabase gratis sendiri lalu jalankan semua file di `supa
   dan perbarui `app/lib/database.types.ts`.
 - **Test**: logika murni (jadwal, format, validasi) diberi unit test di sebelah file-nya, mis.
   `app/lib/activities.test.ts`.
+- **Gagal muat bukan data kosong**: fungsi pengambil data yang dipakai di browser melempar error (`{ strict: true }`)
+  supaya halaman bisa menampilkan pesan gagal atau memakai snapshot build (`app/lib/snapshot.ts`), bukan tampil
+  seolah datanya memang kosong.
 - **Secret**: tidak ada secret di kode client. Semua env `VITE_*` ikut ke browser.
 
 ## Lisensi

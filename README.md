@@ -1,6 +1,6 @@
 # SWE Growth — Portal Member
 
-[![CI](https://github.com/zikrulihsan/core-swegrowth/actions/workflows/ci.yml/badge.svg)](https://github.com/zikrulihsan/core-swegrowth/actions/workflows/ci.yml)
+[![CI](https://github.com/swegrowthid/core-swegrowth/actions/workflows/ci.yml/badge.svg)](https://github.com/swegrowthid/core-swegrowth/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 Kode sumber [swegrowth.id](https://swegrowth.id), portal komunitas software engineer Indonesia: agenda kegiatan,
@@ -184,12 +184,10 @@ Netlify membaca `netlify.toml`: `npm run build`, publish `build/client`, Node 22
 `VITE_SUPABASE_PUBLISHABLE_KEY` di environment Netlify. Agenda di halaman publik ikut diperbarui di browser, jadi
 event baru tampil tanpa deploy ulang.
 
-Halaman detail kegiatan publik (`/agenda/:slug`) di-prerender saat build supaya isinya langsung tampil; browser tetap
-mengambil data terbaru. Event baru (belum ada saat build) dilayani SPA sampai build berikutnya. Supaya HTML-nya ikut
-terbarui otomatis, buat build hook di Netlify → _Site configuration → Build & deploy → Build hooks_, lalu simpan URL-nya
-sebagai env `NETLIFY_BUILD_HOOK_URL`. Editor event memicu build lewat `/api/rebuild` (khusus admin) setiap kali event
-disimpan atau statusnya diubah. Kalau env Supabase diisi tapi slug gagal diambil saat build, build gagal dan deploy lama
-tetap tayang.
+Halaman detail kegiatan (`/agenda/:slug`) tidak di-prerender: isinya dimuat di browser, dan edge function
+`netlify/edge-functions/event-preview.ts` menyisipkan title dan Open Graph-nya untuk preview link dan mesin pencari
+(disimpan CDN 5 menit). Jadi menyimpan event di admin tidak memicu build. Gambar preview kegiatan dibuat saat build;
+kegiatan yang dibuat atau diubah setelah build memakai poster dari admin atau kartu komunitas sampai deploy berikutnya.
 
 ## Kontribusi
 

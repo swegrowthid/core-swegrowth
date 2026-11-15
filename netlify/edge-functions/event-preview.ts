@@ -1,20 +1,20 @@
 /**
- * Preview link kegiatan & tanya jawabnya untuk WhatsApp, Telegram, X, LinkedIn, dst.
+ * Meta halaman kegiatan & tanya jawabnya (title, Open Graph) untuk preview
+ * link di WhatsApp, Telegram, X, LinkedIn, dst., dan untuk mesin pencari.
  *
- * Kegiatan yang sudah ada saat build di-prerender lengkap dengan meta. Kegiatan
- * yang lebih baru, dan halaman tanya jawab (/agenda/:slug/tanya, selalu SPA),
- * dilayani app shell tanpa meta, sedangkan crawler preview tidak menjalankan
- * JS. Untuk crawler saja, edge function ini mengambil kegiatan dari Supabase
- * lalu menyisipkan title + Open Graph ke HTML sebelum dikirim.
- * Pengunjung biasa langsung dilayani tanpa menunggu Supabase.
- * Gagal ambil data = HTML dikirim apa adanya, halaman tetap jalan.
+ * Halaman kegiatan tidak di-prerender: semuanya dilayani app shell SPA, yang
+ * isinya dimuat di browser. Edge function ini mengambil kegiatan dari Supabase
+ * lalu menyisipkan meta-nya ke HTML. Hasilnya disimpan CDN beberapa menit,
+ * jadi Supabase tidak dipanggil tiap kunjungan dan event yang diubah admin
+ * tampil benar tanpa build ulang. Deploy baru mengosongkan cache ini.
+ * Gagal ambil data = HTML dikirim apa adanya (tanpa disimpan), halaman tetap jalan.
  *
  * Gambarnya kartu bergaya poster dari build (/og/agenda/:slug.png,
- * /og/tanya/:slug.png; lihat app/lib/og-image.ts). Kegiatan yang belum punya
- * gambar karena belum di-build ulang jatuh ke kartu komunitas (netlify.toml).
+ * /og/tanya/:slug.png; lihat app/lib/og-image.ts), tapi hanya kalau kegiatan
+ * belum diubah sejak build (og/versions.json): kartu lama bisa memuat tanggal
+ * yang sudah berubah. Selain itu poster dari admin, atau kartu komunitas.
  */
 import type { Config, Context } from '@netlify/edge-functions';
-import { isbot } from 'isbot';
 
 const SITE_URL = 'https://swegrowth.id';
 
@@ -41,6 +41,10 @@ const wibTime = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-d
 
 const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+/** Lama CDN menyimpan halaman: perubahan event tampil di preview paling lambat 5 menit. */
+const CDN_CACHE = 'public, durable, s-maxage=300, stale-while-revalidate=86400';
+const COMMUNITY_CARD = `${SITE_URL}/og/home.png`;
+
 /** Sama dengan ogImage() di app/lib/og.ts. */
 const ogImage = (path: string, version: string | null) => `${SITE_URL}${path}${version ? `?v=${Date.parse(version).toString(36)}` : ''}`;
 
@@ -64,9 +68,25 @@ async function fetchActivity(slug: string): Promise<Activity | null> {
   return rows[0] ?? null;
 }
 
+/** Path kartu → updated_at kegiatan saat kartu dibuat (scripts/og-images.mjs). Satu kali per deploy. */
+let cardVersions: Promise<Record<string, string>> | undefined;
+function getCardVersions(origin: string) {
+  cardVersions ??= fetch(`${origin}/og/versions.json`, { signal: AbortSignal.timeout(2000) })
+    .then((res) => (res.ok ? res.json() : {}))
+    .catch(() => {
+      cardVersions = undefined;
+      return {};
+    });
+  return cardVersions;
+}
+
+/** Kartu build kalau masih sesuai isi kegiatan, kalau tidak kartu komunitas. */
+const card = (path: string, a: Activity, versions: Record<string, string>) =>
+  a.updated_at && versions[path] === a.updated_at ? ogImage(path, a.updated_at) : COMMUNITY_CARD;
+
 type Preview = { title: string; description: string; url: string; image: string };
 
-function eventPreview(a: Activity): Preview {
+function eventPreview(a: Activity, versions: Record<string, string>): Preview {
   const start = a.starts_at ? new Date(a.starts_at) : null;
   const when = start ? `${wibDay.format(start)}, ${wibTime.format(start)} WIB` : 'Jadwal menyusul';
   const where = a.mode ? ` · ${a.mode[0].toUpperCase()}${a.mode.slice(1)}` : '';
@@ -75,19 +95,19 @@ function eventPreview(a: Activity): Preview {
     description: `${when}${where}. ${a.summary || 'Kegiatan komunitas SWE Growth.'}`,
     url: `${SITE_URL}/agenda/${a.slug}`,
     // Poster dari admin diutamakan, sama dengan meta di routes/event.tsx.
-    image: a.image_url || ogImage(`/og/agenda/${a.slug}.png`, a.updated_at),
+    image: a.image_url || card(`/og/agenda/${a.slug}.png`, a, versions),
   };
 }
 
 /** Sama dengan qnaShareCopy() di app/lib/og.ts (dipakai routes/event-qna.tsx). */
-const qnaPreview = (a: Activity): Preview => ({
+const qnaPreview = (a: Activity, versions: Record<string, string>): Preview => ({
   title: `Tanya di sini: ${a.title} — SWE Growth`,
   description:
     a.qna_status === 'closed'
       ? `Sesi tanya jawab untuk ${a.speaker || 'pembicara'} sudah ditutup. Lihat pertanyaan yang masuk.`
       : `Kirim pertanyaan untuk ${a.speaker || 'pembicara'} dan vote pertanyaan yang paling ingin kamu dengar jawabannya.`,
   url: `${SITE_URL}/agenda/${a.slug}/tanya`,
-  image: ogImage(`/og/tanya/${a.slug}.png`, a.updated_at),
+  image: card(`/og/tanya/${a.slug}.png`, a, versions),
 });
 
 function metaTags(p: Preview) {
@@ -115,26 +135,32 @@ function metaTags(p: Preview) {
 
 export default async function handler(request: Request, context: Context) {
   // Detail (/agenda/:slug) dan tanya jawab (/agenda/:slug/tanya); /daftar, /terdaftar, /tanya/layar dibiarkan.
-  const match = new URL(request.url).pathname.match(/^\/agenda\/([^/]+)(\/tanya)?\/?$/);
-  if (!match || !isbot(request.headers.get('user-agent'))) return;
+  const url = new URL(request.url);
+  const match = url.pathname.match(/^\/agenda\/([^/]+)(\/tanya)?\/?$/);
+  if (!match) return;
   const [, slug, qna] = match;
 
-  const [response, activity] = await Promise.all([context.next(), fetchActivity(decodeURIComponent(slug)).catch(() => null)]);
-  if (!activity || !response.headers.get('content-type')?.includes('text/html')) return response;
+  const [response, activity, versions] = await Promise.all([
+    context.next(),
+    fetchActivity(decodeURIComponent(slug)).catch(() => null),
+    getCardVersions(url.origin),
+  ]);
+  const headers = new Headers(response.headers);
+  if (!activity || !response.headers.get('content-type')?.includes('text/html')) {
+    // Supabase lambat atau slug tidak ada: jangan simpan halaman tanpa meta.
+    headers.set('Netlify-CDN-Cache-Control', 'no-store');
+    return new Response(response.body, { status: response.status, headers });
+  }
 
-  const original = await response.text();
-  // HTML prerender sudah punya meta kegiatan.
-  if (original.includes('property="og:title"')) return new Response(original, response);
-
-  const html = original
+  const html = (await response.text())
     // Title & deskripsi default dari app shell diganti punya halaman ini.
     .replace(/<title>[^<]*<\/title>/, '')
     .replace(/<meta name="description"[^>]*>/, '')
-    .replace('</head>', `${metaTags(qna ? qnaPreview(activity) : eventPreview(activity))}</head>`);
+    .replace('</head>', `${metaTags(qna ? qnaPreview(activity, versions) : eventPreview(activity, versions))}</head>`);
 
-  const headers = new Headers(response.headers);
   headers.delete('content-length');
+  headers.set('Netlify-CDN-Cache-Control', CDN_CACHE);
   return new Response(html, { status: response.status, headers });
 }
 
-export const config: Config = { path: '/agenda/*' };
+export const config: Config = { pattern: '^/agenda/[^/]+(/tanya)?/?$', cache: 'manual' };

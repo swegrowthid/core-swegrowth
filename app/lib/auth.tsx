@@ -19,8 +19,10 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+/** null = profil memang belum ada. Gagal muat dilempar supaya tidak disangka belum onboarding. */
 export async function fetchProfile(userId: string) {
-  const { data } = await supabase().from('profiles').select('*').eq('id', userId).maybeSingle();
+  const { data, error } = await supabase().from('profiles').select('*').eq('id', userId).maybeSingle();
+  if (error) throw error;
   return data;
 }
 
@@ -48,7 +50,8 @@ type Account = {
 
 async function fetchAccount(userId: string): Promise<Account> {
   const [profile, isAdmin, isMember, membership] = await Promise.all([
-    fetchProfile(userId),
+    // Menu & sapaan saja: gagal muat cukup tampil tanpa nama, halaman tetap jalan.
+    fetchProfile(userId).catch(() => null),
     fetchIsAdmin(),
     fetchIsMember(),
     fetchMembership(userId),

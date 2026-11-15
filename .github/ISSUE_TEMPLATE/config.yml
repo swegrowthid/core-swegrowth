@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Laporkan celah keamanan
-    url: https://github.com/zikrulihsan/core-swegrowth/security/advisories/new
+    url: https://github.com/swegrowthid/core-swegrowth/security/advisories/new
     about: Celah keamanan dilaporkan secara privat, bukan lewat issue publik.
   - name: Komunitas SWE Growth
     url: https://swegrowth.id

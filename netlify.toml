@@ -99,11 +99,24 @@
   status = 301
 
 # Gambar preview link dibuat saat build (scripts/og-images.mjs). Kegiatan yang
-# dibuat setelah build belum punya gambar sampai build ulang: pakai kartu komunitas.
+# dibuat setelah build belum punya gambar sampai deploy berikutnya: pakai kartu komunitas.
 [[redirects]]
   from = "/og/*"
   to = "/og/home.png"
   status = 200
+
+# File build dan endpoint yang tidak ada harus 404, bukan app shell. Tanpa ini, CSS/JS ber-hash
+# dari deploy lama dibalas HTML (200, di-cache permanen) dan halaman tampil tanpa gaya.
+# File dan edge function yang ada tetap didahulukan.
+[[redirects]]
+  from = "/assets/*"
+  to = "/__spa-fallback.html"
+  status = 404
+
+[[redirects]]
+  from = "/api/*"
+  to = "/__spa-fallback.html"
+  status = 404
 
 # Semua path tanpa file prerender (course, profil member, activity baru, dst.)
 # dilayani app shell SPA. Netlify mendahulukan file yang ada, jadi ini hanya fallback.

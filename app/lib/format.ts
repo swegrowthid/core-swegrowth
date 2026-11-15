@@ -66,8 +66,13 @@ export const isUpcoming = (d: Date, now = new Date()) => d.getTime() + 24 * 60 *
 
 export const isUpcomingDay = (day: string, now = new Date()) => isUpcoming(new Date(day), now);
 
+const wibIsoDayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' });
+/** Nomor hari kalender WIB, untuk menghitung selisih hari tanpa terpengaruh jam. */
+const wibDayNumber = (d: Date) => Date.parse(wibIsoDayFmt.format(d)) / 86_400_000;
+
+/** Selisih hari kalender WIB: acara pukul 20.00 nanti malam tetap "hari ini", bukan "besok". */
 export const relativeFromNow = (ts: string, now = new Date()) => {
-  const days = Math.round((new Date(ts).getTime() - now.getTime()) / 86_400_000);
+  const days = Math.round(wibDayNumber(new Date(ts)) - wibDayNumber(now));
   if (days === 0) return 'hari ini';
   if (days === 1) return 'besok';
   if (days > 1) return `${days} hari lagi`;

@@ -1,20 +1,11 @@
 import { type RouteConfig, index, layout, route } from '@react-router/dev/routes';
 
-/**
- * Detail event memakai versi prerender (event.tsx, ada `loader`) kalau env
- * Supabase diisi; tanpa env (CI, fork) versi SPA, karena `loader` wajib punya
- * path prerender. `react-router typegen` selalu memakai event.tsx supaya
- * tipenya (./+types/event) tetap dibuat dan typecheck lolos tanpa env.
- */
-const prerenderEvents =
-  Boolean(process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_PUBLISHABLE_KEY) || process.argv.includes('typegen');
-
 export default [
   // Publik — di-prerender saat build (lihat react-router.config.ts)
   index('routes/home.tsx'),
   route('agenda', 'routes/agenda.tsx'),
-  // Detail event publik, di-prerender per kegiatan kalau Supabase dikonfigurasi; daftar butuh login
-  route('agenda/:slug', prerenderEvents ? 'routes/event.tsx' : 'routes/event-spa.tsx'),
+  // Detail event publik (SPA; meta preview dari edge function event-preview); daftar butuh login
+  route('agenda/:slug', 'routes/event.tsx'),
   route('agenda/:slug/daftar', 'routes/event-register.tsx'),
   route('agenda/:slug/terdaftar', 'routes/event-registered.tsx'),
   // Tanya jawab ala Slido (SPA): baca publik, login untuk bertanya & vote
@@ -39,14 +30,20 @@ export default [
   // Wajib login (lihat member-layout); isi khusus verified dijaga per halaman
   layout('routes/member-layout.tsx', [
     route('onboarding', 'routes/onboarding.tsx'),
-    route('portal', 'routes/portal.tsx'),
-    // Kegiatanku: kegiatan yang diikuti + rekap (ringkasan, rekaman, feedback)
-    route('portal/kegiatan', 'routes/my-activities.tsx'),
-    route('portal/kegiatan/:slug', 'routes/my-activity.tsx'),
-    route('portal/profil', 'routes/portal-profile.tsx'),
-    route('portal/profil/edit', 'routes/portal-profile-edit.tsx'),
-    route('portal/membership', 'routes/membership.tsx'),
-    route('rekomendasi/kirim', 'routes/recommendation-submit.tsx'),
+    // Ruang member: menu samping/bar bawah sendiri (lihat portal-layout)
+    layout('routes/portal-layout.tsx', [
+      route('portal', 'routes/portal.tsx'),
+      // Kegiatan: yang diikuti + rekap (ringkasan, rekaman, feedback), agenda, acara dari luar
+      route('portal/kegiatan', 'routes/my-activities.tsx'),
+      route('portal/kegiatan/:slug', 'routes/my-activity.tsx'),
+      route('portal/komunitas', 'routes/portal-community.tsx'),
+      route('portal/rekomendasiku', 'routes/portal-recommendations.tsx'),
+      route('portal/profil', 'routes/portal-profile.tsx'),
+      route('portal/profil/edit', 'routes/portal-profile-edit.tsx'),
+      // Belum dibuka (MEMBERSHIP_LIVE), tidak ada di menu; ditautkan dari Profil
+      route('portal/membership', 'routes/membership.tsx'),
+      route('rekomendasi/kirim', 'routes/recommendation-submit.tsx'),
+    ]),
     // Masuk ke app lain dengan akun ini, mis. /ke/trellonotes
     route('ke/:app', 'routes/app-handoff.tsx'),
   ]),
