@@ -44,7 +44,7 @@ Halaman publik di-prerender saat build; sisanya SPA lewat `__spa-fallback.html` 
 
 **Preview link** (WhatsApp, Telegram, X, LinkedIn): gambar 1200×630 bergaya poster event dibuat setelah build
 (`scripts/og-images.mjs` → `build/client/og/`, gambarnya di `app/lib/og-image.ts`): kartu komunitas untuk beranda &
-halaman umum, daftar agenda untuk `/agenda`, poster per kegiatan, dan kartu "Tanya di …" untuk `/agenda/:slug/tanya`.
+halaman umum, daftar agenda untuk `/agenda`, poster per kegiatan, dan kartu "Tanya di sini" untuk `/agenda/:slug/tanya`.
 Halaman SPA (tanya jawab, kegiatan baru) mendapat meta-nya dari edge function `event-preview` khusus untuk crawler.
 
 Tidak ada server dan tidak ada secret key di aplikasi. Hak akses dijaga di database: RLS + fungsi `is_admin()`,
