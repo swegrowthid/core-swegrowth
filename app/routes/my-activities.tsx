@@ -13,7 +13,14 @@ import {
 } from '~/lib/activities';
 import { requireUser } from '~/lib/auth';
 import { formatWibDate, wibDayParts } from '~/lib/format';
-import { feedbackOpen, fetchMyFeedbackIds, myActivityPath, splitMyActivities, type MyActivity } from '~/lib/my-activities';
+import {
+  feedbackOpen,
+  fetchMyFeedbackIds,
+  fetchMySummaryIds,
+  myActivityPath,
+  splitMyActivities,
+  type MyActivity,
+} from '~/lib/my-activities';
 import { directoryPath, getPublishedRecommendations, SUBMIT_PATH } from '~/lib/recommendations';
 import { youtubeId } from '~/lib/youtube';
 
@@ -24,10 +31,11 @@ const EXTERNAL_LIMIT = 4;
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const user = await requireUser(request);
   // Gagal muat = null, supaya tidak tampil seolah kamu belum ikut apa pun.
-  const [regs, activities, feedbackIds, recommendations] = await Promise.all([
+  const [regs, activities, feedbackIds, summaryIds, recommendations] = await Promise.all([
     fetchMyRegistrationStatuses(user.id).catch(() => null),
     getPublishedActivities({ strict: true }).catch(() => null),
     fetchMyFeedbackIds(user.id),
+    fetchMySummaryIds(),
     getPublishedRecommendations({ strict: true }).catch(() => null),
   ]);
   const external =
@@ -43,6 +51,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     ...splitMyActivities(activities, regs),
     others: upcomingSessions(activities, { undatedLast: true }).filter((a) => !registered.has(a.id)),
     feedbackIds,
+    summaryIds,
     external,
     now: Date.now(),
   };
@@ -85,7 +94,14 @@ export default function MyActivities({ loaderData }: Route.ComponentProps) {
   );
 }
 
-function OwnActivities({ upcoming, past, others, feedbackIds, now }: Extract<Route.ComponentProps['loaderData'], { failed: false }>) {
+function OwnActivities({
+  upcoming,
+  past,
+  others,
+  feedbackIds,
+  summaryIds,
+  now,
+}: Extract<Route.ComponentProps['loaderData'], { failed: false }>) {
   return (
     <>
       <PortalSection id="akan-datang" title="Kamu terdaftar">
@@ -115,6 +131,7 @@ function OwnActivities({ upcoming, past, others, feedbackIds, now }: Extract<Rou
             <MyRows
               items={past}
               chips={(m) => [
+                ...(summaryIds.includes(m.activity.id) ? ['ringkasan'] : []),
                 ...(youtubeId(m.activity.youtube_url) ? ['rekaman'] : []),
                 ...(m.status === 'confirmed' && feedbackOpen(m.activity, new Date(now))
                   ? [feedbackIds.includes(m.activity.id) ? 'feedback ✓' : 'beri feedback']
