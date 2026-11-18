@@ -28,6 +28,8 @@ export async function loadAdminDashboard() {
     recommendations,
     recommendationTopics,
     communityGroups,
+    jobPosters,
+    pendingJobs,
   ] = await Promise.all([
     db.from('profiles').select('*').order('created_at', { ascending: false }),
     db.from('memberships').select('*'),
@@ -39,6 +41,8 @@ export async function loadAdminDashboard() {
     db.from('recommendations').select('*').order('created_at', { ascending: false }),
     db.from('recommendation_topics').select('*').order('sort_order').order('name'),
     db.from('community_groups').select('*').order('sort_order').order('name'),
+    db.from('job_posters').select('*').order('created_at'),
+    db.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
   ]);
   return {
     profiles: profiles.data ?? [],
@@ -51,6 +55,8 @@ export async function loadAdminDashboard() {
     recommendations: recommendations.data ?? [],
     recommendationTopics: recommendationTopics.data ?? [],
     communityGroups: communityGroups.data ?? [],
+    jobPosters: jobPosters.data ?? [],
+    pendingJobs: pendingJobs.count ?? 0,
   };
 }
 
@@ -190,3 +196,11 @@ export const updateRecommendationTopic = (name: string, patch: Update<'recommend
   supabase().from('recommendation_topics').update(patch).eq('name', name);
 
 export const deleteRecommendationTopic = (name: string) => supabase().from('recommendation_topics').delete().eq('name', name);
+
+// ---------------------------------------------------------------------------
+// Tim loker
+// ---------------------------------------------------------------------------
+
+export const addJobPoster = (row: Insert<'job_posters'>) => supabase().from('job_posters').insert(row);
+
+export const removeJobPoster = (userId: string) => supabase().from('job_posters').delete().eq('user_id', userId);

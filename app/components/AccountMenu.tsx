@@ -80,6 +80,7 @@ export function AccountMenu({ portal = false }: { portal?: boolean }) {
           <Link to="/portal/profil">Profil saya</Link>
           <Link to="/portal/profil/edit">Edit profil</Link>
           <Link to="/portal/rekomendasiku">Rekomendasiku</Link>
+          <Link to="/portal/lokerku">Lokerku</Link>
           {isAdmin && <Link to="/admin">Admin</Link>}
           {portal && (
             <Link className="account-public" to="/">
