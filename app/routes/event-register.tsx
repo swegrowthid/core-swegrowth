@@ -114,7 +114,10 @@ export default function EventRegister({ loaderData }: Route.ComponentProps) {
 
           <fieldset className="profile-section">
             <legend>Data peserta</legend>
-            <p className="form-sub">Terisi dari profilmu. Perubahan di sini juga melengkapi profil yang masih kosong.</p>
+            <p className="form-sub">
+              Terisi dari profilmu. Perubahan di sini juga melengkapi profil yang masih kosong. Dengan mendaftar, kamu sekaligus tercatat
+              bergabung di komunitas SWE Growth.
+            </p>
             <div className="form-grid">
               <div className="field">
                 <label htmlFor="name">Nama lengkap</label>
