@@ -110,6 +110,10 @@ export default function PortalProfile({ loaderData: { profile, onboarded, requir
         <Link className="text-link" to="/portal/rekomendasiku">
           Rekomendasiku
         </Link>
+        , loker yang kamu bagikan di{' '}
+        <Link className="text-link" to="/portal/lokerku">
+          Lokerku
+        </Link>
         . Membership dan badge verified member{' '}
         <Link className="text-link" to="/portal/membership">
           segera hadir

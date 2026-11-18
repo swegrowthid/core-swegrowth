@@ -324,6 +324,71 @@ export type PublishedRecommendation = Pick<
   recommender_avatar_url: string | null;
 };
 
+export type JobEmploymentType = 'full_time' | 'contract' | 'internship' | 'freelance' | 'part_time';
+export type JobWorkMode = 'onsite' | 'hybrid' | 'remote';
+export type JobLevel = 'entry' | 'junior' | 'mid' | 'senior' | 'lead';
+export type JobStatus = 'pending' | 'approved' | 'rejected' | 'hidden';
+/** Hubungan pengirim dengan lokernya. */
+export type JobSubmitterRelation = 'hiring' | 'insider' | 'share';
+export type JobRejectReason = 'duplikat' | 'kedaluwarsa' | 'kurang_relevan' | 'kurang_lengkap' | 'mencurigakan';
+
+export type JobPosterRow = { user_id: string; added_by: string | null; created_at: string };
+
+export type JobRow = {
+  id: string;
+  title: string;
+  company: string;
+  /** Link lamaran (https://) atau email HR (mailto:). */
+  apply_url: string;
+  description: string;
+  employment_type: JobEmploymentType;
+  work_mode: JobWorkMode;
+  location: string;
+  level: JobLevel | null;
+  /** Teks bebas, mis. "8–12 jt/bulan". */
+  salary: string;
+  /** Batas lamaran (yyyy-mm-dd); tanpa batas tampil 45 hari sejak dikirim. */
+  deadline: string | null;
+  /** 'poster' = dimasukkan tim loker (langsung tayang), 'member' = rekomendasi member. */
+  source: 'poster' | 'member';
+  submitted_by: string | null;
+  show_submitter: boolean;
+  submitter_relation: JobSubmitterRelation;
+  /** Pengirim bersedia ditanya-tanya soal loker ini. */
+  open_to_questions: boolean;
+  status: JobStatus;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  reject_reason: JobRejectReason | null;
+  reject_note: string;
+  created_at: string;
+  updated_at: string;
+};
+
+/** Hasil published_jobs(): hanya kolom aman. */
+export type PublishedJob = Pick<
+  JobRow,
+  | 'id'
+  | 'title'
+  | 'company'
+  | 'apply_url'
+  | 'description'
+  | 'employment_type'
+  | 'work_mode'
+  | 'location'
+  | 'level'
+  | 'salary'
+  | 'deadline'
+  | 'source'
+  | 'submitter_relation'
+  | 'open_to_questions'
+  | 'created_at'
+> & {
+  submitter_name: string | null;
+  submitter_handle: string | null;
+  submitter_avatar_url: string | null;
+};
+
 export type ActivityMemberInfoRow = {
   activity_id: string;
   meeting_url: string | null;
@@ -376,6 +441,8 @@ export type Database = {
       member_contributions: Table<MemberContributionRow, 'title' | 'url', 'id' | 'created_at'>;
       recommendations: Table<RecommendationRow, 'category' | 'title' | 'url' | 'reason', Timestamps>;
       recommendation_topics: Table<RecommendationTopicRow, 'name', 'created_at'>;
+      job_posters: Table<JobPosterRow, 'user_id', 'created_at'>;
+      jobs: Table<JobRow, 'title' | 'company' | 'apply_url' | 'description', Timestamps>;
       activity_questions: Table<ActivityQuestionRow, 'activity_id' | 'body', Timestamps>;
       activity_question_votes: Table<ActivityQuestionVoteRow, 'question_id' | 'user_id', 'created_at'>;
       activity_feedback: Table<ActivityFeedbackRow, 'activity_id' | 'user_id' | 'rating', 'created_at' | 'updated_at'>;
@@ -387,6 +454,28 @@ export type Database = {
       is_admin: { Args: Record<string, never>; Returns: boolean };
       is_member: { Args: Record<string, never>; Returns: boolean };
       is_curator: { Args: Record<string, never>; Returns: boolean };
+      is_job_poster: { Args: Record<string, never>; Returns: boolean };
+      published_jobs: { Args: Record<string, never>; Returns: PublishedJob[] };
+      job_submitters: { Args: Record<string, never>; Returns: { id: string; full_name: string; handle: string }[] };
+      submit_job: {
+        Args: {
+          p_title: string;
+          p_company: string;
+          p_apply_url: string;
+          p_description: string;
+          p_employment_type?: JobEmploymentType;
+          p_work_mode?: JobWorkMode;
+          p_location?: string;
+          p_level?: JobLevel | null;
+          p_salary?: string;
+          p_deadline?: string | null;
+          p_show_submitter?: boolean;
+          p_submitter_relation?: JobSubmitterRelation;
+          p_open_to_questions?: boolean;
+          p_id?: string | null;
+        };
+        Returns: string;
+      };
       has_complete_profile: { Args: Record<string, never>; Returns: boolean };
       public_profile: { Args: { p_handle: string }; Returns: PublicProfile[] };
       published_contributions: { Args: Record<string, never>; Returns: PublishedContribution[] };

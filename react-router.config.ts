@@ -10,6 +10,6 @@ import type { Config } from '@react-router/dev/config';
 export default {
   ssr: false,
   prerender() {
-    return ['/', '/tentang', '/agenda', '/rekaman', '/rekomendasi', '/code-of-conduct', '/privasi', '/term-of-service'];
+    return ['/', '/tentang', '/agenda', '/rekaman', '/rekomendasi', '/loker', '/code-of-conduct', '/privasi', '/term-of-service'];
   },
 } satisfies Config;
