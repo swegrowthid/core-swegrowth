@@ -1,9 +1,8 @@
-import DOMPurify from 'dompurify';
-import { marked } from 'marked';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import { data, Link, redirect } from 'react-router';
 import type { Route } from './+types/my-activity';
 import { PortalPage } from '~/components/Portal';
+import { SessionSummary } from '~/components/SessionSummary';
 import { YouTubeEmbed } from '~/components/YouTubeEmbed';
 import {
   activityPath,
@@ -111,7 +110,7 @@ export default function MyActivity({ loaderData }: Route.ComponentProps) {
             <h2>Ringkasan sesi</h2>
           </div>
           {recap?.summary ? (
-            <Summary markdown={recap.summary} />
+            <SessionSummary markdown={recap.summary} />
           ) : (
             <p className="muted">
               {upcoming ? 'Ringkasan tersedia setelah acara.' : 'Ringkasan sesi belum tersedia. Admin akan menambahkannya setelah acara.'}
@@ -141,12 +140,6 @@ export default function MyActivity({ loaderData }: Route.ComponentProps) {
       </div>
     </PortalPage>
   );
-}
-
-/** Ringkasan dari Zoom biasanya markdown (judul, poin); dirender lalu dibersihkan. */
-function Summary({ markdown }: { markdown: string }) {
-  const html = useMemo(() => DOMPurify.sanitize(marked.parse(markdown, { async: false, breaks: true })), [markdown]);
-  return <div className="prose recap-summary" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 function Recording({
