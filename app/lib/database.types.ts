@@ -337,9 +337,11 @@ export type JobPosterRow = { user_id: string; added_by: string | null; created_a
 export type JobRow = {
   id: string;
   title: string;
+  /** Kosong kalau pesan di grup tidak menyebut perusahaannya. */
   company: string;
-  /** Link lamaran (https://) atau email HR (mailto:). */
-  apply_url: string;
+  /** Link lamaran (https://) atau email HR (mailto:); null kalau melamar lewat CP. */
+  apply_url: string | null;
+  /** Boleh kosong kalau original_message terisi. */
   description: string;
   employment_type: JobEmploymentType;
   work_mode: JobWorkMode;
@@ -353,6 +355,14 @@ export type JobRow = {
   source: 'poster' | 'member';
   submitted_by: string | null;
   show_submitter: boolean;
+  /** Contact person loker (bisa beda dari pengirim, mis. admin menginput dari grup). */
+  contact_name: string;
+  /** Nomor WA, email, LinkedIn, dll. Wajib kalau apply_url kosong. */
+  contact: string;
+  /** Pesan asli dari grup WhatsApp, apa adanya. */
+  original_message: string;
+  /** Member pemilik loker (yang membagikannya); bisa melihat siapa yang tertarik. */
+  owner_id: string | null;
   submitter_relation: JobSubmitterRelation;
   /** Pengirim bersedia ditanya-tanya soal loker ini. */
   open_to_questions: boolean;
@@ -382,11 +392,34 @@ export type PublishedJob = Pick<
   | 'source'
   | 'submitter_relation'
   | 'open_to_questions'
+  | 'contact_name'
+  | 'contact'
+  | 'original_message'
   | 'created_at'
 > & {
-  submitter_name: string | null;
-  submitter_handle: string | null;
-  submitter_avatar_url: string | null;
+  /** Pemilik loker (atau pengirim kalau tidak ditunjuk), kalau namanya boleh tampil. */
+  owner_name: string | null;
+  owner_handle: string | null;
+  owner_avatar_url: string | null;
+  /** Pemanggil adalah pemilik/pengirim loker ini. */
+  is_mine: boolean;
+  interest_count: number;
+  /** Pemanggil sudah menandai tertarik. */
+  interested: boolean;
+};
+
+export type JobInterestRow = { job_id: string; user_id: string; note: string; created_at: string };
+
+/** Hasil job_interested(): profil yang tertarik, khusus pemilik loker & tim loker. */
+export type JobInterested = Pick<
+  ProfileRow,
+  'full_name' | 'avatar_url' | 'headline' | 'seniority' | 'company' | 'tech_stack' | 'whatsapp' | 'linkedin_url'
+> & {
+  user_id: string;
+  handle: string;
+  /** Relevansi pengalaman yang ditulis saat menandai tertarik. */
+  note: string;
+  created_at: string;
 };
 
 export type ActivityMemberInfoRow = {
@@ -442,7 +475,8 @@ export type Database = {
       recommendations: Table<RecommendationRow, 'category' | 'title' | 'url' | 'reason', Timestamps>;
       recommendation_topics: Table<RecommendationTopicRow, 'name', 'created_at'>;
       job_posters: Table<JobPosterRow, 'user_id', 'created_at'>;
-      jobs: Table<JobRow, 'title' | 'company' | 'apply_url' | 'description', Timestamps>;
+      jobs: Table<JobRow, 'title', Timestamps>;
+      job_interests: Table<JobInterestRow, 'job_id' | 'user_id', 'created_at'>;
       activity_questions: Table<ActivityQuestionRow, 'activity_id' | 'body', Timestamps>;
       activity_question_votes: Table<ActivityQuestionVoteRow, 'question_id' | 'user_id', 'created_at'>;
       activity_feedback: Table<ActivityFeedbackRow, 'activity_id' | 'user_id' | 'rating', 'created_at' | 'updated_at'>;
@@ -456,13 +490,19 @@ export type Database = {
       is_curator: { Args: Record<string, never>; Returns: boolean };
       is_job_poster: { Args: Record<string, never>; Returns: boolean };
       published_jobs: { Args: Record<string, never>; Returns: PublishedJob[] };
+      toggle_job_interest: { Args: { p_job_id: string }; Returns: boolean };
+      express_job_interest: { Args: { p_job_id: string; p_note: string }; Returns: string | null };
+      close_job: { Args: { p_job_id: string }; Returns: boolean };
+      job_interested: { Args: { p_job_id: string }; Returns: JobInterested[] };
+      job_interest_counts: { Args: Record<string, never>; Returns: { job_id: string; total: number }[] };
+      job_owner_candidates: { Args: Record<string, never>; Returns: { id: string; full_name: string; handle: string }[] };
       job_submitters: { Args: Record<string, never>; Returns: { id: string; full_name: string; handle: string }[] };
       submit_job: {
         Args: {
           p_title: string;
-          p_company: string;
-          p_apply_url: string;
-          p_description: string;
+          p_company?: string;
+          p_apply_url?: string | null;
+          p_description?: string;
           p_employment_type?: JobEmploymentType;
           p_work_mode?: JobWorkMode;
           p_location?: string;
@@ -472,6 +512,10 @@ export type Database = {
           p_show_submitter?: boolean;
           p_submitter_relation?: JobSubmitterRelation;
           p_open_to_questions?: boolean;
+          p_contact_name?: string;
+          p_contact?: string;
+          p_original_message?: string;
+          p_owner_id?: string | null;
           p_id?: string | null;
         };
         Returns: string;

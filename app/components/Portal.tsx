@@ -32,6 +32,12 @@ export const PORTAL_ICONS = {
       <path d="M15.5 5.6a3.2 3.2 0 0 1 0 5.8M17.5 14.9c1.7.6 2.9 2.2 3.5 4.6" />
     </svg>
   ),
+  jobs: (
+    <svg {...stroke}>
+      <rect x="3.5" y="7" width="17" height="12.5" rx="2.5" />
+      <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3.5 12.5h17" />
+    </svg>
+  ),
   profile: (
     <svg {...stroke}>
       <circle cx="12" cy="8" r="4" />
@@ -53,6 +59,7 @@ const DESTINATIONS = [
   { to: '/portal', label: 'Beranda', icon: PORTAL_ICONS.home, end: true },
   { to: '/portal/kegiatan', label: 'Kegiatan', icon: PORTAL_ICONS.events, end: false },
   { to: '/portal/komunitas', label: 'Komunitas', icon: PORTAL_ICONS.community, end: false },
+  { to: '/portal/loker', label: 'Loker', icon: PORTAL_ICONS.jobs, end: false },
   { to: '/portal/profil', label: 'Profil', icon: PORTAL_ICONS.profile, end: false },
 ];
 
@@ -83,15 +90,17 @@ export function PortalPage({
   title,
   intro,
   actions,
+  className,
   children,
 }: {
   title: ReactNode;
   intro?: ReactNode;
   actions?: ReactNode;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <div className="portal-page">
+    <div className={className ? `portal-page ${className}` : 'portal-page'}>
       <header className="portal-head">
         <div>
           <h1 className="portal-title">{title}</h1>
