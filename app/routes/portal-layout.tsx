@@ -1,6 +1,7 @@
-import { isRouteErrorResponse, Link, Outlet, useNavigation } from 'react-router';
+import { isRouteErrorResponse, Link, Outlet, useLocation, useNavigation } from 'react-router';
 import type { Route } from './+types/portal-layout';
 import { PortalNav, PortalPage } from '~/components/Portal';
+import { useOnboarded } from '~/lib/onboarding';
 
 /** Dibaca root (Nav, Footer): halaman di bawah layout ini memakai kerangka ruang member. */
 export const handle = { portal: true };
@@ -12,6 +13,8 @@ export const handle = { portal: true };
 export default function PortalLayout() {
   const navigation = useNavigation();
   const pending = navigation.state === 'loading';
+  const onboarded = useOnboarded();
+  const { pathname, search } = useLocation();
   return (
     <div className="portal-app">
       <PortalNav />
@@ -20,6 +23,18 @@ export default function PortalLayout() {
           <div className="portal-progress" role="status">
             <span className="visually-hidden">Memuat halaman…</span>
           </div>
+        )}
+        {/* Portal terbuka untuk semua akun; yang belum lengkap diajak tanpa dihalangi. Profil & Komunitas punya ajakannya sendiri. */}
+        {!onboarded && !pathname.startsWith('/portal/profil') && pathname !== '/portal/komunitas' && (
+          <p className="portal-onboard-note">
+            <span>
+              <strong>Profilmu belum lengkap.</strong> Lengkapi supaya bisa masuk grup WhatsApp komunitas, menandai Tertarik di loker, dan
+              berbagi rekomendasi.
+            </span>
+            <Link className="btn btn-primary sm" to={`/onboarding?next=${encodeURIComponent(pathname + search)}`}>
+              Lengkapi profil
+            </Link>
+          </p>
         )}
         <Outlet />
       </div>
