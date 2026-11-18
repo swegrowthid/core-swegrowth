@@ -4,25 +4,30 @@ import { fetchProfile, requireUser } from '~/lib/auth';
 import { fetchMotivation, isOnboarded } from '~/lib/profile';
 import { skipSearchOnlyRevalidation } from '~/lib/revalidate';
 
-/** Halaman profil tetap bisa dibuka walau onboarding belum selesai; di sana member diajak melengkapi. */
-const OPEN_BEFORE_ONBOARDING = ['/onboarding', '/portal/profil'];
+/**
+ * Halaman yang butuh profil lengkap (dijaga juga di database lewat has_complete_profile):
+ * mengirim rekomendasi/loker dan masuk ke aplikasi lain. Sisanya terbuka untuk semua akun.
+ */
+const REQUIRES_ONBOARDING = ['/rekomendasi/kirim', '/loker/kirim', '/ke'];
 
 /**
- * Semua halaman di bawah layout ini wajib login. Akun yang belum selesai
- * onboarding (kenalan + profil, lihat isOnboarded) diarahkan ke /onboarding dulu,
- * kecuali halaman di OPEN_BEFORE_ONBOARDING. Portal terbuka untuk semua akun; isi khusus verified member dijaga di
- * database (is_member()).
+ * Semua halaman di bawah layout ini wajib login. Portal terbuka untuk semua akun,
+ * termasuk yang baru mendaftar acara: rekap & feedback kegiatan, loker, profil.
+ * Yang belum onboarding (kenalan + profil, lihat isOnboarded) diajak melengkapi
+ * lewat banner di portal; link grup WhatsApp baru muncul setelah lengkap.
+ * Isi khusus verified member dijaga di database (is_member()).
  */
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const user = await requireUser(request);
   const url = new URL(request.url);
-  if (OPEN_BEFORE_ONBOARDING.some((p) => url.pathname === p || url.pathname.startsWith(`${p}/`))) return null;
+  if (url.pathname === '/onboarding') return { onboarded: false };
 
   const [profile, motivation] = await Promise.all([fetchProfile(user.id), fetchMotivation(user.id)]);
-  if (!isOnboarded(profile, motivation)) {
+  const onboarded = isOnboarded(profile, motivation);
+  if (!onboarded && REQUIRES_ONBOARDING.some((p) => url.pathname === p || url.pathname.startsWith(`${p}/`))) {
     throw redirect(`/onboarding?next=${encodeURIComponent(url.pathname + url.search)}`);
   }
-  return null;
+  return { onboarded };
 }
 
 export const shouldRevalidate = skipSearchOnlyRevalidation;

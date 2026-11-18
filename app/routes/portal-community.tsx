@@ -3,6 +3,7 @@ import type { Route } from './+types/portal-community';
 import { CommunityChannels } from '~/components/CommunityChannels';
 import { LoadError, PortalPage, PortalSection } from '~/components/Portal';
 import { requireUser } from '~/lib/auth';
+import { useOnboarded } from '~/lib/onboarding';
 import { fetchWhatsappGroups } from '~/lib/community';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Komunitas — SWE Growth' }, { name: 'robots', content: 'noindex' }];
@@ -18,13 +19,26 @@ export function HydrateFallback() {
 }
 
 export default function PortalCommunity({ loaderData: { groups } }: Route.ComponentProps) {
+  const onboarded = useOnboarded();
   return (
     <PortalPage title="Komunitas" intro="Obrolan sehari-hari ada di grup. Gabung yang umum dulu, lalu grup sesuai bidangmu.">
-      <PortalSection title="Kanal utama">
-        <CommunityChannels />
-      </PortalSection>
+      {/* Link grup untuk yang sudah melengkapi profil (dijanjikan di halaman masuk); grup per bidang juga dijaga RLS. */}
+      {!onboarded ? (
+        <PortalSection title="Grup WhatsApp">
+          <div className="empty-note">
+            <p>Link grup WhatsApp dan Telegram komunitas muncul di sini setelah profilmu lengkap. Cuma perlu beberapa menit.</p>
+            <Link className="btn btn-primary" to="/onboarding?next=/portal/komunitas">
+              Lengkapi profil
+            </Link>
+          </div>
+        </PortalSection>
+      ) : (
+        <PortalSection title="Kanal utama">
+          <CommunityChannels />
+        </PortalSection>
+      )}
 
-      {groups === null ? (
+      {!onboarded ? null : groups === null ? (
         <PortalSection title="Grup per bidang">
           <LoadError what="Daftar grup" />
         </PortalSection>
@@ -50,13 +64,15 @@ export default function PortalCommunity({ loaderData: { groups } }: Route.Compon
         )
       )}
 
-      <p className="portal-footnote">
-        Ruang diskusi di portal sedang kami siapkan; sampai saat itu, obrolan ada di grup di atas. Di semua kanal berlaku{' '}
-        <Link className="text-link" to="/code-of-conduct">
-          Code of Conduct
-        </Link>
-        .
-      </p>
+      {onboarded && (
+        <p className="portal-footnote">
+          Ruang diskusi di portal sedang kami siapkan; sampai saat itu, obrolan ada di grup di atas. Di semua kanal berlaku{' '}
+          <Link className="text-link" to="/code-of-conduct">
+            Code of Conduct
+          </Link>
+          .
+        </p>
+      )}
     </PortalPage>
   );
 }
