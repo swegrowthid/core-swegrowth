@@ -69,7 +69,7 @@ export default function MyActivities({ loaderData }: Route.ComponentProps) {
   return (
     <PortalPage
       title="Kegiatan"
-      intro="Sesi yang kamu ikuti beserta rekap dan feedback-nya, agenda berikutnya, dan acara pilihan dari luar."
+      intro="Sesi yang kamu ikuti beserta rekap dan feedback-nya, rekaman semua sesi, agenda berikutnya, dan acara pilihan dari luar."
     >
       {loaderData.failed ? <LoadError what="Kegiatanmu" /> : <OwnActivities {...loaderData} />}
 
@@ -125,8 +125,9 @@ function OwnActivities({
         </PortalSection>
       )}
 
-      {past.length > 0 && (
-        <PortalSection id="sudah-lewat" title="Sudah kamu ikuti">
+      {/* Selalu tampil: rekaman semua sesi publik ada di /rekaman, termasuk yang tidak kamu ikuti. */}
+      <PortalSection id="sudah-lewat" title="Sudah kamu ikuti" link={{ to: '/rekaman', label: 'Semua rekaman' }}>
+        {past.length > 0 ? (
           <div className="panel">
             <MyRows
               items={past}
@@ -139,8 +140,16 @@ function OwnActivities({
               ]}
             />
           </div>
-        </PortalSection>
-      )}
+        ) : (
+          <p className="psec-empty">
+            Belum ada sesi yang sudah kamu ikuti.{' '}
+            <Link className="text-link" to="/rekaman">
+              Tonton rekaman sesi komunitas sebelumnya
+            </Link>
+            .
+          </p>
+        )}
+      </PortalSection>
     </>
   );
 }
