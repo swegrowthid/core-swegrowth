@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
+import { Check } from './Icons';
 import { useAuth } from '~/lib/auth';
 import {
   companyLabel,
   contactHref,
   expressJobInterest,
   fetchMyInterestNote,
+  firstName,
   INTEREST_NOTE_MAX,
   INTEREST_NOTE_MIN,
   interestMessage,
@@ -14,6 +16,21 @@ import {
 } from '~/lib/jobs';
 import { waNumber } from '~/lib/profile';
 import { SITE_URL } from '~/lib/site';
+
+/** Ke mana pesan dikirim setelah tertarik; `to` = nama untuk sapaan (boleh kosong). */
+type Channel =
+  | { kind: 'wa'; to: string; href: string }
+  | { kind: 'email'; to: string; address: string }
+  | { kind: 'profile'; to: string; handle: string }
+  | { kind: 'none'; to: string };
+
+const CHANNEL_NOTE: Record<Channel['kind'], (to: string) => string> = {
+  wa: () =>
+    'Pesan WhatsApp sudah disiapkan dengan catatan Anda. Periksa kembali sebelum dikirim; jika belum dibalas, beri waktu beberapa hari.',
+  email: () => 'Aplikasi email Anda akan terbuka dengan pesan ini. Periksa kembali sebelum dikirim.',
+  profile: (to) => `${firstName(to)} tidak mencantumkan WhatsApp. Salin pesan ini, lalu kirim lewat LinkedIn di profilnya.`,
+  none: () => 'Lowongan ini tidak mencantumkan kontak. Salin pesan ini, lalu kirim ke pengirimnya di grup loker.',
+};
 
 /** Panduan lengkap tampil sekali; setelah itu diringkas (hanya kenyamanan di browser ini). */
 const GUIDE_SEEN_KEY = 'swg-loker-panduan';
@@ -46,14 +63,16 @@ export function JobInterestDialog({
 }) {
   const { user, profile } = useAuth();
   const ref = useRef<HTMLDialogElement>(null);
-  const waRef = useRef<HTMLAnchorElement>(null);
+  const primaryRef = useRef<HTMLAnchorElement>(null);
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const [step, setStep] = useState<'form' | 'done'>('form');
   const [note, setNote] = useState('');
   const [loadingNote, setLoadingNote] = useState(interested);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [waHref, setWaHref] = useState<string | null>(null);
+  const [channel, setChannel] = useState<Channel | null>(null);
+  const [message, setMessage] = useState('');
+  const [copied, setCopied] = useState(false);
   const [fullGuide] = useState(() => !guideSeen());
   const titleId = useId();
   const noteId = useId();
@@ -78,14 +97,20 @@ export function JobInterestDialog({
   }, [interested, j.id, user]);
 
   useEffect(() => {
-    if (step === 'done') (waRef.current ?? ref.current?.querySelector<HTMLElement>('[data-autofocus]'))?.focus();
+    if (step === 'done') (primaryRef.current ?? ref.current?.querySelector<HTMLElement>('[data-autofocus]'))?.focus();
     if (step === 'form' && !loadingNote) noteRef.current?.focus();
   }, [step, loadingNote]);
 
   const cpHref = j.contact ? contactHref(j.contact) : null;
   const cpWa = cpHref?.startsWith('https://wa.me/') ? cpHref : null;
-  // Yang dihubungi: yang membagikan kalau bersedia ditanya, selain itu CP ber-WA.
-  const askName = j.open_to_questions ? j.owner_name : cpWa ? j.contact_name || null : null;
+  const email = cpHref?.startsWith('mailto:') ? cpHref.slice(7) : j.apply_url?.startsWith('mailto:') ? j.apply_url.slice(7) : null;
+  // Yang dihubungi, urut: yang membagikan (kalau bersedia ditanya), CP ber-WA, email, lalu profil yang membagikan.
+  const askName =
+    (j.open_to_questions && j.owner_name) ||
+    (cpWa && (j.contact_name || 'CP')) ||
+    (email && (j.contact_name || 'perekrut')) ||
+    j.owner_name ||
+    null;
   const viewer = j.owner_name ?? 'tim loker SWE Growth';
   const noteLength = note.trim().length;
   const close = () => ref.current?.close();
@@ -112,21 +137,38 @@ export function JobInterestDialog({
     }
     if (!interested) onSaved();
 
-    const to = ownerWa ? `https://wa.me/${waNumber(ownerWa)}` : cpWa;
-    setWaHref(
-      to && profile
-        ? `${to}?text=${encodeURIComponent(
-            interestMessage({
-              to: (ownerWa ? j.owner_name : j.contact_name) ?? '',
-              from: profile.full_name,
-              job: j,
-              note,
-              profileUrl: `${SITE_URL}/member/${profile.username ?? profile.id}`,
-            }),
-          )}`
-        : null,
-    );
+    const next: Channel = ownerWa
+      ? { kind: 'wa', to: j.owner_name ?? '', href: `https://wa.me/${waNumber(ownerWa)}` }
+      : cpWa
+        ? { kind: 'wa', to: j.contact_name, href: cpWa }
+        : email
+          ? { kind: 'email', to: j.contact_name, address: email }
+          : j.owner_name && j.owner_handle
+            ? { kind: 'profile', to: j.owner_name, handle: j.owner_handle }
+            : { kind: 'none', to: '' };
+    const text = interestMessage({
+      to: next.to,
+      from: profile?.full_name ?? '',
+      job: j,
+      note,
+      profileUrl: profile ? `${SITE_URL}/member/${profile.username ?? profile.id}` : SITE_URL,
+    });
+    setChannel(next);
+    setMessage(text);
+    setCopied(false);
     setStep('done');
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(message);
+      setCopied(true);
+    } catch {
+      // Clipboard ditolak (izin/iframe): pilih teksnya supaya bisa disalin manual.
+      const sel = window.getSelection();
+      const node = ref.current?.querySelector('.job-sheet-message');
+      if (sel && node) sel.selectAllChildren(node);
+    }
   };
 
   const withdraw = async () => {
@@ -197,8 +239,8 @@ export function JobInterestDialog({
               )
             ) : (
               <p className="job-sheet-note">
-                Profil, WhatsApp, LinkedIn, dan catatan Anda akan terlihat oleh {viewer}. Lowongan ini tidak mencantumkan nomor WhatsApp
-                untuk dihubungi.
+                Profil, WhatsApp, LinkedIn, dan catatan Anda akan terlihat oleh {viewer}. Lowongan ini tidak mencantumkan kontak; setelah
+                ini Anda mendapat pesan siap salin untuk dikirim ke pengirimnya di grup.
               </p>
             )}
 
@@ -238,15 +280,7 @@ export function JobInterestDialog({
 
             <div className="job-sheet-actions">
               <button className="btn btn-primary" type="submit" disabled={busy || loadingNote}>
-                {busy
-                  ? 'Menyimpan…'
-                  : interested
-                    ? askName
-                      ? 'Simpan & siapkan pesan'
-                      : 'Simpan catatan'
-                    : askName
-                      ? 'Tandai tertarik & siapkan pesan'
-                      : 'Tandai tertarik'}
+                {busy ? 'Menyimpan…' : interested ? 'Simpan & siapkan pesan' : 'Tandai tertarik & siapkan pesan'}
               </button>
               {interested && (
                 <button className="link-btn danger" type="button" disabled={busy} onClick={withdraw}>
@@ -256,32 +290,56 @@ export function JobInterestDialog({
             </div>
           </form>
         ) : (
-          <div className="job-sheet-body" role="status">
-            <h3>Tercatat sebagai peminat</h3>
-            <p>{j.owner_name ?? 'Tim loker SWE Growth'} dapat melihat profil dan catatan Anda di daftar peminat.</p>
-            {waHref ? (
-              <>
-                <p className="job-sheet-note">
-                  Pesan WhatsApp sudah disiapkan dengan catatan Anda. Periksa kembali sebelum dikirim, dan jika belum dibalas, beri waktu
-                  beberapa hari sebelum menindaklanjuti.
-                </p>
+          <div className="job-sheet-body">
+            <div role="status">
+              <h3>Tercatat sebagai peminat</h3>
+              <p>{j.owner_name ?? 'Tim loker SWE Growth'} dapat melihat profil dan catatan Anda di daftar peminat.</p>
+            </div>
+
+            {channel && (
+              <div className="job-sheet-next">
+                <h3>{channel.to ? `Langkah berikutnya: hubungi ${firstName(channel.to)}` : 'Langkah berikutnya: kirim pesan'}</h3>
+                <p className="job-sheet-note">{CHANNEL_NOTE[channel.kind](channel.to)}</p>
+                <pre className="job-sheet-message" aria-label="Pesan yang disiapkan">
+                  {message}
+                </pre>
                 <div className="job-sheet-actions">
-                  <a ref={waRef} className="btn btn-primary" href={waHref} target="_blank" rel="noopener">
-                    Buka WhatsApp
-                  </a>
+                  {channel.kind === 'wa' ? (
+                    <a
+                      ref={primaryRef}
+                      className="btn btn-primary"
+                      href={`${channel.href}?text=${encodeURIComponent(message)}`}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      Buka WhatsApp
+                    </a>
+                  ) : channel.kind === 'email' ? (
+                    <a
+                      ref={primaryRef}
+                      className="btn btn-primary"
+                      href={`mailto:${channel.address}?subject=${encodeURIComponent(`Pertanyaan lowongan ${j.title} (via SWE Growth)`)}&body=${encodeURIComponent(message)}`}
+                    >
+                      Kirim email
+                    </a>
+                  ) : channel.kind === 'profile' ? (
+                    <a ref={primaryRef} className="btn btn-primary" href={`/member/${channel.handle}`} target="_blank" rel="noopener">
+                      Buka profil {firstName(channel.to)}
+                    </a>
+                  ) : null}
+                  <button
+                    className={`btn ${channel.kind === 'none' ? 'btn-primary' : 'btn-ghost'}`}
+                    type="button"
+                    data-autofocus
+                    onClick={copy}
+                  >
+                    {copied && <Check />}
+                    {copied ? 'Pesan tersalin' : 'Salin pesan'}
+                  </button>
                   <button className="link-btn" type="button" onClick={() => setStep('form')}>
                     Ubah catatan
                   </button>
                 </div>
-              </>
-            ) : (
-              <div className="job-sheet-actions">
-                <button className="btn btn-ghost" type="button" data-autofocus onClick={close}>
-                  Selesai
-                </button>
-                <button className="link-btn" type="button" onClick={() => setStep('form')}>
-                  Ubah catatan
-                </button>
               </div>
             )}
           </div>

@@ -3775,3 +3775,26 @@ a.contrib-maker:hover {
   font-size: 0.85rem;
   font-weight: 600;
 }
+
+/* Tertarik, langkah 2: pesan yang disiapkan (catatan member + kerangka formal). */
+.job-sheet-next {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.job-sheet-message {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
