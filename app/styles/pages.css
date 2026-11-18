@@ -710,6 +710,23 @@ a.contrib-maker:hover {
 .portal-page {
   max-width: 920px;
 }
+/* Ajakan melengkapi profil: portal terbuka untuk semua akun, tidak menghalangi isi. */
+.portal-onboard-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  max-width: 920px;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--yellow) 30%, var(--paper));
+  font-size: 0.92rem;
+}
+.portal-onboard-note span {
+  flex: 1 1 280px;
+}
 .portal-narrow {
   max-width: 680px;
 }
@@ -2071,6 +2088,8 @@ a.contrib-maker:hover {
 }
 .rec-pick input {
   position: absolute;
+  width: 1px;
+  height: 1px;
   opacity: 0;
   pointer-events: none;
 }
@@ -2116,27 +2135,230 @@ a.contrib-maker:hover {
   justify-content: center;
 }
 
-/* Loker: kartu memakai gaya rekomendasi, warna per tipe pekerjaan. */
-.job-card[data-type='full_time'] {
+/* Loker: daftar satu kolom ala job board, warna per tipe pekerjaan di garis kiri. */
+.job-item {
+  --cat: var(--line-2);
+}
+.job-item[data-type='full_time'] {
   --cat: #6cc4c9;
 }
-.job-card[data-type='contract'] {
+.job-item[data-type='contract'] {
   --cat: #e8a87c;
 }
-.job-card[data-type='internship'] {
+.job-item[data-type='internship'] {
   --cat: #7dd957;
 }
-.job-card[data-type='freelance'] {
+.job-item[data-type='freelance'] {
   --cat: #c9a6e8;
 }
-.job-card[data-type='part_time'] {
+.job-item[data-type='part_time'] {
   --cat: #f0d65c;
 }
-.job-card .rec-top {
+.job-board .portal-head {
+  margin-bottom: 18px;
+}
+.job-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.job-search input,
+.job-filters select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink);
+}
+.job-search input:focus,
+.job-filters select:focus {
+  outline: none;
+  border-color: var(--green-deep);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 28%, transparent);
+}
+.job-filter-toggle {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink-soft);
+  font-weight: 650;
+  cursor: pointer;
+}
+.job-filter-toggle span {
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--teal);
+  color: var(--cream);
+  font-size: 0.7rem;
+}
+.job-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.job-types {
+  margin-bottom: 14px;
+}
+.job-list-title {
+  margin-bottom: 10px;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+}
+.job-list {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.job-item {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  transition: box-shadow 0.2s;
+}
+.job-item:hover {
+  box-shadow: 0 14px 30px -22px rgb(11 61 64 / 0.45);
+}
+.job-item-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.job-item h3 {
+  font-size: 1.04rem;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.job-salary {
+  flex-shrink: 0;
+  max-width: 45%;
+  color: var(--green-deep);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: right;
+}
+.job-tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
-.job-card .rec-go {
-  margin-left: auto;
+.job-tags li {
+  padding: 2px 9px;
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+.job-tags .job-tag-type {
+  background: color-mix(in srgb, var(--cat) 35%, var(--paper));
+  color: var(--ink);
+}
+.job-tags .job-tag-relation {
+  background: color-mix(in srgb, var(--green) 20%, var(--paper));
+  color: var(--green-deep);
+}
+.job-company {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 0.88rem;
+}
+.job-company span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.job-company svg {
+  width: 14px;
+  height: 14px;
+}
+.job-desc {
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.job-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+.job-by {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+@media (max-width: 860px) {
+  .job-search {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .job-filter-toggle {
+    display: inline-flex;
+  }
+  .job-filters:not(.is-open) {
+    display: none;
+  }
+  .job-types {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: -20px;
+    padding-inline: 20px;
+    scrollbar-width: none;
+  }
+  .job-types button {
+    flex-shrink: 0;
+  }
+  /* Judul & tombol sebaris, supaya daftar loker langsung terlihat. */
+  .job-board .portal-head {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .job-board .portal-intro {
+    margin-top: 4px;
+    font-size: 0.86rem;
+  }
+  .job-board .portal-head-actions {
+    width: auto;
+    flex-shrink: 0;
+  }
+  .job-board .portal-head-actions .btn {
+    flex: none;
+  }
 }
 .job-relation {
   padding: 2px 10px;
@@ -2169,7 +2391,104 @@ a.contrib-maker:hover {
 .job-autofill .form-message ul {
   margin: 6px 0 0 18px;
 }
-.rec-meta li.job-deadline {
+.job-cp-hint {
+  margin: -6px 0 16px;
+}
+.job-cp {
+  position: relative;
+  z-index: 1;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.job-cp a {
+  color: var(--green-deep);
+}
+.job-cp a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* Di atas link kartu supaya bisa dibuka tanpa membuka link lamaran. */
+.job-original {
+  position: relative;
+  z-index: 1;
+  font-size: 0.84rem;
+}
+.job-original summary {
+  cursor: pointer;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.job-original p {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+/* Tertarik: di atas link kartu supaya bisa diklik tanpa membuka link lamaran. */
+.job-interest {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.job-interest-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+.job-profile-note {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--yellow) 30%, var(--paper));
+  font-size: 0.9rem;
+}
+.job-profile-note a {
+  color: var(--green-deep);
+  font-weight: 700;
+}
+/* Daftar peminat (Lokerku & kelola loker) */
+.job-interested {
+  margin-top: 6px;
+  font-size: 0.88rem;
+}
+.job-interested summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--green-deep);
+}
+.job-interested ul {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.job-interested li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.job-interested li > div {
+  display: grid;
+  gap: 2px;
+}
+.job-interested-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.job-interested-links a {
+  color: var(--green-deep);
+  font-weight: 600;
+}
+.job-tags li.job-deadline {
   background: color-mix(in srgb, var(--yellow) 35%, var(--paper));
   color: var(--ink);
 }
@@ -2193,27 +2512,36 @@ a.contrib-maker:hover {
 .load-error {
   margin: 0;
 }
-/* Di HP chip status turun ke bawah, supaya judul usulan tidak terlipat per kata. */
+/* Di HP chip status turun ke bawah, supaya judul usulan tidak terlipat per kata.
+   .rows.rec-rows: app.css (dimuat setelah file ini) mengatur .rows .row-main { flex: 1 }. */
 @media (max-width: 560px) {
-  .rec-rows > li {
+  .rows.rec-rows > li {
     flex-wrap: wrap;
     row-gap: 8px;
   }
-  .rec-rows .row-main {
+  .rows.rec-rows .row-main {
     flex-basis: 100%;
   }
 }
-.rec-status.pending {
+/* Daftar peminat di dalam baris Lokerku: jangan ikut aturan .rows .row-main span. */
+.rows .row-main .job-interested .avatar {
+  display: inline-grid;
+  margin-top: 0;
+}
+.rows .row-main .job-interested-links {
+  display: flex;
+}
+.rec-status[data-status='pending'] {
   background: color-mix(in srgb, var(--yellow) 40%, var(--paper));
   border-color: var(--yellow);
   color: var(--teal);
 }
-.rec-status.approved {
+.rec-status[data-status='approved'] {
   background: color-mix(in srgb, var(--green) 20%, var(--paper));
   border-color: color-mix(in srgb, var(--green) 60%, var(--line));
   color: var(--ink);
 }
-.rec-status.rejected {
+.rec-status[data-status='rejected'] {
   background: color-mix(in srgb, var(--red) 12%, var(--paper));
   border-color: color-mix(in srgb, var(--red) 35%, var(--line));
   color: var(--ink);
@@ -3213,4 +3541,260 @@ a.contrib-maker:hover {
   40% {
     transform: scale(1.3);
   }
+}
+
+.job-interested-note {
+  display: block;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+  font-style: italic;
+  white-space: pre-wrap;
+}
+
+/* Loker: Tertarik di bottom sheet (HP) / dialog (desktop). Satu tugas yang perlu fokus:
+   panduan + catatan relevansi, lalu Buka WhatsApp. */
+.job-sheet {
+  width: min(560px, calc(100% - 32px));
+  max-width: none;
+  max-height: min(88dvh, 760px);
+  margin: auto;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.95rem;
+  box-shadow: var(--shadow-lg);
+  overscroll-behavior: contain;
+}
+.job-sheet::backdrop {
+  background: rgb(11 61 64 / 0.45);
+}
+.job-sheet[open] {
+  animation: job-sheet-in 0.22s var(--ease);
+}
+@keyframes job-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.job-sheet-panel {
+  display: grid;
+}
+.job-sheet-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 22px 14px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.job-sheet-head h2 {
+  font-size: 1.15rem;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.job-sheet-context {
+  margin-bottom: 4px;
+  color: var(--ink-faint);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.job-sheet-head .link-btn {
+  flex-shrink: 0;
+  min-height: 32px;
+}
+.job-sheet-body {
+  display: grid;
+  gap: 16px;
+  padding: 18px 22px 22px;
+}
+.job-sheet-body h3 {
+  font-size: 1rem;
+}
+.job-sheet-body p {
+  color: var(--ink-soft);
+}
+.job-sheet-guide {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--ink-soft);
+}
+.job-sheet-guide h3 {
+  color: var(--ink);
+}
+.job-sheet-guide ul {
+  display: grid;
+  gap: 4px;
+  margin-left: 18px;
+}
+.job-sheet-guide summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-weight: 700;
+}
+.job-sheet-guide[open] summary {
+  margin-bottom: 4px;
+}
+.job-sheet-note {
+  font-size: 0.9rem;
+}
+.job-sheet-field {
+  display: grid;
+  gap: 6px;
+}
+.job-sheet-field label {
+  font-weight: 700;
+}
+.job-sheet-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  resize: vertical;
+}
+.job-sheet-field textarea:focus {
+  outline: none;
+  border-color: var(--green-deep);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 28%, transparent);
+}
+.job-sheet-field textarea[aria-invalid='true'] {
+  border-color: var(--red);
+}
+.job-sheet-field textarea:disabled {
+  background: var(--paper-2);
+}
+.job-sheet-error {
+  color: var(--red-ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.job-sheet-count {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--green-deep);
+}
+.job-sheet-count[data-short] {
+  color: var(--ink-faint);
+}
+.job-sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+}
+/* HP: menempel di bawah layar seperti sheet, dekat jempol. */
+@media (max-width: 560px) {
+  .job-sheet {
+    width: 100%;
+    max-height: 92dvh;
+    margin: auto 0 0;
+    border-radius: var(--r) var(--r) 0 0;
+  }
+  .job-sheet[open] {
+    animation-name: job-sheet-up;
+  }
+  @keyframes job-sheet-up {
+    from {
+      transform: translateY(100%);
+    }
+  }
+  .job-sheet-head {
+    padding: 18px 18px 12px;
+  }
+  .job-sheet-body {
+    padding: 16px 18px calc(20px + env(safe-area-inset-bottom));
+  }
+  .job-sheet-actions .btn {
+    flex: 1 1 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .job-sheet[open] {
+    animation: none;
+  }
+}
+
+/* Admin: ringkasan sesi (Tulis / Pratinjau). Pratinjau sama dengan rekap di portal. */
+.summary-editor {
+  display: grid;
+  gap: 8px;
+}
+.summary-editor-tabs {
+  display: inline-flex;
+  justify-self: start;
+  padding: 3px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+}
+.summary-editor-tabs button {
+  min-height: 32px;
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 650;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+.summary-editor-tabs button[aria-pressed='true'] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(11 61 64 / 0.12);
+}
+.summary-editor-tabs button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.summary-editor-preview {
+  max-height: 420px;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+}
+.summary-editor-note {
+  color: var(--green-deep);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Tertarik, langkah 2: pesan yang disiapkan (catatan member + kerangka formal). */
+.job-sheet-next {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.job-sheet-message {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

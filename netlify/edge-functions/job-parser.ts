@@ -37,7 +37,12 @@ const SYSTEM = `Kamu membantu tim loker SWE Growth (komunitas software engineer 
 dari pesan grup WhatsApp ke form direktori loker. Aturan:
 - Hanya pakai fakta yang tertulis di pesan. Jangan mengarang nama perusahaan, gaji, kota, deadline, atau kontak.
 - Field yang tidak disebut di pesan diisi string kosong, dan sebutkan di "missing" apa yang perlu dilengkapi manusia.
-- Abaikan basa-basi pembuka/penutup ("izin share", "terima kasih", "kalo kenalannya kenalan").`;
+- Yang menginput sering admin, bukan pemilik loker. "Kirim CV ke saya" berarti CP-nya pengirim pesan di grup,
+  bukan admin; jangan isi kontak itu dengan tebakan.
+- Abaikan basa-basi pembuka/penutup ("izin share", "izin bantu share dari recruiter", "terima kasih").
+- Pesan bisa di-copy beserta header WhatsApp "[05/12/25, 22.14.49] Nama Pengirim: isi". Nama pengirim di grup sering
+  berawalan kode angkatan seperti ">SE_250121-", "SE_22 ", "~ ", atau "Tahfidz_"; buang kode itu dari nama.
+  Kalau headernya berupa nomor telepon, itu nomor pengirim.`;
 
 const PROMPT = (message: string, today: string) => `Hari ini ${today} (WIB).
 
@@ -47,11 +52,22 @@ ${message}
 """
 
 Ekstrak lowongannya (kalau ada beberapa, ambil yang pertama):
+- sender_name: nama pengirim pesan dari header WhatsApp, tanpa kode angkatan dan emoji; kosong kalau tidak ada
+  header atau headernya berupa nomor telepon.
+- is_job: false kalau ini bukan lowongan kerja (mis. info beasiswa/PhD, template email lamaran, obrolan biasa).
 - title: nama posisi yang rapi, mis. "Senior Fullstack Engineer (Web)". Tulis "Senior", bukan "Sr.".
-- company: nama perusahaan; kosong kalau tidak disebut.
-- apply_url: cara melamar. Email → tulis alamat emailnya saja. Link → URL lengkap dengan https://.
-  Nomor WhatsApp/HP → https://wa.me/62xxxxxxxxxx (buang 0 atau +62 di depan, tanpa spasi/strip).
-  Kosong kalau hanya "kirim CV ke saya"/"DM saya" tanpa kontak tertulis.
+  Kalau pesannya hanya link (mis. postingan LinkedIn "…/posts/nama_were-hiring-software-developer-intern-activity-…"),
+  tebak posisi dari kata-kata di URL ("Software Developer Intern") dan sebutkan di "missing" bahwa detailnya perlu
+  dicek di link.
+- company: nama perusahaan; kosong kalau tidak disebut (itu wajar, tidak perlu masuk "missing").
+- apply_url: link lamaran resmi (situs karier, LinkedIn job/post, Google Form, talentgo, dll.) dengan https://
+  (buang parameter pelacak seperti ?utm_source=… dan &rcm=…), atau email HR/rekruter untuk kirim CV (alamatnya saja).
+  Kosong kalau tidak ada.
+- contact_name: nama contact person. Kalau pesan bilang "DM saya", "kirim CV ke saya", "japri", atau "cc saya",
+  CP-nya pengirim pesan: pakai nama pengirim dari header (tanpa kode angkatan). Kosong kalau tidak diketahui.
+- contact: kontak CP untuk ditanya-tanya: nomor WhatsApp/HP apa adanya, email cc, @username, atau link LinkedIn.
+  Kalau CP-nya pengirim dan header berupa nomor telepon, isi nomor itu. Kosong kalau tidak tertulis.
+  Kalau satu-satunya kontak adalah email lamaran, cukup isi apply_url.
 - description: ringkasan 1–3 kalimat Bahasa Indonesia (30–600 karakter): peran, stack/skill utama, syarat penting
   (mis. bahasa Inggris). Jangan ulangi kontak, gaji, atau lokasi.
 - employment_type: salah satu ${EMPLOYMENT.join(', ')} (default full_time kalau tidak disebut).
@@ -61,15 +77,19 @@ Ekstrak lowongannya (kalau ada beberapa, ambil yang pertama):
   lead/head/manager → lead.
 - salary: teks gaji singkat kalau disebut, mis. "15–25 jt/bulan"; kosong kalau tidak.
 - deadline: batas lamaran yyyy-mm-dd kalau disebut; kosong kalau tidak.
-- missing: daftar pendek (Bahasa Indonesia) field wajib yang kosong atau perlu dicek, mis.
-  "Nama perusahaan tidak disebut", "Kontak lamaran: pesan bilang kirim CV ke pengirim, isi email/WA-nya".`;
+- missing: daftar pendek (Bahasa Indonesia) yang perlu dilengkapi atau dicek, terutama kalau apply_url DAN contact
+  kosong, mis. "Pesan bilang kirim CV ke pengirim: isi nomor WA pengirim pesan di grup sebagai CP".`;
 
 const SCHEMA = {
   type: 'OBJECT',
   properties: {
+    is_job: { type: 'BOOLEAN' },
+    sender_name: { type: 'STRING' },
     title: { type: 'STRING' },
     company: { type: 'STRING' },
     apply_url: { type: 'STRING' },
+    contact_name: { type: 'STRING' },
+    contact: { type: 'STRING' },
     description: { type: 'STRING' },
     employment_type: { type: 'STRING', enum: EMPLOYMENT },
     work_mode: { type: 'STRING' },
@@ -79,7 +99,18 @@ const SCHEMA = {
     deadline: { type: 'STRING' },
     missing: { type: 'ARRAY', items: { type: 'STRING' } },
   },
-  required: ['title', 'company', 'apply_url', 'description', 'employment_type', 'missing'],
+  required: [
+    'is_job',
+    'sender_name',
+    'title',
+    'company',
+    'apply_url',
+    'contact_name',
+    'contact',
+    'description',
+    'employment_type',
+    'missing',
+  ],
 };
 
 async function gemini(prompt: string) {
@@ -134,6 +165,8 @@ export default async (req: Request) => {
         title: str(r.title, 120),
         company: str(r.company, 120),
         apply_url: applyUrl(str(r.apply_url, 300)),
+        contact_name: str(r.contact_name, 80),
+        contact: str(r.contact, 200),
         description: str(r.description, 1000),
         employment_type: oneOf(r.employment_type, EMPLOYMENT) || 'full_time',
         work_mode: oneOf(r.work_mode, WORK_MODE),
@@ -142,12 +175,17 @@ export default async (req: Request) => {
         salary: str(r.salary, 80),
         deadline,
       },
-      missing: Array.isArray(r.missing)
-        ? r.missing
-            .map((m: unknown) => str(m, 200))
-            .filter(Boolean)
-            .slice(0, 5)
-        : [],
+      // Untuk mencocokkan pemilik loker dengan member SWE Growth (di browser).
+      sender_name: str(r.sender_name, 80),
+      missing: [
+        ...(r.is_job === false ? ['Pesan ini sepertinya bukan lowongan kerja. Yakin mau dimasukkan?'] : []),
+        ...(Array.isArray(r.missing)
+          ? r.missing
+              .map((m: unknown) => str(m, 200))
+              .filter(Boolean)
+              .slice(0, 5)
+          : []),
+      ],
     });
   } catch (e) {
     return reply(502, { status: 'error', detail: String(e).slice(0, 300) });

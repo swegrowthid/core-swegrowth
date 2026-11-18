@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, redirect } from 'react-router';
 import type { Route } from './+types/job-manage';
+import { JobInterested } from '~/components/JobInterested';
 import { PortalPage } from '~/components/Portal';
 import { Field, useMutation, val } from '~/lib/admin-form';
 import { requireUser, useAuth } from '~/lib/auth';
@@ -8,6 +9,7 @@ import type { JobRejectReason, JobRow, JobStatus } from '~/lib/database.types';
 import { formatDate } from '~/lib/format';
 import {
   applyLabel,
+  companyLabel,
   deleteJob,
   fetchIsJobPoster,
   formatDeadline,
@@ -46,7 +48,7 @@ const VIEWS: { id: JobStatus; label: string }[] = [
  * Tim loker & admin: review rekomendasi member, sembunyikan loker yang sudah
  * tutup, dan hapus. Loker baru ditambahkan lewat form kirim (langsung tayang).
  */
-export default function JobManage({ loaderData: { jobs, submitters } }: Route.ComponentProps) {
+export default function JobManage({ loaderData: { jobs, submitters, counts } }: Route.ComponentProps) {
   const { user } = useAuth();
   const { busy, run, flash } = useMutation();
   const [view, setView] = useState<JobStatus>('pending');
@@ -56,7 +58,12 @@ export default function JobManage({ loaderData: { jobs, submitters } }: Route.Co
   const countOf = (s: JobStatus) => jobs.filter((j) => j.status === s).length;
   const shown = jobs.filter((j) => j.status === view);
   const duplicateOf = (j: JobRow) =>
-    jobs.find((o) => o.id !== j.id && o.status !== 'rejected' && normalizeApplyUrl(o.apply_url) === normalizeApplyUrl(j.apply_url));
+    j.apply_url
+      ? jobs.find(
+          (o) =>
+            o.id !== j.id && o.status !== 'rejected' && o.apply_url && normalizeApplyUrl(o.apply_url) === normalizeApplyUrl(j.apply_url!),
+        )
+      : undefined;
 
   const reviewed = () => ({ reviewed_by: user?.id ?? null, reviewed_at: new Date().toISOString() });
 
@@ -97,7 +104,7 @@ export default function JobManage({ loaderData: { jobs, submitters } }: Route.Co
       title="Kelola loker"
       intro={
         <>
-          Review rekomendasi member dan rapikan <Link to={JOBS_PATH}>direktori</Link>. Loker yang kamu tambahkan langsung tayang.
+          Tinjau lowongan dari member dan rapikan <Link to={JOBS_PATH}>daftar loker</Link>. Lowongan yang Anda tambahkan langsung tayang.
         </>
       }
       actions={
@@ -141,15 +148,28 @@ export default function JobManage({ loaderData: { jobs, submitters } }: Route.Co
                   <div className="rec-admin-item">
                     <div>
                       <strong>
-                        {j.title} · {j.company}
+                        {j.title} · {companyLabel(j.company)}
                       </strong>
                       <span className="slug">
                         {[...jobMeta(j), j.deadline && `tutup ${formatDeadline(j.deadline)}`].filter(Boolean).join(' · ')}
                       </span>
-                      <a className="slug" href={j.apply_url} target="_blank" rel="noopener nofollow">
-                        {applyLabel(j.apply_url)}
-                      </a>
-                      <p className="rec-admin-reason">{j.description}</p>
+                      {j.apply_url && (
+                        <a className="slug" href={j.apply_url} target="_blank" rel="noopener nofollow">
+                          {applyLabel(j.apply_url)}
+                        </a>
+                      )}
+                      {j.contact && (
+                        <span className="slug">
+                          CP{j.contact_name && ` ${j.contact_name}`}: {j.contact}
+                        </span>
+                      )}
+                      {j.description && <p className="rec-admin-reason">{j.description}</p>}
+                      {j.original_message && (
+                        <details className="job-original">
+                          <summary>Pesan asli</summary>
+                          <p>{j.original_message}</p>
+                        </details>
+                      )}
                       <span className="slug">
                         {j.source === 'poster' ? 'Ditambahkan tim loker' : 'Direkomendasikan'}{' '}
                         {by ? <Link to={`/member/${by.handle}`}>{by.full_name || 'member'}</Link> : '(akun dihapus)'}
@@ -158,6 +178,17 @@ export default function JobManage({ loaderData: { jobs, submitters } }: Route.Co
                         {!j.show_submitter && ' · nama disembunyikan'}
                         {` · ${formatDate(j.created_at)}`}
                       </span>
+                      {j.owner_id && j.owner_id !== j.submitted_by && (
+                        <span className="slug">
+                          Pemilik:{' '}
+                          {submitterOf.get(j.owner_id) ? (
+                            <Link to={`/member/${submitterOf.get(j.owner_id)!.handle}`}>{submitterOf.get(j.owner_id)!.full_name}</Link>
+                          ) : (
+                            '(akun dihapus)'
+                          )}
+                        </span>
+                      )}
+                      {j.status === 'approved' && <JobInterested jobId={j.id} count={counts.get(j.id) ?? 0} />}
                       {j.status === 'rejected' && (
                         <span className="slug">
                           Alasan: {rejectReasonLabel(j.reject_reason)}

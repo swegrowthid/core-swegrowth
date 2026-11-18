@@ -471,7 +471,9 @@ function RegisterCard({ activity: a, stats, my, done }: { activity: Activity; st
         )}
         <p className="register-note">
           {full ? 'Kuota utama penuh; kamu masuk waitlist dan otomatis naik kalau ada yang batal. ' : ''}
-          {user ? 'Isi form singkat, data terisi dari profilmu.' : 'Login sekali, lalu isi form singkat.'}
+          {user
+            ? 'Isi form singkat, data terisi dari profilmu.'
+            : 'Login sekali pakai Google, lalu isi form singkat. Sekali daftar, kamu sekaligus bergabung di komunitas SWE Growth.'}
         </p>
       </>
     );
