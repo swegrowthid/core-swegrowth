@@ -141,3 +141,19 @@ export const normalizeApplyUrl = (url: string) => url.trim().replace(/\/+$/, '')
 
 /** Tampilan link lamaran: email tanpa "mailto:", URL tanpa "https://". */
 export const applyLabel = (url: string) => (url.startsWith('mailto:') ? url.slice(7) : url.replace(/^https:\/\//, ''));
+
+/** Nama perusahaan di kartu; pesan grup kadang tidak menyebutnya. */
+export const companyLabel = (company: string) => company || 'Perusahaan tidak disebut';
+
+/**
+ * Link untuk kontak CP: nomor HP jadi wa.me, email jadi mailto:, URL apa adanya.
+ * null kalau bentuknya tidak dikenali (mis. "@budi di grup"), cukup ditampilkan sebagai teks.
+ */
+export function contactHref(contact: string) {
+  const v = contact.trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return `mailto:${v}`;
+  if (/^https:\/\/\S+$/.test(v)) return v;
+  const digits = v.replace(/[\s().-]/g, '');
+  if (/^(\+?62|0)8\d{7,12}$/.test(digits)) return `https://wa.me/62${digits.replace(/^(\+?62|0)/, '')}`;
+  return null;
+}

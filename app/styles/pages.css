@@ -2169,6 +2169,43 @@ a.contrib-maker:hover {
 .job-autofill .form-message ul {
   margin: 6px 0 0 18px;
 }
+.job-cp-hint {
+  margin: -6px 0 16px;
+}
+.job-cp {
+  position: relative;
+  z-index: 1;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.job-cp a {
+  color: var(--green-deep);
+}
+.job-cp a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* Di atas link kartu supaya bisa dibuka tanpa membuka link lamaran. */
+.job-original {
+  position: relative;
+  z-index: 1;
+  font-size: 0.84rem;
+}
+.job-original summary {
+  cursor: pointer;
+  color: var(--ink-faint);
+  font-weight: 600;
+}
+.job-original p {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--ink-soft);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .rec-meta li.job-deadline {
   background: color-mix(in srgb, var(--yellow) 35%, var(--paper));
   color: var(--ink);

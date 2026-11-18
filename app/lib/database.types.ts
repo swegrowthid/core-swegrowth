@@ -337,9 +337,11 @@ export type JobPosterRow = { user_id: string; added_by: string | null; created_a
 export type JobRow = {
   id: string;
   title: string;
+  /** Kosong kalau pesan di grup tidak menyebut perusahaannya. */
   company: string;
-  /** Link lamaran (https://) atau email HR (mailto:). */
-  apply_url: string;
+  /** Link lamaran (https://) atau email HR (mailto:); null kalau melamar lewat CP. */
+  apply_url: string | null;
+  /** Boleh kosong kalau original_message terisi. */
   description: string;
   employment_type: JobEmploymentType;
   work_mode: JobWorkMode;
@@ -353,6 +355,12 @@ export type JobRow = {
   source: 'poster' | 'member';
   submitted_by: string | null;
   show_submitter: boolean;
+  /** Contact person loker (bisa beda dari pengirim, mis. admin menginput dari grup). */
+  contact_name: string;
+  /** Nomor WA, email, LinkedIn, dll. Wajib kalau apply_url kosong. */
+  contact: string;
+  /** Pesan asli dari grup WhatsApp, apa adanya. */
+  original_message: string;
   submitter_relation: JobSubmitterRelation;
   /** Pengirim bersedia ditanya-tanya soal loker ini. */
   open_to_questions: boolean;
@@ -382,8 +390,13 @@ export type PublishedJob = Pick<
   | 'source'
   | 'submitter_relation'
   | 'open_to_questions'
+  | 'contact_name'
+  | 'original_message'
   | 'created_at'
 > & {
+  /** null untuk pengunjung yang belum login (lihat has_contact). */
+  contact: string | null;
+  has_contact: boolean;
   submitter_name: string | null;
   submitter_handle: string | null;
   submitter_avatar_url: string | null;
@@ -442,7 +455,7 @@ export type Database = {
       recommendations: Table<RecommendationRow, 'category' | 'title' | 'url' | 'reason', Timestamps>;
       recommendation_topics: Table<RecommendationTopicRow, 'name', 'created_at'>;
       job_posters: Table<JobPosterRow, 'user_id', 'created_at'>;
-      jobs: Table<JobRow, 'title' | 'company' | 'apply_url' | 'description', Timestamps>;
+      jobs: Table<JobRow, 'title', Timestamps>;
       activity_questions: Table<ActivityQuestionRow, 'activity_id' | 'body', Timestamps>;
       activity_question_votes: Table<ActivityQuestionVoteRow, 'question_id' | 'user_id', 'created_at'>;
       activity_feedback: Table<ActivityFeedbackRow, 'activity_id' | 'user_id' | 'rating', 'created_at' | 'updated_at'>;
@@ -460,9 +473,9 @@ export type Database = {
       submit_job: {
         Args: {
           p_title: string;
-          p_company: string;
-          p_apply_url: string;
-          p_description: string;
+          p_company?: string;
+          p_apply_url?: string | null;
+          p_description?: string;
           p_employment_type?: JobEmploymentType;
           p_work_mode?: JobWorkMode;
           p_location?: string;
@@ -472,6 +485,9 @@ export type Database = {
           p_show_submitter?: boolean;
           p_submitter_relation?: JobSubmitterRelation;
           p_open_to_questions?: boolean;
+          p_contact_name?: string;
+          p_contact?: string;
+          p_original_message?: string;
           p_id?: string | null;
         };
         Returns: string;

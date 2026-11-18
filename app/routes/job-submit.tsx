@@ -43,15 +43,21 @@ export default function JobSubmit({ loaderData: { editing, isPoster } }: Route.C
   return <SubmitForm key={editing?.id ?? 'new'} editing={editing} isPoster={isPoster} />;
 }
 
-/** "nama@x.com" jadi mailto:, URL tanpa skema jadi https://. */
+/** "nama@x.com" jadi mailto:, URL tanpa skema jadi https://, kosong jadi null (melamar lewat CP). */
 const normalizeApply = (v: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? `mailto:${v}` : /^(https:\/\/|mailto:)/.test(v) ? v : `https://${v.replace(/^http:\/\//, '')}`;
+  !v
+    ? null
+    : /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+      ? `mailto:${v}`
+      : /^(https:\/\/|mailto:)/.test(v)
+        ? v
+        : `https://${v.replace(/^http:\/\//, '')}`;
 
 /** Isian form yang dipakai sebagai defaultValue; diganti saat isi otomatis dari pesan WA. */
 type Draft = Pick<
   JobRow,
-  'title' | 'company' | 'apply_url' | 'description' | 'employment_type' | 'work_mode' | 'location' | 'salary' | 'deadline'
-> & { level: JobLevel | '' };
+  'title' | 'company' | 'description' | 'employment_type' | 'work_mode' | 'location' | 'salary' | 'deadline' | 'contact_name' | 'contact'
+> & { apply_url: string; level: JobLevel | '' };
 
 const EMPTY_DRAFT: Draft = {
   title: '',
@@ -64,10 +70,12 @@ const EMPTY_DRAFT: Draft = {
   level: '',
   salary: '',
   deadline: null,
+  contact_name: '',
+  contact: '',
 };
 
 const draftOf = (j: JobRow | null): Draft =>
-  j ? { ...j, apply_url: j.apply_url.replace(/^mailto:/, ''), level: j.level ?? '' } : EMPTY_DRAFT;
+  j ? { ...j, apply_url: (j.apply_url ?? '').replace(/^mailto:/, ''), level: j.level ?? '' } : EMPTY_DRAFT;
 
 function readDraft(form: HTMLFormElement): Draft {
   const data = new FormData(form);
@@ -83,6 +91,8 @@ function readDraft(form: HTMLFormElement): Draft {
     level: val('level') as JobLevel | '',
     salary: val('salary'),
     deadline: val('deadline') || null,
+    contact_name: val('contact_name'),
+    contact: val('contact'),
   };
 }
 
@@ -90,7 +100,8 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
   const formRef = useRef<HTMLFormElement>(null);
   const [draft, setDraft] = useState(() => draftOf(editing));
   const [descLength, setDescLength] = useState(editing?.description.length ?? 0);
-  const [message, setMessage] = useState('');
+  // Pesan asli dari grup: bahan isi otomatis sekaligus disimpan dan bisa dibaca di kartu.
+  const [message, setMessage] = useState(editing?.original_message ?? '');
   const [parsing, setParsing] = useState(false);
   const [parseNote, setParseNote] = useState<{ kind: 'success' | 'error'; text: string; missing: string[] } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -124,8 +135,12 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
     const form = new FormData(e.currentTarget);
     const val = (name: string) => String(form.get(name) ?? '').trim();
 
-    if (val('description').length < DESC_MIN) {
-      setError(`Tulis ringkasan lowongannya minimal ${DESC_MIN} karakter, ya.`);
+    if (!message.trim() && val('description').length < DESC_MIN) {
+      setError(`Tulis ringkasan lowongannya minimal ${DESC_MIN} karakter, atau tempel pesan aslinya dari grup.`);
+      return;
+    }
+    if (!val('apply_url') && !val('contact')) {
+      setError('Isi link lamaran atau kontak CP, supaya pelamar tahu harus ke mana.');
       return;
     }
 
@@ -146,6 +161,9 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
       p_submitter_relation: val('submitter_relation') as JobSubmitterRelation,
       // Bisa ditanya hanya kalau namanya tampil, supaya pembaca tahu harus menghubungi siapa.
       p_open_to_questions: showName && form.get('open_to_questions') === 'on',
+      p_contact_name: val('contact_name'),
+      p_contact: val('contact'),
+      p_original_message: message.trim(),
       p_id: editing?.id ?? null,
     });
     setBusy(false);
@@ -205,42 +223,41 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
         <Link className="back" to={isPoster ? JOB_MANAGE_PATH : '/portal/lokerku'}>
           ← {isPoster ? 'Kelola loker' : 'Lokerku'}
         </Link>
-        {!editing && (
-          <div className="form-card job-autofill">
-            <div className="field">
-              <label htmlFor="j_paste">
-                <b>Isi otomatis dari pesan WhatsApp</b>
-                <small> (opsional)</small>
-              </label>
-              <textarea
-                id="j_paste"
-                rows={4}
-                maxLength={4000}
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Tempel pesan loker dari grup di sini, lalu klik Isi form."
-              />
-            </div>
-            <div className="inline-actions">
-              <button className="btn btn-ghost sm" type="button" disabled={parsing || message.trim().length < 20} onClick={autofill}>
-                {parsing ? 'Membaca pesan…' : 'Isi form'}
-              </button>
-              <small className="field-hint">Dibaca AI (Gemini). Hasilnya selalu cek ulang dulu.</small>
-            </div>
-            {parseNote && (
-              <div className={`form-message ${parseNote.kind}`} role="status">
-                {parseNote.text}
-                {parseNote.missing.length > 0 && (
-                  <ul>
-                    {parseNote.missing.map((m) => (
-                      <li key={m}>{m}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
+        <div className="form-card job-autofill">
+          <div className="field">
+            <label htmlFor="j_paste">
+              <b>Pesan asli dari grup</b>
+              <small> (opsional)</small>
+            </label>
+            <textarea
+              id="j_paste"
+              rows={4}
+              maxLength={4000}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Tempel pesan loker dari grup WhatsApp di sini, lalu klik Isi form dari pesan."
+            />
+            <small className="field-hint">Disimpan apa adanya dan bisa dibaca di kartu loker. Hapus nomor pribadi yang tidak perlu.</small>
           </div>
-        )}
+          <div className="inline-actions">
+            <button className="btn btn-ghost sm" type="button" disabled={parsing || message.trim().length < 20} onClick={autofill}>
+              {parsing ? 'Membaca pesan…' : 'Isi form dari pesan'}
+            </button>
+            <small className="field-hint">Dibaca AI (Gemini). Hasilnya selalu cek ulang dulu.</small>
+          </div>
+          {parseNote && (
+            <div className={`form-message ${parseNote.kind}`} role="status">
+              {parseNote.text}
+              {parseNote.missing.length > 0 && (
+                <ul>
+                  {parseNote.missing.map((m) => (
+                    <li key={m}>{m}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
         <form key={formKey} ref={formRef} className="form-card rec-form" onSubmit={onSubmit}>
           <h1 className="page-title">{editing ? 'Edit loker' : isPoster ? 'Tambah loker' : 'Rekomendasikan loker'}</h1>
           <p className="form-sub">
@@ -267,32 +284,48 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
             />
           </Field>
 
-          <Field id="j_company" label="Perusahaan">
-            <input id="j_company" name="company" required maxLength={120} defaultValue={draft.company} />
+          <Field id="j_company" label="Perusahaan" optional hint="Kosongkan kalau pesannya tidak menyebut perusahaan.">
+            <input id="j_company" name="company" maxLength={120} defaultValue={draft.company} />
           </Field>
 
           <Field
             id="j_apply"
             label="Link lamaran atau email HR"
-            hint="Link resmi (LinkedIn, situs karier), email untuk kirim CV, atau link WhatsApp https://wa.me/62…"
+            optional
+            hint="Link resmi (LinkedIn, situs karier) atau email untuk kirim CV. Boleh kosong kalau melamar lewat CP."
           >
             <input
               id="j_apply"
               name="apply_url"
-              required
               maxLength={300}
               defaultValue={draft.apply_url}
               placeholder="https://… atau hr@perusahaan.com"
             />
           </Field>
 
-          <Field id="j_desc" label="Ringkasan" hint={`${descLength}/${DESC_MAX} · tanggung jawab, kualifikasi utama, stack.`}>
+          <div className="rec-row">
+            <Field id="j_cp_name" label="Nama CP" optional>
+              <input id="j_cp_name" name="contact_name" maxLength={80} defaultValue={draft.contact_name} placeholder="Mis. Rina" />
+            </Field>
+            <Field id="j_cp" label="Kontak CP" optional>
+              <input id="j_cp" name="contact" maxLength={200} defaultValue={draft.contact} placeholder="No. WA, email, atau LinkedIn" />
+            </Field>
+          </div>
+          <p className="field-hint job-cp-hint">
+            Contact person untuk ditanya-tanya atau kirim CV, biasanya yang membagikan loker di grup (bukan kamu, kalau kamu cuma
+            menginput). Kontak CP hanya terlihat oleh yang sudah login.
+          </p>
+
+          <Field
+            id="j_desc"
+            label="Ringkasan"
+            optional={Boolean(message.trim())}
+            hint={`${descLength}/${DESC_MAX} · tanggung jawab, kualifikasi utama, stack.`}
+          >
             <textarea
               id="j_desc"
               name="description"
               rows={5}
-              required
-              minLength={DESC_MIN}
               maxLength={DESC_MAX}
               defaultValue={draft.description}
               placeholder="Mis. Bangun layanan pembayaran pakai Go & PostgreSQL. Min. 2 tahun pengalaman backend."

@@ -11,6 +11,9 @@ export type ParsedJob = {
   company: string;
   /** Email, https://, atau kosong. */
   apply_url: string;
+  contact_name: string;
+  /** Nomor WA, @username, atau LinkedIn CP; kosong kalau tidak tertulis. */
+  contact: string;
   description: string;
   employment_type: JobEmploymentType;
   work_mode: JobWorkMode | '';

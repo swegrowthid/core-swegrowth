@@ -5,6 +5,7 @@ import { LoadError, PortalPage } from '~/components/Portal';
 import { requireUser } from '~/lib/auth';
 import type { JobRow } from '~/lib/database.types';
 import {
+  companyLabel,
   fetchMyJobs,
   JOB_SUBMIT_PATH as SUBMIT_PATH,
   JOBS_PATH,
@@ -103,7 +104,7 @@ export default function PortalJobs({ loaderData: { items } }: Route.ComponentPro
                 <div className="row-main">
                   <strong>{r.title}</strong>
                   <span>
-                    {r.company} · {RELATION_LABEL[r.submitter_relation].form}
+                    {companyLabel(r.company)} · {RELATION_LABEL[r.submitter_relation].form}
                     {r.status === 'rejected' && rejectReasonLabel(r.reject_reason) && ` · ${rejectReasonLabel(r.reject_reason)}`}
                     {r.status === 'rejected' && r.reject_note && ` · ${r.reject_note}`}
                   </span>

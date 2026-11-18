@@ -8,6 +8,7 @@ import type { JobRejectReason, JobRow, JobStatus } from '~/lib/database.types';
 import { formatDate } from '~/lib/format';
 import {
   applyLabel,
+  companyLabel,
   deleteJob,
   fetchIsJobPoster,
   formatDeadline,
@@ -56,7 +57,12 @@ export default function JobManage({ loaderData: { jobs, submitters } }: Route.Co
   const countOf = (s: JobStatus) => jobs.filter((j) => j.status === s).length;
   const shown = jobs.filter((j) => j.status === view);
   const duplicateOf = (j: JobRow) =>
-    jobs.find((o) => o.id !== j.id && o.status !== 'rejected' && normalizeApplyUrl(o.apply_url) === normalizeApplyUrl(j.apply_url));
+    j.apply_url
+      ? jobs.find(
+          (o) =>
+            o.id !== j.id && o.status !== 'rejected' && o.apply_url && normalizeApplyUrl(o.apply_url) === normalizeApplyUrl(j.apply_url!),
+        )
+      : undefined;
 
   const reviewed = () => ({ reviewed_by: user?.id ?? null, reviewed_at: new Date().toISOString() });
 
@@ -141,15 +147,28 @@ export default function JobManage({ loaderData: { jobs, submitters } }: Route.Co
                   <div className="rec-admin-item">
                     <div>
                       <strong>
-                        {j.title} · {j.company}
+                        {j.title} · {companyLabel(j.company)}
                       </strong>
                       <span className="slug">
                         {[...jobMeta(j), j.deadline && `tutup ${formatDeadline(j.deadline)}`].filter(Boolean).join(' · ')}
                       </span>
-                      <a className="slug" href={j.apply_url} target="_blank" rel="noopener nofollow">
-                        {applyLabel(j.apply_url)}
-                      </a>
-                      <p className="rec-admin-reason">{j.description}</p>
+                      {j.apply_url && (
+                        <a className="slug" href={j.apply_url} target="_blank" rel="noopener nofollow">
+                          {applyLabel(j.apply_url)}
+                        </a>
+                      )}
+                      {j.contact && (
+                        <span className="slug">
+                          CP{j.contact_name && ` ${j.contact_name}`}: {j.contact}
+                        </span>
+                      )}
+                      {j.description && <p className="rec-admin-reason">{j.description}</p>}
+                      {j.original_message && (
+                        <details className="job-original">
+                          <summary>Pesan asli</summary>
+                          <p>{j.original_message}</p>
+                        </details>
+                      )}
                       <span className="slug">
                         {j.source === 'poster' ? 'Ditambahkan tim loker' : 'Direkomendasikan'}{' '}
                         {by ? <Link to={`/member/${by.handle}`}>{by.full_name || 'member'}</Link> : '(akun dihapus)'}
