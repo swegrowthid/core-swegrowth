@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import type { Route } from './+types/recordings';
 import { RecordingGrid } from '~/components/RecordingGrid';
-import { getRecordings, YOUTUBE_CHANNEL_URL } from '~/lib/recordings';
+import { getRecordings, mergeRecordings, YOUTUBE_CHANNEL_URL } from '~/lib/recordings';
 import { pageMeta } from '~/lib/site';
 
 export const meta: Route.MetaFunction = () =>
@@ -12,9 +12,21 @@ export async function loader() {
   return { ...(await getRecordings()), live: false };
 }
 
-/** Di browser: selalu ambil yang terbaru. */
-export async function clientLoader() {
-  return { ...(await getRecordings()), live: true };
+/**
+ * Di browser: ambil yang terbaru. Kalau ada sumber yang gagal, hasilnya digabung
+ * dengan snapshot build, jadi daftar yang sudah tampil tidak berkurang.
+ */
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+  const fresh = await getRecordings();
+  if (fresh.complete) return { ...fresh, live: true };
+  const snapshot = await serverLoader().catch(() => null);
+  if (!snapshot) return { ...fresh, live: true };
+  return {
+    recordings: mergeRecordings(fresh.recordings, snapshot.recordings),
+    channelOk: fresh.channelOk || snapshot.channelOk,
+    complete: false,
+    live: true,
+  };
 }
 clientLoader.hydrate = true as const;
 

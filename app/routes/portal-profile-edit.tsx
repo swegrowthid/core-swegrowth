@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router';
 import type { Route } from './+types/portal-profile-edit';
-import { PortalHeader } from '~/components/PortalHeader';
+import { PortalPage } from '~/components/Portal';
 import { ProfileForm } from '~/components/ProfileForm';
 import { fetchProfile, requireUser, useAuth } from '~/lib/auth';
 
@@ -18,26 +18,21 @@ export default function PortalProfileEdit({ loaderData: { profile, email } }: Ro
   const navigate = useNavigate();
 
   return (
-    <>
-      <PortalHeader />
-      <section className="block tight-top">
-        <div className="wrap narrow-wrap">
-          <Link className="back" to="/portal/profil">
-            ← Profil
+    <PortalPage title="Edit profil" intro="Profil tampil publik, kecuali nomor WhatsApp dan email yang hanya terlihat oleh kamu dan admin.">
+      <p className="muted mb-12">Email akun: {email}</p>
+      <ProfileForm
+        profile={profile}
+        submitLabel="Simpan profil"
+        cancel={
+          <Link className="btn btn-ghost" to="/portal/profil">
+            Batal
           </Link>
-          <p className="muted mb-18">
-            Email akun: {email}. Profil tampil publik, kecuali nomor WhatsApp dan email yang hanya terlihat oleh kamu dan admin.
-          </p>
-          <ProfileForm
-            profile={profile}
-            submitLabel="Simpan profil"
-            onSaved={async () => {
-              await refreshProfile();
-              navigate('/portal/profil');
-            }}
-          />
-        </div>
-      </section>
-    </>
+        }
+        onSaved={async () => {
+          await refreshProfile();
+          navigate('/portal/profil', { state: { saved: true } });
+        }}
+      />
+    </PortalPage>
   );
 }

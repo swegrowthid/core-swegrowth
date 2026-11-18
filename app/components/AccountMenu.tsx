@@ -3,8 +3,11 @@ import { Link, useLocation } from 'react-router';
 import { displayName, useAuth, useSignOut } from '~/lib/auth';
 import { Avatar } from './Avatar';
 
-/** Menu akun di navbar: pintasan portal & profil, lalu Keluar. */
-export function AccountMenu() {
+/**
+ * Menu akun di navbar: pintasan akun lalu Keluar. Disclosure biasa (tombol + daftar link),
+ * bukan role="menu", supaya Tab bekerja seperti yang diharapkan.
+ */
+export function AccountMenu({ portal = false }: { portal?: boolean }) {
   const { user, profile, isAdmin } = useAuth();
   const { signOut, busy } = useSignOut();
   const [open, setOpen] = useState(false);
@@ -25,7 +28,11 @@ export function AccountMenu() {
     const onClick = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     };
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setOpen(false);
+      ref.current?.querySelector<HTMLButtonElement>('.nav-account')?.focus();
+    };
     document.addEventListener('click', onClick);
     document.addEventListener('keydown', onKey);
     return () => {
@@ -39,8 +46,8 @@ export function AccountMenu() {
       <button
         type="button"
         className="nav-account"
-        aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls="account-pop"
         aria-label={`Menu akun ${name}`}
         onClick={(e) => {
           e.stopPropagation();
@@ -64,29 +71,23 @@ export function AccountMenu() {
       </button>
 
       {open && (
-        <div className="account-pop" role="menu">
+        <div className="account-pop" id="account-pop">
           <div className="account-who">
             <strong>{name}</strong>
             {user?.email && <span>{user.email}</span>}
           </div>
-          <Link role="menuitem" to="/portal">
-            Portal
-          </Link>
-          <Link role="menuitem" to="/portal/profil">
-            Profil saya
-          </Link>
-          <Link role="menuitem" to="/portal/profil/edit">
-            Edit profil
-          </Link>
-          <Link role="menuitem" to="/portal#rekomendasiku">
-            Rekomendasiku
-          </Link>
-          {isAdmin && (
-            <Link role="menuitem" to="/admin">
-              Admin
+          {!portal && <Link to="/portal">Portal</Link>}
+          <Link to="/portal/profil">Profil saya</Link>
+          <Link to="/portal/profil/edit">Edit profil</Link>
+          <Link to="/portal/rekomendasiku">Rekomendasiku</Link>
+          <Link to="/portal/lokerku">Lokerku</Link>
+          {isAdmin && <Link to="/admin">Admin</Link>}
+          {portal && (
+            <Link className="account-public" to="/">
+              Situs publik
             </Link>
           )}
-          <button role="menuitem" type="button" className="account-out" disabled={busy} onClick={signOut}>
+          <button type="button" className="account-out" disabled={busy} onClick={signOut}>
             {busy ? 'Keluar…' : 'Keluar'}
           </button>
         </div>

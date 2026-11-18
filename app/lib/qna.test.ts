@@ -134,14 +134,26 @@ describe('screenQuestions', () => {
     q('e', { votes: 0, created_at: '2026-11-14T10:09:00Z' }),
   ];
 
-  it('3 teratas + pertanyaan terbaru di bawah', () => {
-    const { list: top, latest } = screenQuestions(list, 'popular');
+  it('tanpa batas: semua pertanyaan tampil sesuai urutan', () => {
+    const { list: all, latest } = screenQuestions(list, 'popular');
+    expect(all.map((x) => x.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(latest).toBeNull();
+  });
+
+  it('tanpa batas: yang disorot di atas, sisanya lengkap', () => {
+    const { current, list: rest } = screenQuestions(list, 'popular', undefined, 'd');
+    expect(current?.id).toBe('d');
+    expect(rest.map((x) => x.id)).toEqual(['a', 'b', 'c', 'e']);
+  });
+
+  it('dibatasi 4: 3 teratas + pertanyaan terbaru di bawah', () => {
+    const { list: top, latest } = screenQuestions(list, 'popular', 4);
     expect(top.map((x) => x.id)).toEqual(['a', 'b', 'c']);
     expect(latest?.id).toBe('e');
   });
 
   it('terbaru sudah masuk daftar: tanpa bagian terbaru, 4 kartu', () => {
-    const { list: top, latest } = screenQuestions(list.slice(0, 4), 'popular');
+    const { list: top, latest } = screenQuestions(list.slice(0, 4), 'popular', 4);
     expect(top.map((x) => x.id)).toEqual(['a', 'b', 'c', 'd']);
     expect(latest).toBeNull();
   });

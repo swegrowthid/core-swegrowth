@@ -33,7 +33,7 @@ export async function clientLoader({ request, params }: Route.ClientLoaderArgs) 
   const [registration, links, profile, motivation] = await Promise.all([
     fetchMyRegistration(activity.id, user.id),
     fetchActivityLinks(activity.id),
-    fetchProfile(user.id),
+    fetchProfile(user.id).catch(() => null),
     fetchMotivation(user.id),
   ]);
   if (!registration || !isActiveRegistration(registration.status)) throw redirect(activityPath(activity));

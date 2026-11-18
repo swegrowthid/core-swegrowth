@@ -12,6 +12,7 @@ import {
   SUBMIT_PATH,
 } from '~/lib/recommendations';
 import { pageMeta } from '~/lib/site';
+import { liveOrSnapshot } from '~/lib/snapshot';
 
 export const meta: Route.MetaFunction = () =>
   pageMeta(
@@ -20,8 +21,8 @@ export const meta: Route.MetaFunction = () =>
   );
 
 /** Saat build: snapshot untuk HTML prerender. */
-const load = async () => {
-  const [items, topics] = await Promise.all([getPublishedRecommendations(), getRecommendationTopics()]);
+const load = async (strict = false) => {
+  const [items, topics] = await Promise.all([getPublishedRecommendations({ strict }), getRecommendationTopics({ strict })]);
   return { items, topics };
 };
 
@@ -29,9 +30,9 @@ export async function loader() {
   return load();
 }
 
-/** Di browser: selalu ambil yang terbaru. */
-export async function clientLoader() {
-  return load();
+/** Di browser: ambil yang terbaru; kalau gagal, snapshot build tetap dipakai. */
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+  return liveOrSnapshot(() => load(true), serverLoader);
 }
 clientLoader.hydrate = true as const;
 

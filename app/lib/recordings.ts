@@ -50,8 +50,24 @@ export function recordingsFrom(activities: Activity[], channel: ChannelVideo[] =
     .sort((x, y) => y.date.localeCompare(x.date));
 }
 
-/** `channelOk` false = feed YouTube gagal diambil, jadi daftarnya belum lengkap. */
+/**
+ * `channelOk` false = feed YouTube gagal diambil; `complete` false = salah satu sumber gagal,
+ * jadi daftarnya belum lengkap.
+ */
 export async function getRecordings() {
-  const [activities, channel] = await Promise.all([getPublishedActivities(), getChannelVideos()]);
-  return { recordings: recordingsFrom(activities, channel ?? []), channelOk: channel !== null };
+  const [activities, channel] = await Promise.all([getPublishedActivities({ strict: true }).catch(() => null), getChannelVideos()]);
+  return {
+    recordings: recordingsFrom(activities ?? [], channel ?? []),
+    channelOk: channel !== null,
+    complete: activities !== null && channel !== null,
+  };
+}
+
+/**
+ * Daftar dari browser yang belum lengkap dilengkapi snapshot build, supaya
+ * galeri tidak menyusut saat feed YouTube atau database sedang gagal diambil.
+ */
+export function mergeRecordings(live: Recording[], snapshot: Recording[]): Recording[] {
+  const seen = new Set(live.map((r) => r.videoId));
+  return [...live, ...snapshot.filter((r) => !seen.has(r.videoId))].sort((x, y) => y.date.localeCompare(x.date));
 }

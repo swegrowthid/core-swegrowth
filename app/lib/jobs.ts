@@ -108,8 +108,15 @@ export const JOB_MANAGE_PATH = '/loker/kelola';
 
 export const submitJob = (args: Database['public']['Functions']['submit_job']['Args']) => supabase().rpc('submit_job', args);
 
-/** Tarik kiriman sendiri; RLS hanya mengizinkan selama masih pending. */
-export const withdrawJob = (id: string) => supabase().from('jobs').delete().eq('id', id);
+/**
+ * Tarik kiriman sendiri; RLS hanya mengizinkan selama masih pending. Delete yang ditolak RLS
+ * tidak memberi error, jadi baris yang terhapus dihitung: 0 berarti kiriman sudah tidak bisa ditarik.
+ */
+export async function withdrawJob(id: string): Promise<'ok' | 'locked' | 'failed'> {
+  const { data, error } = await supabase().from('jobs').delete().eq('id', id).select('id');
+  if (error) return 'failed';
+  return data && data.length > 0 ? 'ok' : 'locked';
+}
 
 // ---------------------------------------------------------------------------
 // Kelola (tim loker & admin); hak akses dijaga RLS is_job_poster().

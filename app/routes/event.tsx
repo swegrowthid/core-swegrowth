@@ -33,6 +33,7 @@ import {
 import { useAuth } from '~/lib/auth';
 import type { RegistrationStatus } from '~/lib/database.types';
 import { formatWibDate, formatWibDay, formatWibTime } from '~/lib/format';
+import { ogImage, ogPaths } from '~/lib/og';
 import { qnaPath } from '~/lib/qna';
 import { pageMeta } from '~/lib/site';
 import { youtubeId } from '~/lib/youtube';
@@ -41,39 +42,31 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
   const a = loaderData?.activity;
   if (!a) return [{ title: 'Kegiatan tidak ditemukan — SWE Growth' }];
   const when = a.starts_at ? `${formatWibDate(a.starts_at)}, ${formatWibTime(a.starts_at)}. ` : '';
-  return [
-    ...pageMeta(`${a.title} — SWE Growth`, `${when}${a.summary || 'Kegiatan komunitas SWE Growth.'}`),
-    ...(a.image_url ? [{ property: 'og:image', content: a.image_url }] : []),
-  ];
+  // Poster dari admin diutamakan; kalau tidak ada, kartu bergaya poster yang dibuat saat build.
+  const image = a.image_url || ogImage(ogPaths.event(a.slug), a.updated_at);
+  return pageMeta(`${a.title} — SWE Growth`, `${when}${a.summary || 'Kegiatan komunitas SWE Growth.'}`, image);
 };
 
 /**
  * Detail event publik. Pendaftaran tiga langkah:
  * detail (tombol Daftar) → /daftar (form, terisi dari profil) → /terdaftar (konfirmasi).
  *
- * Kegiatan publik di-prerender saat build (lihat react-router.config.ts) supaya
- * isinya langsung tampil; di browser data selalu diambil ulang. Slug yang belum
- * ada saat build dilayani SPA fallback.
+ * Dimuat di browser (SPA). Meta preview link untuk crawler disisipkan edge
+ * function event-preview, jadi halaman ini tidak perlu di-build ulang saat
+ * event diubah.
  */
 const load = async (slug: string) => {
   // Subgrup diambil bersamaan (tabel kecil) supaya tidak menunggu id penyelenggara dulu.
-  const [activity, groups] = await Promise.all([getPublishedActivityBySlug(slug), getCommunityGroups()]);
-  if (!activity) throw data(null, { status: 404 });
-  return { activity, organizer: organizerOf(activity, groups) };
+  const [activity, groups] = await Promise.all([getPublishedActivityBySlug(slug, { strict: true }), getCommunityGroups({ strict: true })]);
+  return activity ? { activity, organizer: organizerOf(activity, groups) } : null;
 };
 
-/** Saat build: snapshot untuk HTML prerender. */
-export async function loader({ params }: Route.LoaderArgs) {
-  const loaded = await load(params.slug);
-  return { ...loaded, stats: await fetchPublicStats(loaded.activity.id), now: Date.now() };
-}
-
-/** Di browser: halaman tampil begitu kegiatannya ada, kuota menyusul (butuh id kegiatan). */
+/** Halaman tampil begitu kegiatannya ada, kuota menyusul (butuh id kegiatan). Gagal muat ke ErrorBoundary, bukan "tidak ditemukan". */
 export async function clientLoader({ params }: Route.ClientLoaderArgs) {
   const loaded = await load(params.slug);
+  if (!loaded) throw data(null, { status: 404 });
   return { ...loaded, stats: fetchPublicStats(loaded.activity.id), now: Date.now() };
 }
-clientLoader.hydrate = true as const;
 
 type Stats = Awaited<ReturnType<typeof fetchPublicStats>>;
 type StatsData = Stats | Promise<Stats>;

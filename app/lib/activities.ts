@@ -126,13 +126,14 @@ export function recurrenceRule(a: Schedule) {
 
 export type CommunityGroup = CommunityGroupRow;
 
-export async function getCommunityGroups(): Promise<CommunityGroup[]> {
+export async function getCommunityGroups({ strict = false } = {}): Promise<CommunityGroup[]> {
   // Bisa dibaca semua orang (RLS), jadi tidak perlu menunggu sesi.
   const db = anonSupabase();
   if (!db) return [];
   const { data, error } = await db.from('community_groups').select('*').order('sort_order').order('name');
   if (error) {
     console.error('Tidak dapat mengambil subgrup komunitas:', error.message);
+    if (strict) throw error;
     return [];
   }
   return data;
@@ -155,7 +156,9 @@ export function client() {
 }
 
 // Filter is_public sama dengan RLS anon, jadi client tanpa sesi cukup (dan tidak menunggu auth).
-export async function getPublishedActivities(): Promise<Activity[]> {
+// Saat build, gagal = daftar kosong. Di browser pakai { strict: true } supaya gagal muat tidak
+// tampil sebagai "belum ada agenda" (halaman publik lalu memakai snapshot build, lihat lib/snapshot).
+export async function getPublishedActivities({ strict = false } = {}): Promise<Activity[]> {
   const db = anonSupabase();
   if (!db) return [];
 
@@ -167,6 +170,7 @@ export async function getPublishedActivities(): Promise<Activity[]> {
 
   if (error) {
     console.error('Tidak dapat mengambil activity dari Supabase:', error.message);
+    if (strict) throw error;
     return [];
   }
   return data;
@@ -205,7 +209,7 @@ export async function getPublishedActivitySlugs(): Promise<string[]> {
 }
 
 // Filter is_public sama dengan RLS anon, jadi client tanpa sesi cukup (dan tidak menunggu auth).
-export async function getPublishedActivityBySlug(slug: string): Promise<Activity | null> {
+export async function getPublishedActivityBySlug(slug: string, { strict = false } = {}): Promise<Activity | null> {
   const db = anonSupabase();
   if (!db) return null;
 
@@ -213,6 +217,8 @@ export async function getPublishedActivityBySlug(slug: string): Promise<Activity
 
   if (error) {
     console.error('Tidak dapat mengambil activity dari Supabase:', error.message);
+    // Gagal muat bukan "kegiatan tidak ditemukan".
+    if (strict) throw error;
     return null;
   }
   // Event berulang tampil dengan jadwal sesi berikutnya.
@@ -387,10 +393,12 @@ export async function fetchActivityLinks(activityId: string) {
 
 /** Status pendaftaran aktif (bukan batal) milik user, per event. */
 export async function fetchMyRegistrationStatuses(userId: string) {
-  const { data } = await supabase()
+  const { data, error } = await supabase()
     .from('activity_registrations')
     .select('activity_id, status')
     .eq('user_id', userId)
     .neq('status', 'cancelled');
+  // Lempar, bukan []: daftar kosong berarti "belum daftar apa pun", padahal yang terjadi gagal muat.
+  if (error) throw error;
   return data ?? [];
 }

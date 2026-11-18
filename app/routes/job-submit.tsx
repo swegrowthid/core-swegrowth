@@ -30,7 +30,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   if (!editId) return { editing: null, isPoster };
 
   const data = await fetchOwnJob(editId, user.id);
-  if (!data || (data.status !== 'pending' && !isPoster)) throw redirect('/portal');
+  if (!data || (data.status !== 'pending' && !isPoster)) throw redirect('/portal/lokerku');
   return { editing: data, isPoster };
 }
 
@@ -94,8 +94,8 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
 
   if (done) {
     return (
-      <section className="block">
-        <div className="wrap narrow-wrap">
+      <div className="portal-narrow">
+        <div>
           <div className="form-card rec-done">
             <span className="check-badge" aria-hidden="true">
               ✓
@@ -107,7 +107,7 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
                 : 'Tim loker cek dulu sebelum tayang di direktori. Statusnya bisa kamu pantau di portal.'}
             </p>
             <div className="inline-actions">
-              <Link className="btn btn-primary" to={isPoster ? JOBS_PATH : '/portal#lokerku'}>
+              <Link className="btn btn-primary" to={isPoster ? JOBS_PATH : '/portal/lokerku'}>
                 {isPoster ? 'Lihat direktori' : 'Lihat status di portal'}
               </Link>
               {!editing && (
@@ -127,15 +127,15 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
             </div>
           </div>
         </div>
-      </section>
+      </div>
     );
   }
 
   return (
-    <section className="block">
-      <div className="wrap narrow-wrap rec-form-wrap">
-        <Link className="back" to={isPoster ? JOB_MANAGE_PATH : JOBS_PATH}>
-          ← {isPoster ? 'Kelola loker' : 'Loker'}
+    <div className="portal-narrow">
+      <div className="rec-form-wrap">
+        <Link className="back" to={isPoster ? JOB_MANAGE_PATH : '/portal/lokerku'}>
+          ← {isPoster ? 'Kelola loker' : 'Lokerku'}
         </Link>
         <form key={formKey} className="form-card rec-form" onSubmit={onSubmit}>
           <h1 className="page-title">{editing ? 'Edit loker' : isPoster ? 'Tambah loker' : 'Rekomendasikan loker'}</h1>
@@ -269,6 +269,6 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
           </button>
         </form>
       </div>
-    </section>
+    </div>
   );
 }

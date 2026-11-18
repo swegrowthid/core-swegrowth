@@ -1,4 +1,6 @@
 build/
+.claude/
+.impeccable/
 .react-router/
 package-lock.json
 supabase/migrations/

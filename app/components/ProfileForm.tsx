@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { Experience, ProfileRow, Seniority } from '~/lib/database.types';
 import {
   isLinkedinUrl,
@@ -16,6 +16,8 @@ type Props = {
   profile: ProfileRow;
   submitLabel: string;
   onSaved: (profile: ProfileRow) => void;
+  /** Aksi kedua di samping tombol simpan, mis. link Batal. */
+  cancel?: ReactNode;
 };
 
 type ExperienceDraft = Experience & { key: number; current: boolean };
@@ -25,13 +27,31 @@ const toDraft = (e: Experience): ExperienceDraft => ({ ...e, key: nextKey++, cur
 const emptyDraft = (): ExperienceDraft => toDraft({ role: '', company: '', start: '', end: null, description: '' });
 
 /** Data member: kontak, karier, keahlian, teknologi, dan riwayat pengalaman. */
-export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
+export function ProfileForm({ profile, submitLabel, onSaved, cancel }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
   const [experiences, setExperiences] = useState(() => sortExperiences(profile.experiences).map(toDraft));
 
   const updateExperience = (key: number, patch: Partial<ExperienceDraft>) =>
     setExperiences((list) => list.map((e) => (e.key === key ? { ...e, ...patch } : e)));
+
+  /**
+   * Pesan error tampil di dekat tombol simpan (tempat mata member berada) dan
+   * diumumkan pembaca layar; kalau jelas kolom mana yang salah, kolom itu difokuskan.
+   */
+  const fail = (text: string, fieldId?: string) => {
+    setError(text);
+    requestAnimationFrame(() => {
+      const field = fieldId ? document.getElementById(fieldId) : null;
+      if (field) {
+        field.focus();
+        field.scrollIntoView({ block: 'center' });
+      } else {
+        errorRef.current?.scrollIntoView({ block: 'center' });
+      }
+    });
+  };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -40,36 +60,36 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
 
     const whatsapp = val('whatsapp');
     if (!WHATSAPP_RE.test(whatsapp)) {
-      setError('Nomor WhatsApp 8–20 digit, boleh diawali +.');
+      fail('Nomor WhatsApp 8–20 digit, boleh diawali +.', 'whatsapp');
       return;
     }
 
     const linkedin = normalizeUrl(val('linkedin_url'));
     if (!isLinkedinUrl(linkedin)) {
-      setError('Isi link profil LinkedIn kamu, contohnya linkedin.com/in/nama-kamu.');
+      fail('Isi link profil LinkedIn kamu, contohnya linkedin.com/in/nama-kamu.', 'linkedin_url');
       return;
     }
 
     const username = val('username').toLowerCase();
     if (username && !USERNAME_RE.test(username)) {
-      setError('Username 3–30 karakter: huruf kecil, angka, atau garis bawah (_).');
+      fail('Username 3–30 karakter: huruf kecil, angka, atau garis bawah (_).', 'username');
       return;
     }
 
     const filled = experiences.filter((x) => x.role.trim() || x.company.trim());
     const invalid = filled.find((x) => !x.role.trim() || !x.company.trim() || !x.start || (!x.current && !x.end));
     if (invalid) {
-      setError('Setiap pengalaman butuh peran, perusahaan, bulan mulai, dan bulan selesai (atau centang "masih di sini").');
+      fail('Setiap pengalaman butuh peran, perusahaan, bulan mulai, dan bulan selesai (atau centang "masih di sini").');
       return;
     }
     if (filled.some((x) => !x.current && x.end! < x.start)) {
-      setError('Bulan selesai pengalaman tidak boleh sebelum bulan mulai.');
+      fail('Bulan selesai pengalaman tidak boleh sebelum bulan mulai.');
       return;
     }
 
     const techStack = parseTags(val('tech_stack'));
     if (techStack.length === 0) {
-      setError('Isi minimal satu teknologi yang kamu kuasai.');
+      fail('Isi minimal satu teknologi yang kamu kuasai.', 'tech_stack');
       return;
     }
 
@@ -106,11 +126,8 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
     setBusy(false);
 
     if (saveError) {
-      setError(
-        saveError.code === '23505'
-          ? 'Username itu sudah dipakai member lain. Coba yang lain.'
-          : 'Profil belum tersimpan. Periksa isian lalu coba lagi.',
-      );
+      if (saveError.code === '23505') fail('Username itu sudah dipakai member lain. Coba yang lain.', 'username');
+      else fail('Profil belum tersimpan. Cek koneksi, lalu coba simpan lagi.');
       return;
     }
     onSaved(data);
@@ -118,8 +135,6 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
 
   return (
     <form className="form-card wide profile-form" onSubmit={onSubmit}>
-      {error && <p className="form-message error">{error}</p>}
-
       <Section title="Data diri">
         <div className="form-grid">
           <Field id="full_name" label="Nama lengkap">
@@ -326,9 +341,15 @@ export function ProfileForm({ profile, submitLabel, onSaved }: Props) {
         </Field>
       </Section>
 
-      <button className="btn btn-primary" type="submit" disabled={busy}>
-        {busy ? 'Menyimpan…' : submitLabel}
-      </button>
+      <p ref={errorRef} className={error ? 'form-message error' : 'visually-hidden'} role="alert">
+        {error}
+      </p>
+      <div className="form-actions">
+        <button className="btn btn-primary" type="submit" disabled={busy}>
+          {busy ? 'Menyimpan…' : submitLabel}
+        </button>
+        {cancel}
+      </div>
     </form>
   );
 }

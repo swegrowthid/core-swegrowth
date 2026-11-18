@@ -21,19 +21,26 @@ import { useAuth } from '~/lib/auth';
 import { getPublishedContributions } from '~/lib/contributions';
 import type { RecommendationCategory } from '~/lib/database.types';
 import { CATEGORIES, directoryPath, getPublishedRecommendations, SUBMIT_PATH } from '~/lib/recommendations';
-import { recordingsFrom, YOUTUBE_CHANNEL_URL } from '~/lib/recordings';
+import { mergeRecordings, recordingsFrom, YOUTUBE_CHANNEL_URL } from '~/lib/recordings';
 import { getChannelVideos } from '~/lib/youtube';
 import { TOPICS } from '~/lib/topics';
 import { pageMeta } from '~/lib/site';
+import { liveOrSnapshot } from '~/lib/snapshot';
 
-export const meta: Route.MetaFunction = () => pageMeta('SWE Growth — komunitas software engineer Indonesia');
+export const meta: Route.MetaFunction = () =>
+  pageMeta(
+    'SWE Growth — komunitas software engineer Indonesia',
+    'Komunitas software engineer Indonesia: ngobrol per bidang di grup WhatsApp, diskusi online, belajar bareng, kelas, dan talkshow dari praktisi.',
+  );
 
-const load = async () => {
+const RECORDING_LIMIT = 3;
+
+const load = async (strict = false) => {
   const [activities, groups, contributions, recommendations, stats, pulse, channel] = await Promise.all([
-    getPublishedActivities(),
-    getCommunityGroups(),
-    getPublishedContributions(),
-    getPublishedRecommendations(),
+    getPublishedActivities({ strict }),
+    getCommunityGroups({ strict }),
+    getPublishedContributions({ strict }),
+    getPublishedRecommendations({ strict }),
     getCommunityStats(),
     getCommunityPulse(),
     getChannelVideos(),
@@ -45,7 +52,8 @@ const load = async () => {
     live,
     pulse,
     activities: upcomingSessions(activities).slice(0, 3),
-    recordings: recordingsFrom(activities, channel ?? []).slice(0, 3),
+    recordings: recordingsFrom(activities, channel ?? []).slice(0, RECORDING_LIMIT),
+    channelOk: channel !== null,
     // Acara dari luar tampil di agenda, jadi tidak diulang di rekomendasi pilihan.
     external: recommendations
       .filter((r) => r.category === 'acara')
@@ -63,8 +71,16 @@ export async function loader() {
   return load();
 }
 
-export async function clientLoader() {
-  return load();
+/**
+ * Di browser: ambil yang terbaru. Kalau gagal, snapshot build tetap dipakai; kalau hanya
+ * feed YouTube yang gagal, rekamannya dilengkapi dari snapshot supaya tidak berkurang.
+ */
+export async function clientLoader({ serverLoader }: Route.ClientLoaderArgs) {
+  const snapshot = async () => ({ ...(await serverLoader()), live: true, now: Date.now() });
+  const fresh = await liveOrSnapshot(() => load(true), snapshot);
+  if (fresh.channelOk) return fresh;
+  const built = await serverLoader().catch(() => null);
+  return built ? { ...fresh, recordings: mergeRecordings(fresh.recordings, built.recordings).slice(0, RECORDING_LIMIT) } : fresh;
 }
 clientLoader.hydrate = true as const;
 

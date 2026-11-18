@@ -66,11 +66,27 @@ export const adminWaLink = (text?: string) => `https://wa.me/${ADMIN_WA}${text ?
 export const DEFAULT_DESCRIPTION =
   'SWE Growth — komunitas software engineer Indonesia. Portal berisi agenda kegiatan, pendaftaran, dan grup WhatsApp komunitas.';
 
-/** Meta standar untuk export `meta` tiap route. */
-export const pageMeta = (title: string, description = DEFAULT_DESCRIPTION) => [
+/** Gambar preview default: kartu komunitas (dibuat saat build, lihat lib/og-image.ts). */
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og/home.png`;
+
+/**
+ * Meta standar untuk export `meta` tiap route, termasuk preview link
+ * (WhatsApp, Telegram, X, LinkedIn). `image` = URL absolut gambar 1200×630.
+ */
+export const pageMeta = (title: string, description = DEFAULT_DESCRIPTION, image = DEFAULT_OG_IMAGE) => [
   { title },
   { name: 'description', content: description },
+  { property: 'og:type', content: 'website' },
+  { property: 'og:site_name', content: SITE_NAME },
+  { property: 'og:locale', content: 'id_ID' },
   { property: 'og:title', content: title },
   { property: 'og:description', content: description },
-  { property: 'og:image', content: `${SITE_URL}/assets/swe-growth-logo.png` },
+  { property: 'og:image', content: image },
+  { property: 'og:image:width', content: '1200' },
+  { property: 'og:image:height', content: '630' },
+  { property: 'og:image:alt', content: title },
+  { name: 'twitter:card', content: 'summary_large_image' },
+  { name: 'twitter:title', content: title },
+  { name: 'twitter:description', content: description },
+  { name: 'twitter:image', content: image },
 ];
