@@ -24,7 +24,7 @@ export function JobInterested({ jobId, count, defaultOpen = false }: { jobId: st
     }
   };
 
-  if (count === 0) return <span className="slug">Belum ada yang tertarik.</span>;
+  if (count === 0) return <span className="slug">Belum ada peminat.</span>;
 
   return (
     <details
@@ -37,7 +37,7 @@ export function JobInterested({ jobId, count, defaultOpen = false }: { jobId: st
       <summary>{count} tertarik</summary>
       {failed ? (
         <p className="row-error" role="alert">
-          Gagal memuat. Tutup lalu buka lagi untuk mencoba ulang.
+          Gagal memuat. Tutup lalu buka kembali untuk mencoba lagi.
         </p>
       ) : !items ? (
         <p className="slug">Memuat…</p>
@@ -52,6 +52,7 @@ export function JobInterested({ jobId, count, defaultOpen = false }: { jobId: st
                 </Link>
                 <span>{[p.headline, p.seniority && seniorityLabel[p.seniority], p.company].filter(Boolean).join(' · ')}</span>
                 {p.tech_stack.length > 0 && <span className="slug">{p.tech_stack.join(', ')}</span>}
+                {p.note && <q className="job-interested-note">{p.note}</q>}
                 <span className="job-interested-links">
                   {p.whatsapp && (
                     <a href={`https://wa.me/${waNumber(p.whatsapp)}`} target="_blank" rel="noopener">

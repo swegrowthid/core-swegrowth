@@ -90,15 +90,17 @@ export function PortalPage({
   title,
   intro,
   actions,
+  className,
   children,
 }: {
   title: ReactNode;
   intro?: ReactNode;
   actions?: ReactNode;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <div className="portal-page">
+    <div className={className ? `portal-page ${className}` : 'portal-page'}>
       <header className="portal-head">
         <div>
           <h1 className="portal-title">{title}</h1>

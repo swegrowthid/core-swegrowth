@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { companyLabel, contactHref } from './jobs';
+import { companyLabel, contactHref, matchMember, postedAgo } from './jobs';
 
 describe('contactHref', () => {
   it('nomor HP Indonesia jadi link WhatsApp', () => {
@@ -24,5 +24,44 @@ describe('companyLabel', () => {
   it('pakai keterangan kalau perusahaan tidak disebut', () => {
     expect(companyLabel('')).toBe('Perusahaan tidak disebut');
     expect(companyLabel('Vision AI')).toBe('Vision AI');
+  });
+});
+
+describe('matchMember', () => {
+  const members = [
+    { id: '1', full_name: 'Budi Santoso' },
+    { id: '2', full_name: 'Budi Hartono' },
+    { id: '3', full_name: 'Rina Kartika' },
+    { id: '4', full_name: 'Zikrul Ihsan' },
+  ];
+
+  it('nama sama persis (abaikan huruf besar & tanda baca)', () => {
+    expect(matchMember('rina kartika', members)?.id).toBe('3');
+    expect(matchMember('Zikrul Ihsan 🚀', members)?.id).toBe('4');
+  });
+
+  it('nama WA yang disingkat tetap cocok kalau hanya satu member', () => {
+    expect(matchMember('Rina', members)?.id).toBe('3');
+    expect(matchMember('Budi S', members)?.id).toBe('1');
+  });
+
+  it('tidak menebak kalau lebih dari satu atau tidak ada yang cocok', () => {
+    expect(matchMember('Budi', members)).toBeNull();
+    expect(matchMember('Andi', members)).toBeNull();
+    expect(matchMember('', members)).toBeNull();
+  });
+});
+
+describe('postedAgo', () => {
+  const now = new Date('2026-11-18T10:00:00+07:00');
+
+  it('hari ini, kemarin, beberapa hari lalu (hari kalender WIB)', () => {
+    expect(postedAgo('2026-11-18T00:30:00+07:00', now)).toBe('hari ini');
+    expect(postedAgo('2026-11-17T23:50:00+07:00', now)).toBe('kemarin');
+    expect(postedAgo('2026-11-15T09:00:00+07:00', now)).toBe('3 hari lalu');
+  });
+
+  it('lebih dari dua minggu jadi tanggal', () => {
+    expect(postedAgo('2026-10-20T09:00:00+07:00', now)).not.toMatch(/lalu/);
   });
 });

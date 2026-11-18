@@ -6,6 +6,7 @@ import { LoadError, PortalPage } from '~/components/Portal';
 import { requireUser } from '~/lib/auth';
 import type { JobRow } from '~/lib/database.types';
 import {
+  closeJob,
   companyLabel,
   fetchInterestCounts,
   fetchMyJobs,
@@ -27,13 +28,16 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
 }
 
 export function HydrateFallback() {
-  return <div className="loading-block">Memuat lokermu…</div>;
+  return <div className="loading-block">Memuat lowongan Anda…</div>;
 }
 
 const WITHDRAW_ERROR = {
-  locked: 'Loker ini sudah direview, jadi tidak bisa ditarik lagi.',
-  failed: 'Gagal menarik loker. Cek koneksi, lalu coba lagi.',
+  locked: 'Lowongan ini sudah ditinjau sehingga tidak dapat ditarik.',
+  failed: 'Gagal menarik lowongan. Periksa koneksi, lalu coba lagi.',
 } as const;
+
+/** Diturunkan oleh yang membagikan lewat close_job(): disembunyikan dengan alasan kedaluwarsa. */
+const isClosed = (r: JobRow) => r.status === 'hidden' && r.reject_reason === 'kedaluwarsa';
 
 /**
  * Loker yang dikirim atau dimiliki member: status review, edit/tarik selama masih
@@ -43,6 +47,7 @@ export default function PortalJobs({ loaderData: { items, counts, userId } }: Ro
   const { hash } = useLocation();
   const revalidator = useRevalidator();
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [closing, setClosing] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ id: string; text: string } | null>(null);
   const [status, setStatus] = useState('');
@@ -64,7 +69,7 @@ export default function PortalJobs({ loaderData: { items, counts, userId } }: Ro
         closeConfirm(r.id);
       } else {
         setConfirming(null);
-        setStatus(`"${r.title}" sudah ditarik dari antrean review.`);
+        setStatus(`"${r.title}" sudah ditarik dari antrean peninjauan.`);
         headingRef.current?.focus();
       }
       await revalidator.revalidate();
@@ -76,6 +81,20 @@ export default function PortalJobs({ loaderData: { items, counts, userId } }: Ro
     }
   };
 
+  const close = async (r: JobRow) => {
+    setBusy(r.id);
+    setNotice(null);
+    const ok = await closeJob(r.id);
+    setBusy(null);
+    setClosing(null);
+    if (!ok) {
+      setNotice({ id: r.id, text: 'Gagal menandai sudah tutup. Silakan coba lagi.' });
+      return;
+    }
+    setStatus(`"${r.title}" ditandai sudah tutup dan tidak lagi tampil di daftar loker.`);
+    await revalidator.revalidate();
+  };
+
   return (
     <PortalPage
       title={
@@ -83,10 +102,10 @@ export default function PortalJobs({ loaderData: { items, counts, userId } }: Ro
           Lokerku
         </span>
       }
-      intro="Loker yang kamu bagikan, termasuk yang diinput tim loker atas namamu. Cek siapa saja yang tertarik di sini."
+      intro="Lowongan yang Anda bagikan, termasuk yang diinput tim loker atas nama Anda, beserta daftar peminatnya. Tandai sudah tutup begitu posisinya terisi."
       actions={
         <Link className="btn btn-primary" to={SUBMIT_PATH}>
-          Rekomendasikan loker
+          Bagikan loker
         </Link>
       }
     >
@@ -94,14 +113,14 @@ export default function PortalJobs({ loaderData: { items, counts, userId } }: Ro
         {status}
       </p>
       {items === null ? (
-        <LoadError what="Lokermu" />
+        <LoadError what="Lowongan Anda" />
       ) : items.length === 0 ? (
         <p className="psec-empty">
-          Belum ada loker. Lihat loker bagus di grup atau di kantormu?{' '}
+          Belum ada lowongan.{' '}
           <Link className="text-link" to={SUBMIT_PATH}>
-            Bagikan ke direktori loker
-          </Link>
-          .
+            Bagikan lowongan
+          </Link>{' '}
+          dari grup atau dari tempat Anda bekerja.
         </p>
       ) : (
         <div className="panel">
@@ -119,7 +138,7 @@ export default function PortalJobs({ loaderData: { items, counts, userId } }: Ro
                     r.submitted_by === userId &&
                     (confirming === r.id ? (
                       <span className="inline-actions rec-row-actions rec-confirm">
-                        <span>Tarik dari antrean review?</span>
+                        <span>Tarik dari antrean peninjauan?</span>
                         <button className="link-btn danger" type="button" disabled={busy === r.id} onClick={() => withdraw(r)}>
                           {busy === r.id ? 'Menarik…' : 'Ya, tarik'}
                         </button>
@@ -145,15 +164,29 @@ export default function PortalJobs({ loaderData: { items, counts, userId } }: Ro
                         </button>
                       </span>
                     ))}
-                  {r.status === 'approved' && (
-                    <>
+                  {r.status === 'approved' &&
+                    (closing === r.id ? (
+                      <span className="inline-actions rec-row-actions rec-confirm">
+                        <span>Posisi ini sudah terisi atau ditutup?</span>
+                        <button className="link-btn danger" type="button" disabled={busy === r.id} onClick={() => close(r)}>
+                          {busy === r.id ? 'Menyimpan…' : 'Ya, tandai tutup'}
+                        </button>
+                        <button className="link-btn" type="button" disabled={busy === r.id} onClick={() => setClosing(null)} autoFocus>
+                          Batal
+                        </button>
+                      </span>
+                    ) : (
                       <span className="rec-row-actions">
                         <Link className="text-link" to={JOBS_PATH}>
-                          Lihat di direktori
+                          Lihat di daftar loker
                         </Link>
+                        <button className="link-btn" type="button" onClick={() => setClosing(r.id)}>
+                          Tandai sudah tutup
+                        </button>
                       </span>
-                      <JobInterested jobId={r.id} count={counts.get(r.id) ?? 0} defaultOpen={hash === `#loker-${r.id}`} />
-                    </>
+                    ))}
+                  {(r.status === 'approved' || isClosed(r)) && (
+                    <JobInterested jobId={r.id} count={counts.get(r.id) ?? 0} defaultOpen={hash === `#loker-${r.id}`} />
                   )}
                   {notice?.id === r.id && (
                     <span className="row-error" role="alert">
@@ -161,7 +194,9 @@ export default function PortalJobs({ loaderData: { items, counts, userId } }: Ro
                     </span>
                   )}
                 </div>
-                <span className={`chip rec-status ${r.status}`}>{STATUS_LABEL[r.status]}</span>
+                <span className="chip rec-status" data-status={r.status}>
+                  {isClosed(r) ? 'Sudah tutup' : STATUS_LABEL[r.status]}
+                </span>
               </li>
             ))}
           </ul>

@@ -2,6 +2,7 @@ import { Outlet, redirect } from 'react-router';
 import type { Route } from './+types/member-layout';
 import { fetchProfile, requireUser } from '~/lib/auth';
 import { fetchMotivation, isOnboarded } from '~/lib/profile';
+import { skipSearchOnlyRevalidation } from '~/lib/revalidate';
 
 /** Halaman profil tetap bisa dibuka walau onboarding belum selesai; di sana member diajak melengkapi. */
 const OPEN_BEFORE_ONBOARDING = ['/onboarding', '/portal/profil'];
@@ -23,6 +24,8 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   }
   return null;
 }
+
+export const shouldRevalidate = skipSearchOnlyRevalidation;
 
 export function HydrateFallback() {
   return <div className="loading-block">Memuat…</div>;

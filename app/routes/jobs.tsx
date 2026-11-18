@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import type { Route } from './+types/jobs';
 import { JobCard } from '~/components/JobCard';
@@ -16,6 +17,7 @@ import {
   WORK_MODE_LABEL,
   type Job,
 } from '~/lib/jobs';
+import { skipSearchOnlyRevalidation } from '~/lib/revalidate';
 
 export const meta: Route.MetaFunction = () => [{ title: 'Loker — SWE Growth' }, { name: 'robots', content: 'noindex' }];
 
@@ -31,6 +33,8 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   return { items, isPoster, canInterest };
 }
 
+export const shouldRevalidate = skipSearchOnlyRevalidation;
+
 export function HydrateFallback() {
   return <div className="loading-block">Memuat loker…</div>;
 }
@@ -39,17 +43,18 @@ export function HydrateFallback() {
 export default function Jobs({ loaderData: { items, isPoster, canInterest } }: Route.ComponentProps) {
   return (
     <PortalPage
+      className="job-board"
       title="Loker"
-      intro="Lowongan dari grup loker dan rekomendasi member. Klik Tertarik supaya pemilik lokernya bisa melihat profilmu, dan hati-hati dengan loker yang minta bayaran."
+      intro="Dari grup loker dan member. Waspadai lowongan yang meminta bayaran."
       actions={
         <>
           {isPoster && (
-            <Link className="btn btn-ghost" to={JOB_MANAGE_PATH}>
+            <Link className="btn btn-ghost sm" to={JOB_MANAGE_PATH}>
               Kelola
             </Link>
           )}
-          <Link className="btn btn-primary" to={JOB_SUBMIT_PATH}>
-            {isPoster ? 'Tambah loker' : 'Rekomendasikan loker'}
+          <Link className="btn btn-primary sm" to={JOB_SUBMIT_PATH}>
+            {isPoster ? 'Tambah loker' : 'Bagikan loker'}
           </Link>
         </>
       }
@@ -65,6 +70,10 @@ function JobDirectory({ items, canInterest }: { items: Job[]; canInterest: boole
   const mode = params.get('mode') ?? '';
   const level = params.get('level') ?? '';
   const query = params.get('q') ?? '';
+  const activeFilters = [mode, level].filter(Boolean).length;
+  // Di HP filter mode & level dilipat supaya daftar loker langsung terlihat.
+  const [filterOpen, setFilterOpen] = useState(activeFilters > 0);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const set = (key: string, value: string) =>
     setParams(
@@ -91,36 +100,37 @@ function JobDirectory({ items, canInterest }: { items: Job[]; canInterest: boole
   );
   const filtered = Boolean(mode || level || q || isEmploymentType(type));
 
+  const resetFilters = () => {
+    setParams(new URLSearchParams(), { replace: true, preventScrollReset: true });
+    // Kolom cari tidak terkendali (defaultValue), jadi dikosongkan langsung.
+    if (searchRef.current) searchRef.current.value = '';
+  };
+
   return (
     <>
-      {!canInterest && (
-        <p className="job-profile-note">
-          Lengkapi <Link to="/portal/profil/edit">profilmu</Link> supaya bisa menandai Tertarik. Pemilik loker melihat profil, WhatsApp, dan
-          LinkedIn-mu dari situ.
-        </p>
-      )}
-
-      <nav className="rec-tabs" aria-label="Tipe pekerjaan">
-        <button type="button" aria-pressed={!isEmploymentType(type)} onClick={() => set('tipe', '')}>
-          Semua <span>{base.length}</span>
-        </button>
-        {types.map((t) => (
-          <button key={t} type="button" aria-pressed={type === t} onClick={() => set('tipe', t)}>
-            {EMPLOYMENT_LABEL[t]} <span>{base.filter((j) => j.employment_type === t).length}</span>
-          </button>
-        ))}
-      </nav>
-
-      <div className="rec-filters">
+      <div className="job-search">
         <input
+          ref={searchRef}
           type="search"
           aria-label="Cari loker"
-          placeholder="Cari posisi, perusahaan, atau kota…"
+          placeholder="Cari posisi, perusahaan, kota…"
           defaultValue={query}
           onChange={(e) => set('q', e.target.value)}
         />
+        <button
+          className="job-filter-toggle"
+          type="button"
+          aria-expanded={filterOpen}
+          aria-controls="job-filters"
+          onClick={() => setFilterOpen((o) => !o)}
+        >
+          Filter{activeFilters > 0 && <span>{activeFilters}</span>}
+        </button>
+      </div>
+
+      <div id="job-filters" className={`job-filters${filterOpen ? ' is-open' : ''}`}>
         <select aria-label="Mode kerja" value={mode} onChange={(e) => set('mode', e.target.value)}>
-          <option value="">Semua mode kerja</option>
+          <option value="">Semua mode</option>
           {(Object.keys(WORK_MODE_LABEL) as JobWorkMode[]).map((m) => (
             <option key={m} value={m}>
               {WORK_MODE_LABEL[m]}
@@ -137,20 +147,50 @@ function JobDirectory({ items, canInterest }: { items: Job[]; canInterest: boole
         </select>
       </div>
 
+      <nav className="rec-tabs job-types" aria-label="Tipe pekerjaan">
+        <button type="button" aria-pressed={!isEmploymentType(type)} onClick={() => set('tipe', '')}>
+          Semua <span>{base.length}</span>
+        </button>
+        {types.map((t) => (
+          <button key={t} type="button" aria-pressed={type === t} onClick={() => set('tipe', t)}>
+            {EMPLOYMENT_LABEL[t]} <span>{base.filter((j) => j.employment_type === t).length}</span>
+          </button>
+        ))}
+      </nav>
+
+      {!canInterest && (
+        <p className="job-profile-note">
+          <Link to="/portal/profil/edit">Lengkapi profil Anda</Link> untuk dapat menandai tertarik.
+        </p>
+      )}
+
       {shown.length > 0 ? (
-        <ul className="rec-grid start">
-          {shown.map((j) => (
-            <JobCard key={j.id} j={j} canInterest={canInterest} />
-          ))}
-        </ul>
+        <>
+          <h2 className="job-list-title">{filtered ? `${shown.length} lowongan cocok` : 'Lowongan terbaru dari grup'}</h2>
+          <ul className="job-list">
+            {shown.map((j) => (
+              <JobCard key={j.id} j={j} canInterest={canInterest} />
+            ))}
+          </ul>
+        </>
       ) : (
         <div className="empty-note rec-empty">
-          <p>{filtered ? 'Belum ada loker buat filter ini.' : 'Belum ada loker yang buka.'} Lihat loker bagus di grup?</p>
-          <Link className="btn btn-primary" to={JOB_SUBMIT_PATH}>
-            Rekomendasikan ke sini
-          </Link>
+          <p>{filtered ? 'Tidak ada lowongan untuk filter ini.' : 'Belum ada lowongan yang dibuka.'}</p>
+          {filtered ? (
+            <button className="btn btn-primary" type="button" onClick={resetFilters}>
+              Hapus filter
+            </button>
+          ) : (
+            <Link className="btn btn-primary" to={JOB_SUBMIT_PATH}>
+              Bagikan lowongan
+            </Link>
+          )}
         </div>
       )}
+      {/* Jumlah hasil untuk pembaca layar; judul daftar berubah tanpa diumumkan. */}
+      <p className="visually-hidden" role="status">
+        {filtered ? `${shown.length} lowongan cocok dengan filter.` : ''}
+      </p>
     </>
   );
 }

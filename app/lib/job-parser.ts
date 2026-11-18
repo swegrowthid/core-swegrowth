@@ -28,6 +28,8 @@ export type ParseResult = {
   error?: string;
   detail?: string;
   job?: ParsedJob;
+  /** Nama pengirim di header WhatsApp, tanpa kode angkatan. */
+  sender_name?: string;
   /** Yang perlu dilengkapi manusia, mis. nama perusahaan tidak disebut. */
   missing?: string[];
 };
@@ -50,13 +52,13 @@ export async function parseJobMessage(message: string): Promise<ParseResult> {
 
 export const parserErrorText = (r: ParseResult) =>
   r.status === 'not_configured'
-    ? 'Isi otomatis belum aktif: GEMINI_API_KEY belum diisi di Netlify. Isi form secara manual dulu, ya.'
+    ? 'Isi otomatis belum aktif: GEMINI_API_KEY belum diisi di Netlify. Silakan isi formulir secara manual.'
     : r.error === 'profile_required'
-      ? 'Lengkapi profil dulu untuk memakai isi otomatis.'
+      ? 'Lengkapi profil terlebih dahulu untuk memakai isi otomatis.'
       : r.error === 'login_required'
-        ? 'Sesi login habis, masuk lagi dulu.'
+        ? 'Sesi login telah berakhir. Silakan masuk kembali.'
         : r.error === 'message_too_short'
-          ? 'Pesannya terlalu pendek. Tempel pesan loker lengkapnya.'
+          ? 'Pesan terlalu pendek. Tempel pesan lowongan secara lengkap.'
           : r.error || r.status === 'error'
-            ? `Isi otomatis gagal (${r.detail ?? r.error}). Isi form secara manual dulu, ya.`
+            ? `Isi otomatis gagal (${r.detail ?? r.error}). Silakan isi formulir secara manual.`
             : null;

@@ -408,7 +408,7 @@ export type PublishedJob = Pick<
   interested: boolean;
 };
 
-export type JobInterestRow = { job_id: string; user_id: string; created_at: string };
+export type JobInterestRow = { job_id: string; user_id: string; note: string; created_at: string };
 
 /** Hasil job_interested(): profil yang tertarik, khusus pemilik loker & tim loker. */
 export type JobInterested = Pick<
@@ -417,6 +417,8 @@ export type JobInterested = Pick<
 > & {
   user_id: string;
   handle: string;
+  /** Relevansi pengalaman yang ditulis saat menandai tertarik. */
+  note: string;
   created_at: string;
 };
 
@@ -489,6 +491,8 @@ export type Database = {
       is_job_poster: { Args: Record<string, never>; Returns: boolean };
       published_jobs: { Args: Record<string, never>; Returns: PublishedJob[] };
       toggle_job_interest: { Args: { p_job_id: string }; Returns: boolean };
+      express_job_interest: { Args: { p_job_id: string; p_note: string }; Returns: string | null };
+      close_job: { Args: { p_job_id: string }; Returns: boolean };
       job_interested: { Args: { p_job_id: string }; Returns: JobInterested[] };
       job_interest_counts: { Args: Record<string, never>; Returns: { job_id: string; total: number }[] };
       job_owner_candidates: { Args: Record<string, never>; Returns: { id: string; full_name: string; handle: string }[] };

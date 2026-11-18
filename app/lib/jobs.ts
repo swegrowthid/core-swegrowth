@@ -1,4 +1,5 @@
 import { client } from './activities';
+import { formatShortDate, relativeFromNow } from './format';
 import type {
   Database,
   JobEmploymentType,
@@ -34,9 +35,9 @@ export const LEVEL_LABEL: Record<JobLevel, string> = {
 
 /** Label di form (sudut pandang pengirim) dan di kartu (sudut pandang pembaca). */
 export const RELATION_LABEL: Record<JobSubmitterRelation, { form: string; card: string }> = {
-  hiring: { form: 'Aku yang hiring / HR di sana', card: 'Yang hiring' },
-  insider: { form: 'Aku kerja di sana (bisa bantu referral)', card: 'Orang dalam' },
-  share: { form: 'Cuma meneruskan info', card: 'Info dari grup' },
+  hiring: { form: 'Saya yang merekrut / HR di sana', card: 'Perekrut' },
+  insider: { form: 'Saya bekerja di sana (dapat membantu referral)', card: 'Orang dalam' },
+  share: { form: 'Hanya meneruskan informasi', card: 'Info dari grup' },
 };
 
 export const STATUS_LABEL: Record<JobStatus, string> = {
@@ -47,7 +48,7 @@ export const STATUS_LABEL: Record<JobStatus, string> = {
 };
 
 export const REJECT_REASONS: { id: JobRejectReason; label: string }[] = [
-  { id: 'duplikat', label: 'Sudah ada di direktori' },
+  { id: 'duplikat', label: 'Sudah ada di daftar loker' },
   { id: 'kedaluwarsa', label: 'Lowongan sudah tutup' },
   { id: 'kurang_relevan', label: 'Bukan loker tech / software' },
   { id: 'kurang_lengkap', label: 'Info atau link lamaran kurang jelas' },
@@ -68,10 +69,18 @@ export function jobMeta(j: Pick<JobRow, 'employment_type' | 'work_mode' | 'locat
   ].filter(Boolean) as string[];
 }
 
+/** Kapan loker dibagikan, gaya obrolan grup: "hari ini", "kemarin", "3 hari lalu", lalu tanggal. */
+export function postedAgo(ts: string, now = new Date()) {
+  const rel = relativeFromNow(ts, now);
+  if (rel === '1 hari lalu') return 'kemarin';
+  const days = Number.parseInt(rel, 10);
+  return days > 14 ? formatShortDate(ts) : rel;
+}
+
 export const formatDeadline = (date: string) =>
   new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(new Date(date));
 
-/** Direktori publik (prerender saat build, diperbarui di browser). */
+/** Melempar kalau gagal, supaya halaman menampilkan "belum bisa dimuat", bukan "belum ada lowongan". */
 export async function getPublishedJobs(): Promise<Job[]> {
   const db = client();
   if (!db) return [];
@@ -79,7 +88,7 @@ export async function getPublishedJobs(): Promise<Job[]> {
   const { data, error } = await db.rpc('published_jobs');
   if (error) {
     console.error('Tidak dapat mengambil loker dari Supabase:', error.message);
-    return [];
+    throw error;
   }
   return data;
 }
@@ -110,6 +119,59 @@ export async function fetchHasCompleteProfile() {
 /** Tandai/batalkan tertarik; mengembalikan status baru. */
 export const toggleJobInterest = (jobId: string) => supabase().rpc('toggle_job_interest', { p_job_id: jobId });
 
+/** Tertarik + catatan relevansi. Data = nomor WA yang membagikan kalau ia bersedia ditanya. */
+export const expressJobInterest = (jobId: string, note: string) =>
+  supabase().rpc('express_job_interest', { p_job_id: jobId, p_note: note });
+
+/** Catatan relevansi milik sendiri pada satu loker (RLS: hanya baris sendiri); kosong kalau belum ada. */
+export async function fetchMyInterestNote(jobId: string, userId: string) {
+  const { data } = await supabase().from('job_interests').select('note').eq('job_id', jobId).eq('user_id', userId).maybeSingle();
+  return data?.note ?? '';
+}
+
+/** Yang membagikan atau tim loker menurunkan lowongan yang sudah terisi/tutup. */
+export async function closeJob(jobId: string) {
+  const { data, error } = await supabase().rpc('close_job', { p_job_id: jobId });
+  return !error && data === true;
+}
+
+export const INTEREST_NOTE_MIN = 40;
+export const INTEREST_NOTE_MAX = 600;
+
+/** Nama depan untuk sapaan ("Halo Budi,"); kosong kalau tidak ada nama. */
+export const firstName = (name: string | null | undefined) => (name ?? '').trim().split(/\s+/)[0] ?? '';
+
+/**
+ * Kerangka pesan WhatsApp ke yang membagikan / CP. Inti pesannya (relevansi
+ * pengalaman) ditulis member sendiri; profil hanya pelengkap di akhir.
+ */
+export function interestMessage({
+  to,
+  from,
+  job,
+  note,
+  profileUrl,
+}: {
+  to: string;
+  from: string;
+  job: Pick<Job, 'title' | 'company'>;
+  note: string;
+  profileUrl: string;
+}) {
+  const greet = firstName(to);
+  const position = job.company ? `${job.title} di ${job.company}` : job.title;
+  return [
+    `${greet ? `Halo ${greet},` : 'Halo,'} saya ${from} dari komunitas SWE Growth.`,
+    `Saya melihat lowongan ${position} yang dibagikan di grup loker SWE Growth.`,
+    '',
+    note.trim(),
+    '',
+    'Apakah saya boleh bertanya lebih lanjut mengenai posisi dan proses rekrutmennya?',
+    '',
+    `Profil saya: ${profileUrl}`,
+  ].join('\n');
+}
+
 /** Yang tertarik pada satu loker (hanya untuk pemilik, pengirim, dan tim loker). */
 export async function fetchJobInterested(jobId: string) {
   const { data, error } = await supabase().rpc('job_interested', { p_job_id: jobId });
@@ -127,6 +189,32 @@ export async function fetchInterestCounts() {
 export async function fetchOwnerCandidates() {
   const { data } = await supabase().rpc('job_owner_candidates');
   return data ?? [];
+}
+
+const nameWords = (v: string) =>
+  v
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+
+/**
+ * Member yang namanya cocok dengan nama pengirim di grup WA. Nama di WA sering
+ * disingkat ("Budi S", "Rina"), jadi cukup kalau semua kata nama pengirim jadi
+ * awal kata di nama member. Null kalau tidak ada atau lebih dari satu yang cocok.
+ */
+export function matchMember<T extends { full_name: string }>(sender: string, members: T[]): T | null {
+  const words = nameWords(sender);
+  if (words.length === 0) return null;
+  const key = words.join(' ');
+  const exact = members.filter((m) => nameWords(m.full_name).join(' ') === key);
+  if (exact.length > 0) return exact.length === 1 ? exact[0] : null;
+  const partial = members.filter((m) => {
+    const full = nameWords(m.full_name);
+    return words.every((w) => full.some((f) => f.startsWith(w)));
+  });
+  return partial.length === 1 ? partial[0] : null;
 }
 
 /** Kiriman sendiri (untuk ?edit=); null kalau bukan miliknya. */

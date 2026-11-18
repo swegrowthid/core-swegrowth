@@ -149,7 +149,9 @@ export default function PortalRecommendations({ loaderData: { items } }: Route.C
                     </span>
                   )}
                 </div>
-                <span className={`chip rec-status ${r.status}`}>{STATUS_LABEL[r.status]}</span>
+                <span className="chip rec-status" data-status={r.status}>
+                  {STATUS_LABEL[r.status]}
+                </span>
               </li>
             ))}
           </ul>

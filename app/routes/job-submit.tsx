@@ -13,6 +13,7 @@ import {
   JOB_MANAGE_PATH,
   JOBS_PATH,
   LEVEL_LABEL,
+  matchMember,
   RELATION_LABEL,
   STATUS_LABEL,
   submitJob,
@@ -62,7 +63,7 @@ const normalizeApply = (v: string) =>
 type Draft = Pick<
   JobRow,
   'title' | 'company' | 'description' | 'employment_type' | 'work_mode' | 'location' | 'salary' | 'deadline' | 'contact_name' | 'contact'
-> & { apply_url: string; level: JobLevel | '' };
+> & { apply_url: string; level: JobLevel | ''; owner_id: string };
 
 const EMPTY_DRAFT: Draft = {
   title: '',
@@ -77,10 +78,19 @@ const EMPTY_DRAFT: Draft = {
   deadline: null,
   contact_name: '',
   contact: '',
+  owner_id: '',
 };
 
+// owner_id kosong = yang menginput sendiri.
 const draftOf = (j: JobRow | null): Draft =>
-  j ? { ...j, apply_url: (j.apply_url ?? '').replace(/^mailto:/, ''), level: j.level ?? '' } : EMPTY_DRAFT;
+  j
+    ? {
+        ...j,
+        apply_url: (j.apply_url ?? '').replace(/^mailto:/, ''),
+        level: j.level ?? '',
+        owner_id: j.owner_id && j.owner_id !== j.submitted_by ? j.owner_id : '',
+      }
+    : EMPTY_DRAFT;
 
 function readDraft(form: HTMLFormElement): Draft {
   const data = new FormData(form);
@@ -98,6 +108,7 @@ function readDraft(form: HTMLFormElement): Draft {
     deadline: val('deadline') || null,
     contact_name: val('contact_name'),
     contact: val('contact'),
+    owner_id: val('owner_id'),
   };
 }
 
@@ -123,16 +134,28 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
     setParsing(false);
     const failed = parserErrorText(result);
     if (failed || !result.job) {
-      setParseNote({ kind: 'error', text: failed ?? 'Isi otomatis gagal. Isi form secara manual dulu, ya.', missing: [] });
+      setParseNote({ kind: 'error', text: failed ?? 'Isi otomatis gagal. Silakan isi formulir secara manual.', missing: [] });
       return;
     }
     const current = formRef.current ? readDraft(formRef.current) : draft;
     const filled = Object.fromEntries(Object.entries(result.job).filter(([, v]) => v)) as Partial<Draft>;
-    const next = { ...current, ...filled };
+    // Pengirim pesan di grup = pemilik loker, kalau namanya cocok dengan satu member.
+    const sender = isPoster ? (result.sender_name ?? '') : '';
+    const owner = sender ? matchMember(sender, owners) : null;
+    const next = { ...current, ...filled, ...(owner && { owner_id: owner.id }) };
     setDraft(next);
     setDescLength(next.description.length);
     setFormKey((k) => k + 1);
-    setParseNote({ kind: 'success', text: 'Form terisi dari pesan. Cek lagi sebelum dikirim.', missing: result.missing ?? [] });
+    const ownerNote = !sender
+      ? []
+      : owner
+        ? [`Dibagikan oleh diisi ${owner.full_name} dari nama pengirim "${sender}". Pastikan orangnya benar.`]
+        : [`Pengirim "${sender}" tidak ditemukan (atau lebih dari satu) di data member. Pilih secara manual di kolom Dibagikan oleh.`];
+    setParseNote({
+      kind: 'success',
+      text: 'Formulir terisi dari pesan. Periksa kembali sebelum dikirim.',
+      missing: [...ownerNote, ...(result.missing ?? [])],
+    });
   };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -141,11 +164,11 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
     const val = (name: string) => String(form.get(name) ?? '').trim();
 
     if (!message.trim() && val('description').length < DESC_MIN) {
-      setError(`Tulis ringkasan lowongannya minimal ${DESC_MIN} karakter, atau tempel pesan aslinya dari grup.`);
+      setError(`Tulis ringkasan lowongan minimal ${DESC_MIN} karakter, atau tempel pesan asli dari grup.`);
       return;
     }
     if (!val('apply_url') && !val('contact')) {
-      setError('Isi link lamaran atau kontak CP, supaya pelamar tahu harus ke mana.');
+      setError('Isi link lamaran atau kontak CP agar pelamar tahu harus menghubungi siapa.');
       return;
     }
 
@@ -190,15 +213,15 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
             <span className="check-badge" aria-hidden="true">
               ✓
             </span>
-            <h1 className="page-title">{editing ? 'Perubahan tersimpan' : isPoster ? 'Loker tayang!' : 'Makasih udah berbagi!'}</h1>
+            <h1 className="page-title">{editing ? 'Perubahan tersimpan' : isPoster ? 'Loker tayang!' : 'Terima kasih telah berbagi'}</h1>
             <p className="form-sub">
               {isPoster
-                ? 'Lokernya langsung tampil di direktori.'
-                : 'Tim loker cek dulu sebelum tayang di direktori. Statusnya bisa kamu pantau di portal.'}
+                ? 'Lowongan langsung tampil di daftar loker.'
+                : 'Tim loker akan meninjaunya sebelum tayang. Statusnya dapat dipantau di Lokerku.'}
             </p>
             <div className="inline-actions">
               <Link className="btn btn-primary" to={isPoster ? JOBS_PATH : '/portal/lokerku'}>
-                {isPoster ? 'Lihat direktori' : 'Lihat status di portal'}
+                {isPoster ? 'Lihat daftar loker' : 'Lihat status di Lokerku'}
               </Link>
               {!editing && (
                 <button
@@ -214,7 +237,7 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
                     setDone(false);
                   }}
                 >
-                  Kirim loker lain
+                  Bagikan lowongan lain
                 </button>
               )}
             </div>
@@ -250,7 +273,7 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
             <button className="btn btn-ghost sm" type="button" disabled={parsing || message.trim().length < 20} onClick={autofill}>
               {parsing ? 'Membaca pesan…' : 'Isi form dari pesan'}
             </button>
-            <small className="field-hint">Dibaca AI (Gemini). Hasilnya selalu cek ulang dulu.</small>
+            <small className="field-hint">Dibaca AI (Gemini). Selalu periksa kembali hasilnya.</small>
           </div>
           {parseNote && (
             <div className={`form-message ${parseNote.kind}`} role="status">
@@ -269,8 +292,8 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
           <h1 className="page-title">{editing ? 'Edit loker' : isPoster ? 'Tambah loker' : 'Rekomendasikan loker'}</h1>
           <p className="form-sub">
             {isPoster
-              ? 'Kamu tim loker, jadi loker ini langsung tayang.'
-              : 'Lihat loker bagus di grup atau di kantormu? Tim loker cek dulu sebelum tayang.'}
+              ? 'Sebagai tim loker, lowongan yang Anda tambahkan langsung tayang.'
+              : 'Bagikan lowongan dari grup atau dari tempat Anda bekerja. Tim loker akan meninjaunya sebelum tayang.'}
             {editing && (
               <>
                 {' '}
@@ -278,6 +301,24 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
               </>
             )}
           </p>
+
+          {isPoster && (
+            <Field
+              id="j_owner"
+              label="Dibagikan oleh"
+              optional
+              hint="Member SWE Growth yang membagikan loker ini di grup. Namanya tampil di kartu, dan dia bisa melihat siapa saja yang tertarik."
+            >
+              <select id="j_owner" name="owner_id" defaultValue={draft.owner_id}>
+                <option value="">Saya sendiri</option>
+                {owners.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.full_name} (@{o.handle})
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
 
           <Field id="j_title" label="Posisi">
             <input
@@ -291,7 +332,7 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
             />
           </Field>
 
-          <Field id="j_company" label="Perusahaan" optional hint="Kosongkan kalau pesannya tidak menyebut perusahaan.">
+          <Field id="j_company" label="Perusahaan" optional hint="Kosongkan jika pesan tidak menyebut perusahaan.">
             <input id="j_company" name="company" maxLength={120} defaultValue={draft.company} />
           </Field>
 
@@ -299,7 +340,7 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
             id="j_apply"
             label="Link lamaran atau email HR"
             optional
-            hint="Link resmi (LinkedIn, situs karier) atau email untuk kirim CV. Boleh kosong kalau melamar lewat CP."
+            hint="Link resmi (LinkedIn, situs karier) atau email untuk kirim CV. Boleh kosong jika melamar lewat CP."
           >
             <input
               id="j_apply"
@@ -319,7 +360,7 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
             </Field>
           </div>
           <p className="field-hint job-cp-hint">
-            Contact person untuk ditanya-tanya atau kirim CV, biasanya yang membagikan loker di grup (bukan kamu, kalau kamu cuma
+            Contact person untuk pertanyaan atau pengiriman CV, biasanya yang membagikan lowongan di grup (bukan Anda, jika Anda hanya
             menginput). Kontak CP hanya terlihat oleh yang sudah login.
           </p>
 
@@ -335,7 +376,7 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
               rows={5}
               maxLength={DESC_MAX}
               defaultValue={draft.description}
-              placeholder="Mis. Bangun layanan pembayaran pakai Go & PostgreSQL. Min. 2 tahun pengalaman backend."
+              placeholder="Mis. Membangun layanan pembayaran dengan Go & PostgreSQL. Min. 2 tahun pengalaman backend."
               onChange={(e) => setDescLength(e.target.value.length)}
             />
           </Field>
@@ -383,30 +424,8 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
             </Field>
           </div>
 
-          {isPoster && (
-            <Field
-              id="j_owner"
-              label="Pemilik loker"
-              optional
-              hint="Member yang membagikan loker ini di grup. Namanya tampil di kartu, dan dia bisa melihat siapa saja yang tertarik."
-            >
-              <select
-                id="j_owner"
-                name="owner_id"
-                defaultValue={editing?.owner_id && editing.owner_id !== editing.submitted_by ? editing.owner_id : ''}
-              >
-                <option value="">Aku sendiri</option>
-                {owners.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.full_name} (@{o.handle})
-                  </option>
-                ))}
-              </select>
-            </Field>
-          )}
-
           <fieldset className="field">
-            <legend>{isPoster ? 'Hubungan pemilik dengan loker ini' : 'Hubunganmu dengan loker ini'}</legend>
+            <legend>{isPoster ? 'Hubungan yang membagikan dengan lowongan ini' : 'Hubungan Anda dengan lowongan ini'}</legend>
             <div className="rec-pick" role="radiogroup">
               {(Object.keys(RELATION_LABEL) as JobSubmitterRelation[]).map((r) => (
                 <label key={r}>
@@ -419,20 +438,18 @@ function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isP
 
           <label className="rec-check">
             <input type="checkbox" name="show_submitter" checked={showName} onChange={(e) => setShowName(e.target.checked)} />
-            {isPoster ? 'Tampilkan nama pemilik di kartu loker' : 'Tampilkan namaku di kartu loker'}
+            {isPoster ? 'Tampilkan nama yang membagikan di daftar loker' : 'Tampilkan nama saya di daftar loker'}
           </label>
           {showName && (
             <label className="rec-check">
               <input type="checkbox" name="open_to_questions" defaultChecked={editing?.open_to_questions ?? false} />
-              {isPoster
-                ? 'Pemilik boleh ditanya-tanya soal loker ini (lewat profilnya)'
-                : 'Boleh ditanya-tanya soal loker ini (lewat profilku)'}
+              {isPoster ? 'Yang membagikan bersedia dihubungi mengenai lowongan ini' : 'Saya bersedia dihubungi mengenai lowongan ini'}
             </label>
           )}
 
           <p className="rec-rules">
-            Tanpa batas lamaran, loker tampil 45 hari. Loker yang minta biaya, deposit, atau data sensitif akan ditolak. Selengkapnya di{' '}
-            <Link to="/code-of-conduct">Code of Conduct</Link>.
+            Tanpa batas lamaran, lowongan tampil 45 hari. Lowongan yang meminta biaya, deposit, atau data sensitif akan ditolak.
+            Selengkapnya di <Link to="/code-of-conduct">Code of Conduct</Link>.
           </p>
 
           {error && <p className="form-message error">{error}</p>}

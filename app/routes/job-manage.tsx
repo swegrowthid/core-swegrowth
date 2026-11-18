@@ -104,7 +104,7 @@ export default function JobManage({ loaderData: { jobs, submitters, counts } }: 
       title="Kelola loker"
       intro={
         <>
-          Review rekomendasi member dan rapikan <Link to={JOBS_PATH}>direktori</Link>. Loker yang kamu tambahkan langsung tayang.
+          Tinjau lowongan dari member dan rapikan <Link to={JOBS_PATH}>daftar loker</Link>. Lowongan yang Anda tambahkan langsung tayang.
         </>
       }
       actions={

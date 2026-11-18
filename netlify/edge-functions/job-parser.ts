@@ -52,6 +52,8 @@ ${message}
 """
 
 Ekstrak lowongannya (kalau ada beberapa, ambil yang pertama):
+- sender_name: nama pengirim pesan dari header WhatsApp, tanpa kode angkatan dan emoji; kosong kalau tidak ada
+  header atau headernya berupa nomor telepon.
 - is_job: false kalau ini bukan lowongan kerja (mis. info beasiswa/PhD, template email lamaran, obrolan biasa).
 - title: nama posisi yang rapi, mis. "Senior Fullstack Engineer (Web)". Tulis "Senior", bukan "Sr.".
   Kalau pesannya hanya link (mis. postingan LinkedIn "…/posts/nama_were-hiring-software-developer-intern-activity-…"),
@@ -82,6 +84,7 @@ const SCHEMA = {
   type: 'OBJECT',
   properties: {
     is_job: { type: 'BOOLEAN' },
+    sender_name: { type: 'STRING' },
     title: { type: 'STRING' },
     company: { type: 'STRING' },
     apply_url: { type: 'STRING' },
@@ -96,7 +99,18 @@ const SCHEMA = {
     deadline: { type: 'STRING' },
     missing: { type: 'ARRAY', items: { type: 'STRING' } },
   },
-  required: ['is_job', 'title', 'company', 'apply_url', 'contact_name', 'contact', 'description', 'employment_type', 'missing'],
+  required: [
+    'is_job',
+    'sender_name',
+    'title',
+    'company',
+    'apply_url',
+    'contact_name',
+    'contact',
+    'description',
+    'employment_type',
+    'missing',
+  ],
 };
 
 async function gemini(prompt: string) {
@@ -161,6 +175,8 @@ export default async (req: Request) => {
         salary: str(r.salary, 80),
         deadline,
       },
+      // Untuk mencocokkan pemilik loker dengan member SWE Growth (di browser).
+      sender_name: str(r.sender_name, 80),
       missing: [
         ...(r.is_job === false ? ['Pesan ini sepertinya bukan lowongan kerja. Yakin mau dimasukkan?'] : []),
         ...(Array.isArray(r.missing)
