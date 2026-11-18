@@ -9,6 +9,7 @@ import { QnaPanel } from '~/components/admin-event/QnaPanel';
 import { Registrants } from '~/components/admin-event/Registrants';
 import { FieldsEditor, NextStepsEditor } from '~/components/admin-event/RegistrationEditors';
 import { Stats } from '~/components/admin-event/Stats';
+import { SummaryEditor } from '~/components/admin-event/SummaryEditor';
 import { Avatar } from '~/components/Avatar';
 import { EventWriter } from '~/components/EventWriter';
 import {
@@ -458,16 +459,9 @@ export default function AdminEvent({ loaderData }: Route.ComponentProps) {
               id="summary_session"
               label="Ringkasan sesi (dari Zoom)"
               optional
-              hint="Tempel ringkasan dari Zoom AI Companion (meeting summary) atau tulis sendiri; boleh markdown. Hanya terlihat oleh peserta kegiatan di Portal → Kegiatan."
+              hint="Tempel langsung dari halaman ringkasan Zoom AI Companion: bold, link, judul, dan daftar ikut terbawa (jadi markdown). Boleh juga tulis sendiri dalam markdown. Hanya terlihat oleh peserta kegiatan di Portal → Kegiatan."
             >
-              <textarea
-                id="summary_session"
-                name="summary_session"
-                rows={8}
-                maxLength={20000}
-                defaultValue={info?.summary ?? ''}
-                placeholder={'## Poin utama\n- …\n\n## Langkah selanjutnya\n- …'}
-              />
+              <SummaryEditor id="summary_session" name="summary_session" maxLength={20000} defaultValue={info?.summary ?? ''} />
             </Field>
             <PhotosEditor initial={a?.photos ?? []} folder={a?.id ?? 'baru'} />
           </EditorSection>

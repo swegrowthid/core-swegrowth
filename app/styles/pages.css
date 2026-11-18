@@ -3728,3 +3728,50 @@ a.contrib-maker:hover {
     animation: none;
   }
 }
+
+/* Admin: ringkasan sesi (Tulis / Pratinjau). Pratinjau sama dengan rekap di portal. */
+.summary-editor {
+  display: grid;
+  gap: 8px;
+}
+.summary-editor-tabs {
+  display: inline-flex;
+  justify-self: start;
+  padding: 3px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper-2);
+}
+.summary-editor-tabs button {
+  min-height: 32px;
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 650;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+.summary-editor-tabs button[aria-pressed='true'] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(11 61 64 / 0.12);
+}
+.summary-editor-tabs button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.summary-editor-preview {
+  max-height: 420px;
+  overflow: auto;
+  padding: 14px 16px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+}
+.summary-editor-note {
+  color: var(--green-deep);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
