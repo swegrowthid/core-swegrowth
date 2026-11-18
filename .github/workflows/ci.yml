@@ -8,9 +8,11 @@ on:
 permissions:
   contents: read
 
+# PR: run lama dibatalkan saat ada push baru ke PR yang sama. Push ke main/develop
+# tidak pernah dibatalkan: run yang batal tampil sebagai check gagal di PR develop → main.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
