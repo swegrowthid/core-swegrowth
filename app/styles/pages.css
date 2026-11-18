@@ -2158,6 +2158,17 @@ a.contrib-maker:hover {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.job-autofill {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.job-autofill .field {
+  margin-bottom: 0;
+}
+.job-autofill .form-message ul {
+  margin: 6px 0 0 18px;
+}
 .rec-meta li.job-deadline {
   background: color-mix(in srgb, var(--yellow) 35%, var(--paper));
   color: var(--ink);
