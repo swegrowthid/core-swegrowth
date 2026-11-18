@@ -92,7 +92,7 @@ type HeroStat = { value: number; suffix?: string; label: string };
 
 function heroStats(stats: { member_count: number; session_count: number } | null) {
   return [
-    stats && { value: stats.member_count, label: 'member' },
+    stats && { value: stats.member_count, label: 'bergabung' },
     { value: PAST_ACTIVITIES.length + (stats?.session_count ?? 0), label: 'sesi komunitas' },
     { value: 10, suffix: '+', label: 'topik diskusi' },
   ].filter((s): s is HeroStat => Boolean(s));

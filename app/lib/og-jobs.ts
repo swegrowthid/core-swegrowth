@@ -23,7 +23,7 @@ export async function ogJobs(): Promise<OgJob[]> {
   // Angka sama dengan hero beranda.
   const community = {
     stats: [
-      ...(stats ? [{ value: count(stats.member_count), label: 'member' }] : []),
+      ...(stats ? [{ value: count(stats.member_count), label: 'bergabung' }] : []),
       ...(stats ? [{ value: count(PAST_ACTIVITIES.length + stats.session_count), label: 'sesi komunitas' }] : []),
       { value: '10+', label: 'topik diskusi' },
     ],
