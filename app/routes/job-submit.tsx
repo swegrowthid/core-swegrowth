@@ -8,6 +8,7 @@ import { parseJobMessage, parserErrorText } from '~/lib/job-parser';
 import {
   EMPLOYMENT_LABEL,
   fetchIsJobPoster,
+  fetchOwnerCandidates,
   fetchOwnJob,
   JOB_MANAGE_PATH,
   JOBS_PATH,
@@ -28,19 +29,23 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const user = await requireUser(request);
   const editId = new URL(request.url).searchParams.get('edit');
   const isPoster = await fetchIsJobPoster();
-  if (!editId) return { editing: null, isPoster };
+  // Tim loker bisa menginput atas nama member yang membagikan lokernya di grup.
+  const owners = isPoster ? await fetchOwnerCandidates() : [];
+  if (!editId) return { editing: null, isPoster, owners };
 
   const data = await fetchOwnJob(editId, user.id);
   if (!data || (data.status !== 'pending' && !isPoster)) throw redirect('/portal/lokerku');
-  return { editing: data, isPoster };
+  return { editing: data, isPoster, owners };
 }
+
+type Owner = { id: string; full_name: string; handle: string };
 
 export function HydrateFallback() {
   return <div className="loading-block">Memuat…</div>;
 }
 
-export default function JobSubmit({ loaderData: { editing, isPoster } }: Route.ComponentProps) {
-  return <SubmitForm key={editing?.id ?? 'new'} editing={editing} isPoster={isPoster} />;
+export default function JobSubmit({ loaderData: { editing, isPoster, owners } }: Route.ComponentProps) {
+  return <SubmitForm key={editing?.id ?? 'new'} editing={editing} isPoster={isPoster} owners={owners} />;
 }
 
 /** "nama@x.com" jadi mailto:, URL tanpa skema jadi https://, kosong jadi null (melamar lewat CP). */
@@ -96,7 +101,7 @@ function readDraft(form: HTMLFormElement): Draft {
   };
 }
 
-function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: boolean }) {
+function SubmitForm({ editing, isPoster, owners }: { editing: JobRow | null; isPoster: boolean; owners: Owner[] }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [draft, setDraft] = useState(() => draftOf(editing));
   const [descLength, setDescLength] = useState(editing?.description.length ?? 0);
@@ -164,6 +169,8 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
       p_contact_name: val('contact_name'),
       p_contact: val('contact'),
       p_original_message: message.trim(),
+      // Kosong = pemiliknya yang menginput. Diabaikan database kalau bukan tim loker.
+      p_owner_id: isPoster ? val('owner_id') || null : null,
       p_id: editing?.id ?? null,
     });
     setBusy(false);
@@ -376,8 +383,30 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
             </Field>
           </div>
 
+          {isPoster && (
+            <Field
+              id="j_owner"
+              label="Pemilik loker"
+              optional
+              hint="Member yang membagikan loker ini di grup. Namanya tampil di kartu, dan dia bisa melihat siapa saja yang tertarik."
+            >
+              <select
+                id="j_owner"
+                name="owner_id"
+                defaultValue={editing?.owner_id && editing.owner_id !== editing.submitted_by ? editing.owner_id : ''}
+              >
+                <option value="">Aku sendiri</option>
+                {owners.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.full_name} (@{o.handle})
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+
           <fieldset className="field">
-            <legend>Hubunganmu dengan loker ini</legend>
+            <legend>{isPoster ? 'Hubungan pemilik dengan loker ini' : 'Hubunganmu dengan loker ini'}</legend>
             <div className="rec-pick" role="radiogroup">
               {(Object.keys(RELATION_LABEL) as JobSubmitterRelation[]).map((r) => (
                 <label key={r}>
@@ -390,12 +419,14 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
 
           <label className="rec-check">
             <input type="checkbox" name="show_submitter" checked={showName} onChange={(e) => setShowName(e.target.checked)} />
-            Tampilkan namaku di kartu loker
+            {isPoster ? 'Tampilkan nama pemilik di kartu loker' : 'Tampilkan namaku di kartu loker'}
           </label>
           {showName && (
             <label className="rec-check">
               <input type="checkbox" name="open_to_questions" defaultChecked={editing?.open_to_questions ?? false} />
-              Boleh ditanya-tanya soal loker ini (lewat profilku)
+              {isPoster
+                ? 'Pemilik boleh ditanya-tanya soal loker ini (lewat profilnya)'
+                : 'Boleh ditanya-tanya soal loker ini (lewat profilku)'}
             </label>
           )}
 

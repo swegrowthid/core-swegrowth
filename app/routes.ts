@@ -15,8 +15,6 @@ export default [
   route('portal/agenda/:slug', 'routes/portal-event-redirect.tsx'),
   route('rekaman', 'routes/recordings.tsx'),
   route('rekomendasi', 'routes/recommendations.tsx'),
-  // Direktori loker: tim loker langsung tayang, member merekomendasikan (antre review)
-  route('loker', 'routes/jobs.tsx'),
   route('tentang', 'routes/about.tsx'),
   // Profil publik member (SPA, data dari public_profile())
   route('member/:handle', 'routes/member-public.tsx'),
@@ -40,6 +38,8 @@ export default [
       route('portal/kegiatan/:slug', 'routes/my-activity.tsx'),
       route('portal/komunitas', 'routes/portal-community.tsx'),
       route('portal/rekomendasiku', 'routes/portal-recommendations.tsx'),
+      // Loker internal: tim loker langsung tayang, member merekomendasikan (antre review) & menandai tertarik
+      route('portal/loker', 'routes/jobs.tsx'),
       route('portal/lokerku', 'routes/portal-jobs.tsx'),
       route('portal/profil', 'routes/portal-profile.tsx'),
       route('portal/profil/edit', 'routes/portal-profile-edit.tsx'),

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, redirect } from 'react-router';
 import type { Route } from './+types/job-manage';
+import { JobInterested } from '~/components/JobInterested';
 import { PortalPage } from '~/components/Portal';
 import { Field, useMutation, val } from '~/lib/admin-form';
 import { requireUser, useAuth } from '~/lib/auth';
@@ -47,7 +48,7 @@ const VIEWS: { id: JobStatus; label: string }[] = [
  * Tim loker & admin: review rekomendasi member, sembunyikan loker yang sudah
  * tutup, dan hapus. Loker baru ditambahkan lewat form kirim (langsung tayang).
  */
-export default function JobManage({ loaderData: { jobs, submitters } }: Route.ComponentProps) {
+export default function JobManage({ loaderData: { jobs, submitters, counts } }: Route.ComponentProps) {
   const { user } = useAuth();
   const { busy, run, flash } = useMutation();
   const [view, setView] = useState<JobStatus>('pending');
@@ -177,6 +178,17 @@ export default function JobManage({ loaderData: { jobs, submitters } }: Route.Co
                         {!j.show_submitter && ' · nama disembunyikan'}
                         {` · ${formatDate(j.created_at)}`}
                       </span>
+                      {j.owner_id && j.owner_id !== j.submitted_by && (
+                        <span className="slug">
+                          Pemilik:{' '}
+                          {submitterOf.get(j.owner_id) ? (
+                            <Link to={`/member/${submitterOf.get(j.owner_id)!.handle}`}>{submitterOf.get(j.owner_id)!.full_name}</Link>
+                          ) : (
+                            '(akun dihapus)'
+                          )}
+                        </span>
+                      )}
+                      {j.status === 'approved' && <JobInterested jobId={j.id} count={counts.get(j.id) ?? 0} />}
                       {j.status === 'rejected' && (
                         <span className="slug">
                           Alasan: {rejectReasonLabel(j.reject_reason)}

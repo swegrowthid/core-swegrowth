@@ -90,9 +90,42 @@ export async function fetchIsJobPoster() {
   return data === true;
 }
 
-/** Kiriman milik akun yang login (semua status). */
+/** Loker yang dikirim atau dimiliki akun yang login (semua status). */
 export async function fetchMyJobs(userId: string) {
-  const { data } = await supabase().from('jobs').select('*').eq('submitted_by', userId).order('created_at', { ascending: false });
+  const { data, error } = await supabase()
+    .from('jobs')
+    .select('*')
+    .or(`submitted_by.eq.${userId},owner_id.eq.${userId}`)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
+/** Profil lengkap = boleh menandai tertarik (sama dengan has_complete_profile() di database). */
+export async function fetchHasCompleteProfile() {
+  const { data } = await supabase().rpc('has_complete_profile');
+  return data === true;
+}
+
+/** Tandai/batalkan tertarik; mengembalikan status baru. */
+export const toggleJobInterest = (jobId: string) => supabase().rpc('toggle_job_interest', { p_job_id: jobId });
+
+/** Yang tertarik pada satu loker (hanya untuk pemilik, pengirim, dan tim loker). */
+export async function fetchJobInterested(jobId: string) {
+  const { data, error } = await supabase().rpc('job_interested', { p_job_id: jobId });
+  if (error) throw error;
+  return data;
+}
+
+/** Jumlah peminat per loker yang boleh dilihat pemanggil. */
+export async function fetchInterestCounts() {
+  const { data } = await supabase().rpc('job_interest_counts');
+  return new Map((data ?? []).map((r) => [r.job_id, r.total]));
+}
+
+/** Pilihan pemilik loker untuk tim loker. */
+export async function fetchOwnerCandidates() {
+  const { data } = await supabase().rpc('job_owner_candidates');
   return data ?? [];
 }
 
@@ -102,7 +135,8 @@ export async function fetchOwnJob(id: string, userId: string) {
   return data;
 }
 
-export const JOBS_PATH = '/loker';
+/** Portal internal: hanya untuk member yang login. */
+export const JOBS_PATH = '/portal/loker';
 export const JOB_SUBMIT_PATH = '/loker/kirim';
 export const JOB_MANAGE_PATH = '/loker/kelola';
 
@@ -124,11 +158,12 @@ export async function withdrawJob(id: string): Promise<'ok' | 'locked' | 'failed
 
 export async function loadJobManager() {
   const db = supabase();
-  const [jobs, profiles] = await Promise.all([
+  const [jobs, profiles, counts] = await Promise.all([
     db.from('jobs').select('*').order('created_at', { ascending: false }),
     db.rpc('job_submitters'),
+    fetchInterestCounts(),
   ]);
-  return { jobs: jobs.data ?? [], submitters: profiles.data ?? [] };
+  return { jobs: jobs.data ?? [], submitters: profiles.data ?? [], counts };
 }
 
 export const updateJob = (id: string, patch: Database['public']['Tables']['jobs']['Update']) =>

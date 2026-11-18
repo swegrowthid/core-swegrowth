@@ -33,7 +33,6 @@ export function Footer() {
           <Link to="/agenda">Agenda</Link>
           <Link to="/rekaman">Rekaman</Link>
           <Link to="/rekomendasi">Rekomendasi</Link>
-          <Link to="/loker">Loker</Link>
           <Link to="/code-of-conduct">Code of Conduct</Link>
           <Link to="/privasi">Privasi</Link>
           <Link to="/term-of-service">Syarat Layanan</Link>

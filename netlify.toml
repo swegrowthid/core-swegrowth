@@ -7,6 +7,12 @@
   NODE_VERSION = "22"
 
 # URL dari situs lama
+# Loker sempat publik di /loker sebelum jadi portal internal
+[[redirects]]
+  from = "/loker"
+  to = "/portal/loker"
+  status = 301
+
 [[redirects]]
   from = "/code-of-conduct.html"
   to = "/code-of-conduct"

@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
-import { Link, useRevalidator } from 'react-router';
+import { Link, useLocation, useRevalidator } from 'react-router';
 import type { Route } from './+types/portal-jobs';
+import { JobInterested } from '~/components/JobInterested';
 import { LoadError, PortalPage } from '~/components/Portal';
 import { requireUser } from '~/lib/auth';
 import type { JobRow } from '~/lib/database.types';
 import {
   companyLabel,
+  fetchInterestCounts,
   fetchMyJobs,
   JOB_SUBMIT_PATH as SUBMIT_PATH,
   JOBS_PATH,
@@ -19,8 +21,9 @@ export const meta: Route.MetaFunction = () => [{ title: 'Lokerku — SWE Growth'
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const user = await requireUser(request);
-  // null = gagal dimuat, beda dengan belum pernah mengusulkan.
-  return { items: await fetchMyJobs(user.id).catch(() => null) };
+  // null = gagal dimuat, beda dengan belum pernah mengirim.
+  const [items, counts] = await Promise.all([fetchMyJobs(user.id).catch(() => null), fetchInterestCounts()]);
+  return { items, counts, userId: user.id };
 }
 
 export function HydrateFallback() {
@@ -32,8 +35,12 @@ const WITHDRAW_ERROR = {
   failed: 'Gagal menarik loker. Cek koneksi, lalu coba lagi.',
 } as const;
 
-/** Loker yang dibagikan member: status review, edit/tarik selama masih menunggu. */
-export default function PortalJobs({ loaderData: { items } }: Route.ComponentProps) {
+/**
+ * Loker yang dikirim atau dimiliki member: status review, edit/tarik selama masih
+ * menunggu, dan siapa saja yang tertarik (dengan profil, WhatsApp, LinkedIn).
+ */
+export default function PortalJobs({ loaderData: { items, counts, userId } }: Route.ComponentProps) {
+  const { hash } = useLocation();
   const revalidator = useRevalidator();
   const [confirming, setConfirming] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -76,7 +83,7 @@ export default function PortalJobs({ loaderData: { items } }: Route.ComponentPro
           Lokerku
         </span>
       }
-      intro="Loker yang kamu bagikan ke direktori. Tim loker cek dulu sebelum tayang."
+      intro="Loker yang kamu bagikan, termasuk yang diinput tim loker atas namamu. Cek siapa saja yang tertarik di sini."
       actions={
         <Link className="btn btn-primary" to={SUBMIT_PATH}>
           Rekomendasikan loker
@@ -100,7 +107,7 @@ export default function PortalJobs({ loaderData: { items } }: Route.ComponentPro
         <div className="panel">
           <ul className="rows rec-rows">
             {items.map((r) => (
-              <li key={r.id}>
+              <li key={r.id} id={`loker-${r.id}`}>
                 <div className="row-main">
                   <strong>{r.title}</strong>
                   <span>
@@ -109,6 +116,7 @@ export default function PortalJobs({ loaderData: { items } }: Route.ComponentPro
                     {r.status === 'rejected' && r.reject_note && ` · ${r.reject_note}`}
                   </span>
                   {r.status === 'pending' &&
+                    r.submitted_by === userId &&
                     (confirming === r.id ? (
                       <span className="inline-actions rec-row-actions rec-confirm">
                         <span>Tarik dari antrean review?</span>
@@ -138,11 +146,14 @@ export default function PortalJobs({ loaderData: { items } }: Route.ComponentPro
                       </span>
                     ))}
                   {r.status === 'approved' && (
-                    <span className="rec-row-actions">
-                      <Link className="text-link" to={JOBS_PATH}>
-                        Lihat di direktori
-                      </Link>
-                    </span>
+                    <>
+                      <span className="rec-row-actions">
+                        <Link className="text-link" to={JOBS_PATH}>
+                          Lihat di direktori
+                        </Link>
+                      </span>
+                      <JobInterested jobId={r.id} count={counts.get(r.id) ?? 0} defaultOpen={hash === `#loker-${r.id}`} />
+                    </>
                   )}
                   {notice?.id === r.id && (
                     <span className="row-error" role="alert">

@@ -2206,6 +2206,65 @@ a.contrib-maker:hover {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+/* Tertarik: di atas link kartu supaya bisa diklik tanpa membuka link lamaran. */
+.job-interest {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+.job-interest-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-faint);
+}
+.job-profile-note {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--yellow) 30%, var(--paper));
+  font-size: 0.9rem;
+}
+.job-profile-note a {
+  color: var(--green-deep);
+  font-weight: 700;
+}
+/* Daftar peminat (Lokerku & kelola loker) */
+.job-interested {
+  margin-top: 6px;
+  font-size: 0.88rem;
+}
+.job-interested summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--green-deep);
+}
+.job-interested ul {
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.job-interested li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.job-interested li > div {
+  display: grid;
+  gap: 2px;
+}
+.job-interested-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.job-interested-links a {
+  color: var(--green-deep);
+  font-weight: 600;
+}
 .rec-meta li.job-deadline {
   background: color-mix(in srgb, var(--yellow) 35%, var(--paper));
   color: var(--ink);

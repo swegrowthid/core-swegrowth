@@ -361,6 +361,8 @@ export type JobRow = {
   contact: string;
   /** Pesan asli dari grup WhatsApp, apa adanya. */
   original_message: string;
+  /** Member pemilik loker (yang membagikannya); bisa melihat siapa yang tertarik. */
+  owner_id: string | null;
   submitter_relation: JobSubmitterRelation;
   /** Pengirim bersedia ditanya-tanya soal loker ini. */
   open_to_questions: boolean;
@@ -391,15 +393,31 @@ export type PublishedJob = Pick<
   | 'submitter_relation'
   | 'open_to_questions'
   | 'contact_name'
+  | 'contact'
   | 'original_message'
   | 'created_at'
 > & {
-  /** null untuk pengunjung yang belum login (lihat has_contact). */
-  contact: string | null;
-  has_contact: boolean;
-  submitter_name: string | null;
-  submitter_handle: string | null;
-  submitter_avatar_url: string | null;
+  /** Pemilik loker (atau pengirim kalau tidak ditunjuk), kalau namanya boleh tampil. */
+  owner_name: string | null;
+  owner_handle: string | null;
+  owner_avatar_url: string | null;
+  /** Pemanggil adalah pemilik/pengirim loker ini. */
+  is_mine: boolean;
+  interest_count: number;
+  /** Pemanggil sudah menandai tertarik. */
+  interested: boolean;
+};
+
+export type JobInterestRow = { job_id: string; user_id: string; created_at: string };
+
+/** Hasil job_interested(): profil yang tertarik, khusus pemilik loker & tim loker. */
+export type JobInterested = Pick<
+  ProfileRow,
+  'full_name' | 'avatar_url' | 'headline' | 'seniority' | 'company' | 'tech_stack' | 'whatsapp' | 'linkedin_url'
+> & {
+  user_id: string;
+  handle: string;
+  created_at: string;
 };
 
 export type ActivityMemberInfoRow = {
@@ -456,6 +474,7 @@ export type Database = {
       recommendation_topics: Table<RecommendationTopicRow, 'name', 'created_at'>;
       job_posters: Table<JobPosterRow, 'user_id', 'created_at'>;
       jobs: Table<JobRow, 'title', Timestamps>;
+      job_interests: Table<JobInterestRow, 'job_id' | 'user_id', 'created_at'>;
       activity_questions: Table<ActivityQuestionRow, 'activity_id' | 'body', Timestamps>;
       activity_question_votes: Table<ActivityQuestionVoteRow, 'question_id' | 'user_id', 'created_at'>;
       activity_feedback: Table<ActivityFeedbackRow, 'activity_id' | 'user_id' | 'rating', 'created_at' | 'updated_at'>;
@@ -469,6 +488,10 @@ export type Database = {
       is_curator: { Args: Record<string, never>; Returns: boolean };
       is_job_poster: { Args: Record<string, never>; Returns: boolean };
       published_jobs: { Args: Record<string, never>; Returns: PublishedJob[] };
+      toggle_job_interest: { Args: { p_job_id: string }; Returns: boolean };
+      job_interested: { Args: { p_job_id: string }; Returns: JobInterested[] };
+      job_interest_counts: { Args: Record<string, never>; Returns: { job_id: string; total: number }[] };
+      job_owner_candidates: { Args: Record<string, never>; Returns: { id: string; full_name: string; handle: string }[] };
       job_submitters: { Args: Record<string, never>; Returns: { id: string; full_name: string; handle: string }[] };
       submit_job: {
         Args: {
@@ -488,6 +511,7 @@ export type Database = {
           p_contact_name?: string;
           p_contact?: string;
           p_original_message?: string;
+          p_owner_id?: string | null;
           p_id?: string | null;
         };
         Returns: string;
