@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { Link, redirect } from 'react-router';
 import type { Route } from './+types/job-submit';
 import { Field, todayWib } from '~/lib/admin-form';
 import { requireUser } from '~/lib/auth';
 import type { JobEmploymentType, JobLevel, JobRow, JobSubmitterRelation, JobWorkMode } from '~/lib/database.types';
+import { parseJobMessage, parserErrorText } from '~/lib/job-parser';
 import {
   EMPLOYMENT_LABEL,
   fetchIsJobPoster,
@@ -46,13 +47,77 @@ export default function JobSubmit({ loaderData: { editing, isPoster } }: Route.C
 const normalizeApply = (v: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? `mailto:${v}` : /^(https:\/\/|mailto:)/.test(v) ? v : `https://${v.replace(/^http:\/\//, '')}`;
 
+/** Isian form yang dipakai sebagai defaultValue; diganti saat isi otomatis dari pesan WA. */
+type Draft = Pick<
+  JobRow,
+  'title' | 'company' | 'apply_url' | 'description' | 'employment_type' | 'work_mode' | 'location' | 'salary' | 'deadline'
+> & { level: JobLevel | '' };
+
+const EMPTY_DRAFT: Draft = {
+  title: '',
+  company: '',
+  apply_url: '',
+  description: '',
+  employment_type: 'full_time',
+  work_mode: 'onsite',
+  location: '',
+  level: '',
+  salary: '',
+  deadline: null,
+};
+
+const draftOf = (j: JobRow | null): Draft =>
+  j ? { ...j, apply_url: j.apply_url.replace(/^mailto:/, ''), level: j.level ?? '' } : EMPTY_DRAFT;
+
+function readDraft(form: HTMLFormElement): Draft {
+  const data = new FormData(form);
+  const val = (name: string) => String(data.get(name) ?? '').trim();
+  return {
+    title: val('title'),
+    company: val('company'),
+    apply_url: val('apply_url'),
+    description: val('description'),
+    employment_type: val('employment_type') as JobEmploymentType,
+    work_mode: val('work_mode') as JobWorkMode,
+    location: val('location'),
+    level: val('level') as JobLevel | '',
+    salary: val('salary'),
+    deadline: val('deadline') || null,
+  };
+}
+
 function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: boolean }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [draft, setDraft] = useState(() => draftOf(editing));
   const [descLength, setDescLength] = useState(editing?.description.length ?? 0);
+  const [message, setMessage] = useState('');
+  const [parsing, setParsing] = useState(false);
+  const [parseNote, setParseNote] = useState<{ kind: 'success' | 'error'; text: string; missing: string[] } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [formKey, setFormKey] = useState(0);
   const [showName, setShowName] = useState(editing?.show_submitter ?? true);
+
+  // Field yang terbaca dari pesan menimpa isian; yang kosong tetap seperti yang sudah diketik.
+  const autofill = async () => {
+    setParsing(true);
+    setParseNote(null);
+    const result = await parseJobMessage(message);
+    setParsing(false);
+    const failed = parserErrorText(result);
+    if (failed || !result.job) {
+      setParseNote({ kind: 'error', text: failed ?? 'Isi otomatis gagal. Isi form secara manual dulu, ya.', missing: [] });
+      return;
+    }
+    const current = formRef.current ? readDraft(formRef.current) : draft;
+    const filled = Object.fromEntries(Object.entries(result.job).filter(([, v]) => v)) as Partial<Draft>;
+    const next = { ...current, ...filled };
+    setDraft(next);
+    setDescLength(next.description.length);
+    setFormKey((k) => k + 1);
+    setParseNote({ kind: 'success', text: 'Form terisi dari pesan. Cek lagi sebelum dikirim.', missing: result.missing ?? [] });
+  };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -115,6 +180,9 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
                   className="btn btn-ghost"
                   type="button"
                   onClick={() => {
+                    setDraft(EMPTY_DRAFT);
+                    setMessage('');
+                    setParseNote(null);
                     setDescLength(0);
                     setShowName(true);
                     setFormKey((k) => k + 1);
@@ -137,7 +205,43 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
         <Link className="back" to={isPoster ? JOB_MANAGE_PATH : '/portal/lokerku'}>
           ← {isPoster ? 'Kelola loker' : 'Lokerku'}
         </Link>
-        <form key={formKey} className="form-card rec-form" onSubmit={onSubmit}>
+        {!editing && (
+          <div className="form-card job-autofill">
+            <div className="field">
+              <label htmlFor="j_paste">
+                <b>Isi otomatis dari pesan WhatsApp</b>
+                <small> (opsional)</small>
+              </label>
+              <textarea
+                id="j_paste"
+                rows={4}
+                maxLength={4000}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Tempel pesan loker dari grup di sini, lalu klik Isi form."
+              />
+            </div>
+            <div className="inline-actions">
+              <button className="btn btn-ghost sm" type="button" disabled={parsing || message.trim().length < 20} onClick={autofill}>
+                {parsing ? 'Membaca pesan…' : 'Isi form'}
+              </button>
+              <small className="field-hint">Dibaca AI (Gemini). Hasilnya selalu cek ulang dulu.</small>
+            </div>
+            {parseNote && (
+              <div className={`form-message ${parseNote.kind}`} role="status">
+                {parseNote.text}
+                {parseNote.missing.length > 0 && (
+                  <ul>
+                    {parseNote.missing.map((m) => (
+                      <li key={m}>{m}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        <form key={formKey} ref={formRef} className="form-card rec-form" onSubmit={onSubmit}>
           <h1 className="page-title">{editing ? 'Edit loker' : isPoster ? 'Tambah loker' : 'Rekomendasikan loker'}</h1>
           <p className="form-sub">
             {isPoster
@@ -158,22 +262,26 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
               required
               minLength={2}
               maxLength={120}
-              defaultValue={editing?.title}
+              defaultValue={draft.title}
               placeholder="Mis. Backend Engineer (Go)"
             />
           </Field>
 
           <Field id="j_company" label="Perusahaan">
-            <input id="j_company" name="company" required maxLength={120} defaultValue={editing?.company} />
+            <input id="j_company" name="company" required maxLength={120} defaultValue={draft.company} />
           </Field>
 
-          <Field id="j_apply" label="Link lamaran atau email HR" hint="Link resmi (LinkedIn, situs karier) atau email untuk kirim CV.">
+          <Field
+            id="j_apply"
+            label="Link lamaran atau email HR"
+            hint="Link resmi (LinkedIn, situs karier), email untuk kirim CV, atau link WhatsApp https://wa.me/62…"
+          >
             <input
               id="j_apply"
               name="apply_url"
               required
               maxLength={300}
-              defaultValue={editing?.apply_url.replace(/^mailto:/, '')}
+              defaultValue={draft.apply_url}
               placeholder="https://… atau hr@perusahaan.com"
             />
           </Field>
@@ -186,7 +294,7 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
               required
               minLength={DESC_MIN}
               maxLength={DESC_MAX}
-              defaultValue={editing?.description}
+              defaultValue={draft.description}
               placeholder="Mis. Bangun layanan pembayaran pakai Go & PostgreSQL. Min. 2 tahun pengalaman backend."
               onChange={(e) => setDescLength(e.target.value.length)}
             />
@@ -194,7 +302,7 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
 
           <div className="rec-row">
             <Field id="j_type" label="Tipe">
-              <select id="j_type" name="employment_type" defaultValue={editing?.employment_type ?? 'full_time'}>
+              <select id="j_type" name="employment_type" defaultValue={draft.employment_type}>
                 {(Object.keys(EMPLOYMENT_LABEL) as JobEmploymentType[]).map((t) => (
                   <option key={t} value={t}>
                     {EMPLOYMENT_LABEL[t]}
@@ -203,7 +311,7 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
               </select>
             </Field>
             <Field id="j_mode" label="Mode kerja">
-              <select id="j_mode" name="work_mode" defaultValue={editing?.work_mode ?? 'onsite'}>
+              <select id="j_mode" name="work_mode" defaultValue={draft.work_mode}>
                 {(Object.keys(WORK_MODE_LABEL) as JobWorkMode[]).map((m) => (
                   <option key={m} value={m}>
                     {WORK_MODE_LABEL[m]}
@@ -212,13 +320,13 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
               </select>
             </Field>
             <Field id="j_loc" label="Kota" optional>
-              <input id="j_loc" name="location" maxLength={80} defaultValue={editing?.location} />
+              <input id="j_loc" name="location" maxLength={80} defaultValue={draft.location} />
             </Field>
           </div>
 
           <div className="rec-row">
             <Field id="j_level" label="Level" optional>
-              <select id="j_level" name="level" defaultValue={editing?.level ?? ''}>
+              <select id="j_level" name="level" defaultValue={draft.level}>
                 <option value="">—</option>
                 {(Object.keys(LEVEL_LABEL) as JobLevel[]).map((l) => (
                   <option key={l} value={l}>
@@ -228,10 +336,10 @@ function SubmitForm({ editing, isPoster }: { editing: JobRow | null; isPoster: b
               </select>
             </Field>
             <Field id="j_salary" label="Gaji" optional>
-              <input id="j_salary" name="salary" maxLength={80} defaultValue={editing?.salary} placeholder="Mis. 10–15 jt" />
+              <input id="j_salary" name="salary" maxLength={80} defaultValue={draft.salary} placeholder="Mis. 10–15 jt" />
             </Field>
             <Field id="j_deadline" label="Batas lamaran" optional>
-              <input id="j_deadline" name="deadline" type="date" min={todayWib()} defaultValue={editing?.deadline ?? ''} />
+              <input id="j_deadline" name="deadline" type="date" min={todayWib()} defaultValue={draft.deadline ?? ''} />
             </Field>
           </div>
 
