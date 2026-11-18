@@ -560,7 +560,6 @@ export type Database = {
       toggle_question_vote: { Args: { p_question_id: string }; Returns: boolean };
       import_registration_questions: { Args: { p_activity_id: string; p_field_id?: string }; Returns: number };
       activity_recap: { Args: { p_activity_id: string }; Returns: ActivityRecap[] };
-      my_recap_summary_ids: { Args: Record<string, never>; Returns: string[] };
       submit_activity_feedback: { Args: { p_activity_id: string; p_rating: number; p_comment?: string }; Returns: undefined };
       activity_links: {
         Args: { p_activity_id: string };

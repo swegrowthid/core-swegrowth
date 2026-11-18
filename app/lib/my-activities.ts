@@ -43,12 +43,6 @@ export async function fetchMyFeedback(activityId: string, userId: string) {
   return data;
 }
 
-/** Id kegiatan yang diikuti dan sudah punya ringkasan sesi; kosong kalau gagal (tanda saja, tidak wajib). */
-export async function fetchMySummaryIds() {
-  const { data } = await supabase().rpc('my_recap_summary_ids');
-  return data ?? [];
-}
-
 /** Id kegiatan yang sudah diberi feedback oleh akun ini. */
 export async function fetchMyFeedbackIds(userId: string) {
   const { data } = await supabase().from('activity_feedback').select('activity_id').eq('user_id', userId);
