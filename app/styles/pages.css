@@ -1640,7 +1640,8 @@ a.contrib-maker:hover {
 .rec-pick label:hover {
   border-color: var(--ink-faint);
 }
-.rec-pick label.on {
+.rec-pick label.on,
+.rec-pick label:has(input:checked) {
   background: var(--teal);
   border-color: var(--teal);
   color: var(--cream);
@@ -1700,7 +1701,55 @@ a.contrib-maker:hover {
   justify-content: center;
 }
 
-/* Portal: Rekomendasiku */
+/* Loker: kartu memakai gaya rekomendasi, warna per tipe pekerjaan. */
+.job-card[data-type='full_time'] {
+  --cat: #6cc4c9;
+}
+.job-card[data-type='contract'] {
+  --cat: #e8a87c;
+}
+.job-card[data-type='internship'] {
+  --cat: #7dd957;
+}
+.job-card[data-type='freelance'] {
+  --cat: #c9a6e8;
+}
+.job-card[data-type='part_time'] {
+  --cat: #f0d65c;
+}
+.job-card .rec-top {
+  gap: 6px;
+}
+.job-card .rec-go {
+  margin-left: auto;
+}
+.job-relation {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+.job-ask {
+  position: relative;
+  z-index: 1;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--green) 20%, var(--paper));
+  color: var(--green-deep);
+}
+.job-ask:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rec-meta li.job-deadline {
+  background: color-mix(in srgb, var(--yellow) 35%, var(--paper));
+  color: var(--ink);
+}
+
+/* Portal: Rekomendasiku & Lokerku */
+#lokerku,
 #rekomendasiku {
   scroll-margin-top: 84px;
 }

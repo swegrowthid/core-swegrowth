@@ -21,6 +21,7 @@ export function Nav() {
         { to: '/rekaman', label: 'Rekaman', hint: 'Nonton lagi sesi yang sudah lewat' },
       ],
     },
+    { to: '/loker', label: 'Loker' },
     ...(user ? [{ to: '/portal', label: 'Portal' }] : []),
     { to: '/tentang', label: 'Tentang' },
     { to: '/code-of-conduct', label: 'Code of Conduct' },

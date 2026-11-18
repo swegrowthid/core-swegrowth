@@ -37,6 +37,7 @@ export default {
       '/agenda',
       '/rekaman',
       '/rekomendasi',
+      '/loker',
       '/code-of-conduct',
       '/privasi',
       '/term-of-service',

@@ -18,6 +18,8 @@ export default [
   route('portal/agenda/:slug', 'routes/portal-event-redirect.tsx'),
   route('rekaman', 'routes/recordings.tsx'),
   route('rekomendasi', 'routes/recommendations.tsx'),
+  // Direktori loker: tim loker langsung tayang, member merekomendasikan (antre review)
+  route('loker', 'routes/jobs.tsx'),
   route('tentang', 'routes/about.tsx'),
   // Profil publik member (SPA, data dari public_profile())
   route('member/:handle', 'routes/member-public.tsx'),
@@ -38,6 +40,9 @@ export default [
     route('portal/profil/edit', 'routes/portal-profile-edit.tsx'),
     route('portal/membership', 'routes/membership.tsx'),
     route('rekomendasi/kirim', 'routes/recommendation-submit.tsx'),
+    route('loker/kirim', 'routes/job-submit.tsx'),
+    // Khusus tim loker & admin (dicek di clientLoader)
+    route('loker/kelola', 'routes/job-manage.tsx'),
     // Masuk ke app lain dengan akun ini, mis. /ke/trellonotes
     route('ke/:app', 'routes/app-handoff.tsx'),
   ]),

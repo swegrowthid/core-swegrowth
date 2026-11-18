@@ -16,7 +16,15 @@ import {
 } from '~/lib/activities';
 import { requireUser } from '~/lib/auth';
 import { fetchWhatsappGroups } from '~/lib/community';
-import type { RecommendationRow, RegistrationStatus } from '~/lib/database.types';
+import type { JobRow, RecommendationRow, RegistrationStatus } from '~/lib/database.types';
+import {
+  fetchMyJobs,
+  JOB_SUBMIT_PATH,
+  JOBS_PATH,
+  rejectReasonLabel as jobRejectReasonLabel,
+  STATUS_LABEL as JOB_STATUS_LABEL,
+  withdrawJob,
+} from '~/lib/jobs';
 import { formatWibTime, relativeFromNow, wibDayParts } from '~/lib/format';
 import {
   categoryOf,
@@ -32,11 +40,12 @@ export const meta: Route.MetaFunction = () => [{ title: 'Portal — SWE Growth' 
 
 export async function clientLoader({ request }: Route.ClientLoaderArgs) {
   const user = await requireUser(request);
-  const [regs, activities, groups, recommendations] = await Promise.all([
+  const [regs, activities, groups, recommendations, jobs] = await Promise.all([
     fetchMyRegistrationStatuses(user.id),
     getPublishedActivities(),
     fetchWhatsappGroups(),
     fetchMyRecommendations(user.id),
+    fetchMyJobs(user.id),
   ]);
 
   const upcoming = upcomingSessions(activities, { undatedLast: true });
@@ -50,6 +59,7 @@ export async function clientLoader({ request }: Route.ClientLoaderArgs) {
     attended: [...attended],
     groups,
     recommendations,
+    jobs,
   };
 }
 
@@ -66,7 +76,7 @@ const registrationLabel: Record<RegistrationStatus, string> = {
 };
 
 export default function Portal({ loaderData }: Route.ComponentProps) {
-  const { mine, others, past, attended, groups, recommendations } = loaderData;
+  const { mine, others, past, attended, groups, recommendations, jobs } = loaderData;
   const empty = mine.length === 0 && others.length === 0;
 
   return (
@@ -135,6 +145,7 @@ export default function Portal({ loaderData }: Route.ComponentProps) {
           )}
 
           <MyRecommendations items={recommendations} />
+          <MyJobs items={jobs} />
         </div>
       </section>
     </>
@@ -232,6 +243,71 @@ function MyRecommendations({ items }: { items: RecommendationRow[] }) {
                 )}
               </div>
               <span className={`chip rec-status ${r.status}`}>{STATUS_LABEL[r.status]}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Loker yang dikirim member: status review, edit/tarik selama masih menunggu. */
+function MyJobs({ items }: { items: JobRow[] }) {
+  const revalidator = useRevalidator();
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const withdraw = async (j: JobRow) => {
+    if (!confirm(`Tarik loker "${j.title}"? Kirimannya dihapus dari antrean review.`)) return;
+    setBusy(j.id);
+    await withdrawJob(j.id);
+    setBusy(null);
+    await revalidator.revalidate();
+  };
+
+  return (
+    <div className="panel" id="lokerku">
+      <div className="panel-head">
+        <h2>Lokerku</h2>
+        <Link to={JOB_SUBMIT_PATH}>Rekomendasikan loker</Link>
+      </div>
+      {items.length === 0 ? (
+        <p className="form-sub">
+          Lihat loker bagus di grup atau di kantormu?{' '}
+          <Link className="text-link" to={JOB_SUBMIT_PATH}>
+            Bagikan ke direktori loker
+          </Link>
+          .
+        </p>
+      ) : (
+        <ul className="rows">
+          {items.map((j) => (
+            <li key={j.id}>
+              <div className="row-main">
+                <strong>{j.title}</strong>
+                <span>
+                  {j.company}
+                  {j.status === 'rejected' && jobRejectReasonLabel(j.reject_reason) && ` · ${jobRejectReasonLabel(j.reject_reason)}`}
+                  {j.status === 'rejected' && j.reject_note && ` · ${j.reject_note}`}
+                </span>
+                {j.status === 'pending' && (
+                  <span className="inline-actions rec-row-actions">
+                    <Link className="text-link" to={`${JOB_SUBMIT_PATH}?edit=${j.id}`}>
+                      Edit
+                    </Link>
+                    <button className="link-btn" type="button" disabled={busy === j.id} onClick={() => withdraw(j)}>
+                      Tarik
+                    </button>
+                  </span>
+                )}
+                {j.status === 'approved' && (
+                  <span>
+                    <Link className="text-link" to={JOBS_PATH}>
+                      Lihat di direktori
+                    </Link>
+                  </span>
+                )}
+              </div>
+              <span className={`chip rec-status ${j.status}`}>{JOB_STATUS_LABEL[j.status]}</span>
             </li>
           ))}
         </ul>

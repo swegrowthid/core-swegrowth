@@ -3,6 +3,7 @@ import type { Route } from './+types/admin';
 import { ActivitiesAdmin } from '~/components/admin/ActivitiesAdmin';
 import { CommunityGroupsAdmin } from '~/components/admin/CommunityGroupsAdmin';
 import { ContributionsAdmin } from '~/components/admin/ContributionsAdmin';
+import { JobPostersAdmin } from '~/components/admin/JobPostersAdmin';
 import { MembersAdmin } from '~/components/admin/MembersAdmin';
 import { RecommendationsAdmin } from '~/components/admin/RecommendationsAdmin';
 import { WhatsappGroupsAdmin } from '~/components/admin/WhatsappGroupsAdmin';
@@ -20,7 +21,7 @@ export function HydrateFallback() {
   return <div className="loading-block">Memuat admin…</div>;
 }
 
-type Tab = 'member' | 'event' | 'subgrup' | 'grup' | 'kontribusi' | 'rekomendasi';
+type Tab = 'member' | 'event' | 'subgrup' | 'grup' | 'kontribusi' | 'rekomendasi' | 'loker';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'member', label: 'Member' },
   { id: 'event', label: 'Event' },
@@ -28,6 +29,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'grup', label: 'Grup WhatsApp' },
   { id: 'kontribusi', label: 'Kontribusi member' },
   { id: 'rekomendasi', label: 'Rekomendasi' },
+  { id: 'loker', label: 'Loker' },
 ];
 
 export default function Admin({ loaderData }: Route.ComponentProps) {
@@ -47,6 +49,7 @@ export default function Admin({ loaderData }: Route.ComponentProps) {
             <Link key={t.id} to={t.id === 'member' ? '/admin' : `/admin?tab=${t.id}`} aria-current={tab === t.id ? 'page' : undefined}>
               {t.label}
               {t.id === 'rekomendasi' && pendingRecs > 0 && <span className="chip yellow tab-soon">{pendingRecs}</span>}
+              {t.id === 'loker' && loaderData.pendingJobs > 0 && <span className="chip yellow tab-soon">{loaderData.pendingJobs}</span>}
             </Link>
           ))}
         </nav>
@@ -70,6 +73,9 @@ export default function Admin({ loaderData }: Route.ComponentProps) {
               profiles={loaderData.profiles}
               topics={loaderData.recommendationTopics}
             />
+          )}
+          {tab === 'loker' && (
+            <JobPostersAdmin posters={loaderData.jobPosters} profiles={loaderData.profiles} pendingJobs={loaderData.pendingJobs} />
           )}
           {tab === 'kontribusi' && <ContributionsAdmin contributions={loaderData.contributions} profiles={loaderData.profiles} />}
         </div>
